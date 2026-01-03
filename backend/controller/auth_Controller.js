@@ -1,7 +1,7 @@
 import user_models from "../models/user_models.js";
 import bcrypt from "bcrypt";
-import bcrpt from "bcrypt";
 import jwt from "jsonwebtoken";
+
 export const signupController = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -30,6 +30,7 @@ export const signupController = async (req, res) => {
       email,
       password: hashedPassword,
       profilePic: avatar,
+      role: 'passenger' 
     });
 
     await newUser.save();
@@ -41,6 +42,7 @@ export const signupController = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         profilePic: newUser.profilePic,
+        role: newUser.role,
       },
       success: true,
     });
@@ -53,12 +55,10 @@ export const signupController = async (req, res) => {
   }
 };
 
-//login controller
 export const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    //feilds should not be empty !!
     if (!email || !password) {
       return res.status(400).json({
         message: "All fields are required",
@@ -66,7 +66,6 @@ export const loginController = async (req, res) => {
       });
     }
 
-    //checking for user if they exists
     const userExists = await user_models.findOne({ email });
 
     if (!userExists) {
@@ -76,7 +75,7 @@ export const loginController = async (req, res) => {
       });
     }
 
-    const isPasswordEqual = await bcrpt.compare(password, userExists.password);
+    const isPasswordEqual = await bcrypt.compare(password, userExists.password);
 
     if (!isPasswordEqual) {
       return res.status(403).json({
@@ -84,22 +83,24 @@ export const loginController = async (req, res) => {
         success: false,
       });
     }
-
     const jwt_token = jwt.sign(
       {
         email: userExists.email,
         _id: userExists._id,
+        role: userExists.role 
       },
       process.env.JWT_KEY,
       { expiresIn: "24hr" }
     );
+
     res.status(200).json({
       message: "login successfully",
       success: true,
       jwt_token,
       name: userExists.name,
       email,
-      _id:userExists._id
+      _id: userExists._id,
+      role: userExists.role 
     });
   } catch (error) {
     console.log("error in login controller : ", error);
