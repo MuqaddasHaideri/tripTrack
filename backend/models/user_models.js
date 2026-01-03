@@ -14,10 +14,15 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Added profilePic to match your controller
+  profilePic: {
+    type: String,
+    default: ""
+  },
   role: {
     type: String,
     enum: ['passenger', 'driver', 'admin'],
-    default: 'passenger'
+    default: 'passenger' // Be careful with this default
   },
   phone: {
     type: String,
@@ -28,10 +33,6 @@ const UserSchema = new mongoose.Schema({
     ref: 'Bus',
     default: null
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+}, { timestamps: true }); 
 
 export default mongoose.model('users', UserSchema);

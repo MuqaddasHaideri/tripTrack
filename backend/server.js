@@ -12,7 +12,7 @@ app.use(express.json());
 
 start(); 
 
-app.use("/api/auth", router);
+app.use("/api/auth", router); // https://localhost:3000/api/auth/login
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port = ${PORT}`);
