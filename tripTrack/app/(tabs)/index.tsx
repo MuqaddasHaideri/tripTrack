@@ -1,3 +1,7 @@
+if (__DEV__) {
+  require("../../reactotron");
+}
+
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -23,21 +27,18 @@ export default function PassengerMap() {
 
   return (
     <View style={styles.container}>
-      {/* 2. The Full Screen Map */}
+
       <MapView 
         style={styles.map} 
         initialRegion={{
-          latitude: 24.8607, // Karachi Center (Default)
+          latitude: 24.8607, 
           longitude: 67.0011,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         }}
-        showsUserLocation={true} // Show blue dot
+        showsUserLocation={true} 
       >
-        {/* We will add Bus Markers here later */}
       </MapView>
-
-      {/* 3. The "Transit Style" Search Bar Overlay */}
       <View style={styles.searchContainer}>
         <Text style={styles.searchText}>Where to?</Text>
       </View>

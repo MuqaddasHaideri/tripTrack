@@ -2,30 +2,41 @@ import React, { useState } from 'react';
 import { 
   StyleSheet, 
   View, 
-  Text, 
   TextInput, 
   TouchableOpacity, 
   KeyboardAvoidingView, 
   Platform, 
   ActivityIndicator,
-  Alert 
+  Alert,
+  useColorScheme,
+  Text
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
 
+// --- IMPORTS ---
+import { ThemedText } from '../../components/themed-text';
+import { ThemedView } from '../../components/themed-view';
 import { setCredentials } from '../../redux/authSlice';
 import { loginUserApi } from '../../service/server'; 
+import { Colors } from '../../constants/theme'; 
 
 export default function PassengerLoginScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
   
+  // 1. Get current theme ('light' or 'dark')
+  const theme = useColorScheme() ?? 'light';
+  
+  // 2. Access your specific colors
+  const activeColors = Colors[theme];
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
@@ -34,21 +45,20 @@ export default function PassengerLoginScreen() {
     setLoading(true);
 
     try {
-      const data = await loginUserApi(email, password);
-      
-      // --- CRITICAL UPDATE FOR YOUR CONTROLLER ---
-      // Your controller returns: { jwt_token, _id, name, email, role, ... }
-      
+      const data = await loginUserApi(email, password, 'passenger');
       if (data.success) {
-        // 1. Construct the user object from the flat response
+        if (data.role !== 'passenger') {
+           Alert.alert("Access Denied", "You are not registered as a passenger.");
+           return;
+        }
+
         const userObj = {
-          id: data._id,      // Controller returns '_id'
-          name: data.name,   // Controller returns 'name'
-          email: data.email, // Controller returns 'email'
-          role: data.role    // Controller returns 'role'
+          id: data._id,
+          name: data.name,
+          email: data.email,
+          role: data.role
         };
 
-        // 2. Dispatch with the correct token key ('jwt_token')
         dispatch(setCredentials({ 
           user: userObj, 
           token: data.jwt_token 
@@ -57,6 +67,7 @@ export default function PassengerLoginScreen() {
         Alert.alert("Success", "Welcome back!");
         router.replace('/'); 
       } else {
+
         Alert.alert("Login Failed", data.message || "Invalid credentials");
       }
 
@@ -70,83 +81,197 @@ export default function PassengerLoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"} 
-      style={styles.container}
-    >
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color="#333" />
-      </TouchableOpacity>
-
-      <View style={styles.content}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Passenger Login</Text>
-          <Text style={styles.subtitle}>Login to manage your rides.</Text>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
-          <TextInput 
-            placeholder="Email Address" 
-            style={styles.input} 
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
+    <ThemedView style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+        style={styles.keyboardView}
+      >
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={styles.backButton}
+        >
+          <Ionicons 
+            name="arrow-back" 
+            size={24} 
+            color={activeColors.text} 
           />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-          <TextInput 
-            placeholder="Password" 
-            style={styles.input} 
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.mainButton} onPress={handleLogin} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.mainButtonText}>Log In</Text>
-          )}
         </TouchableOpacity>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/passenger/signup')}>
-            <Text style={styles.linkText}>Sign Up</Text>
+        <View style={styles.content}>
+          <View style={styles.headerContainer}>
+            <ThemedText type="title" style={styles.title}>
+              Passenger Login
+            </ThemedText>
+            <ThemedText style={styles.subtitle}>
+              Login to manage your rides.
+            </ThemedText>
+          </View>
+
+          <View 
+            style={[
+              styles.inputContainer, 
+              { 
+                backgroundColor: activeColors.inputBackground,
+                borderColor: activeColors.inputBorder 
+              }
+            ]}
+          >
+            <Ionicons 
+              name="mail-outline" 
+              size={20} 
+              color={activeColors.icon} 
+              style={styles.inputIcon} 
+            />
+            <TextInput 
+              placeholder="Email Address" 
+              placeholderTextColor={activeColors.placeholder}
+              style={[
+                styles.input, 
+                { color: activeColors.text }
+              ]} 
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          <View 
+            style={[
+              styles.inputContainer, 
+              { 
+                backgroundColor: activeColors.inputBackground,
+                borderColor: activeColors.inputBorder 
+              }
+            ]}
+          >
+            <Ionicons 
+              name="lock-closed-outline" 
+              size={20} 
+              color={activeColors.icon} 
+              style={styles.inputIcon} 
+            />
+            <TextInput 
+              placeholder="Password" 
+              placeholderTextColor={activeColors.placeholder}
+              style={[
+                styles.input, 
+                { color: activeColors.text }
+              ]} 
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+          <TouchableOpacity 
+            style={styles.mainButton} 
+            onPress={handleLogin} 
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.mainButtonText}>
+                Log In
+              </Text>
+            )}
           </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <ThemedText style={styles.footerText}>
+              Don't have an account?{' '}
+            </ThemedText>
+            <TouchableOpacity onPress={() => router.replace('./signup')}>
+              <Text style={styles.linkText}>
+                Sign Up
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  backButton: { position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 10 },
-  content: { flex: 1, justifyContent: 'center', padding: 30 },
-  headerContainer: { marginBottom: 40 },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#333', marginBottom: 10 },
-  subtitle: { fontSize: 16, color: '#666' },
-  inputContainer: { 
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', 
-    borderRadius: 12, marginBottom: 15, paddingHorizontal: 15, height: 55,
-    borderWidth: 1, borderColor: '#eee'
+  container: {
+    flex: 1
   },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 16, color: '#333' },
+  keyboardView: {
+    flex: 1
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    padding: 10
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 30
+  },
+  headerContainer: {
+    marginBottom: 40
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 10
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.7
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+    height: 55,
+    borderWidth: 1
+  },
+  inputIcon: {
+    marginRight: 10
+  },
+  input: {
+    flex: 1,
+    fontSize: 16
+  },
   mainButton: {
-    backgroundColor: '#00C853', borderRadius: 12, height: 55,
-    justifyContent: 'center', alignItems: 'center', marginTop: 10,
-    shadowColor: '#00C853', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 4 }, elevation: 4
+    backgroundColor: '#00C853',
+    borderRadius: 12,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    shadowColor: '#00C853',
+    shadowOpacity: 0.3,
+    shadowOffset: {
+      width: 0,
+      height: 4
+    },
+    elevation: 4
   },
-  mainButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 30 },
-  footerText: { color: '#666', fontSize: 15 },
-  linkText: { color: '#00C853', fontWeight: 'bold', fontSize: 15 },
+  mainButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold'
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 30
+  },
+  footerText: {
+    fontSize: 15,
+    opacity: 0.7
+  },
+  linkText: {
+    color: '#00C853',
+    fontWeight: 'bold',
+    fontSize: 15
+  }
 });

@@ -10,32 +10,70 @@ const tintColorDark = '#fff';
 
 export const Colors = {
   light: {
+    // --- BASIC ---
     text: '#11181C',
-    background: '#fff',
+    background: '#fff',          // Standard white background
     tint: tintColorLight,
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+
+    // --- UI STRUCTURE ---
+    screenBackground: '#F2F2F7', // Slightly darker (iOS Settings Gray) for grouped views
+    cardBackground: '#FFFFFF',   // Cards start white on light mode
+    separator: '#F0F0F0',        // Divider lines
+    
+    // --- INPUTS & FORMS ---
+    primary: '#00C853',          // Your Transit Green
+    inputBackground: '#f5f5f5',
+    inputBorder: '#eeeeee',
+    placeholder: '#687076',
+
+    // --- STATUS ---
+    error: '#FF3B30',            // Red (Logout / Errors)
+    warning: '#FFD700',          // Gold (Star icon)
+    success: '#00C853',
+    
+    // --- SPECIFIC ---
+    guestCardBackground: '#333333', // Guest card is always dark
+    inverseText: '#FFFFFF',         // Text on top of primary buttons/guest cards
   },
   dark: {
+    // --- BASIC ---
     text: '#ECEDEE',
-    background: '#151718',
+    background: '#151718',       // Standard dark background
     tint: tintColorDark,
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+
+    // --- UI STRUCTURE ---
+    screenBackground: '#000000', // Deep black for OLED screens
+    cardBackground: '#1C1C1E',   // Slightly lighter dark for cards
+    separator: '#2C2C2E',        // Darker dividers
+    
+    // --- INPUTS & FORMS ---
+    primary: '#00C853',          // Keep brand color consistent
+    inputBackground: '#2C2C2E',  // Darker gray for inputs
+    inputBorder: '#3A3A3C',
+    placeholder: '#555555',
+
+    // --- STATUS ---
+    error: '#FF453A',            // Slightly lighter red for dark mode visibility
+    warning: '#FFD700',          // Gold
+    success: '#00C853',
+
+    // --- SPECIFIC ---
+    guestCardBackground: '#2C2C2E', 
+    inverseText: '#FFFFFF',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

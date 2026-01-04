@@ -14,7 +14,6 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // Added profilePic to match your controller
   profilePic: {
     type: String,
     default: ""
@@ -22,7 +21,7 @@ const UserSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['passenger', 'driver', 'admin'],
-    default: 'passenger' // Be careful with this default
+    required: true 
   },
   phone: {
     type: String,

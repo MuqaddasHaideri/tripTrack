@@ -4,14 +4,7 @@ import jwt from "jsonwebtoken";
 
 export const signupController = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "All fields are required",
-        success: false,
-      });
-    }
+    const { name, email, password, role, phone } = req.body;
 
     const userExists = await user_models.findOne({ email });
     if (userExists) {
@@ -30,7 +23,8 @@ export const signupController = async (req, res) => {
       email,
       password: hashedPassword,
       profilePic: avatar,
-      role: 'passenger' 
+      role, 
+      phone: phone || "" 
     });
 
     await newUser.save();
@@ -43,6 +37,7 @@ export const signupController = async (req, res) => {
         email: newUser.email,
         profilePic: newUser.profilePic,
         role: newUser.role,
+        phone: newUser.phone
       },
       success: true,
     });
@@ -57,20 +52,23 @@ export const signupController = async (req, res) => {
 
 export const loginController = async (req, res) => {
   try {
-    const { email, password } = req.body;
+  
+    const { email, password, role } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "All fields are required",
-        success: false,
-      });
-    }
 
     const userExists = await user_models.findOne({ email });
 
     if (!userExists) {
       return res.status(403).json({
-        message: "Auth failed! email or password is wrong",
+        message: "Auth failed! Email or password is wrong",
+        success: false,
+      });
+    }
+
+
+    if (userExists.role !== role) {
+      return res.status(403).json({
+        message: `Access Denied! You are registered as a ${userExists.role}, not a ${role}.`,
         success: false,
       });
     }
@@ -79,10 +77,11 @@ export const loginController = async (req, res) => {
 
     if (!isPasswordEqual) {
       return res.status(403).json({
-        message: "Auth failed! email or password is wrong",
+        message: "Auth failed! Email or password is wrong",
         success: false,
       });
     }
+
     const jwt_token = jwt.sign(
       {
         email: userExists.email,
@@ -94,18 +93,19 @@ export const loginController = async (req, res) => {
     );
 
     res.status(200).json({
-      message: "login successfully",
+      message: "Login successful",
       success: true,
       jwt_token,
       name: userExists.name,
       email,
       _id: userExists._id,
-      role: userExists.role 
+      role: userExists.role, 
+      profilePic: userExists.profilePic
     });
   } catch (error) {
-    console.log("error in login controller : ", error);
+    console.log("Error in login controller : ", error);
     return res.status(500).json({
-      message: "internal server error",
+      message: "Internal server error",
       success: false,
     });
   }
