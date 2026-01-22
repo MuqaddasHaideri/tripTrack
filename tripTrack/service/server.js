@@ -52,3 +52,15 @@ export const signupUserApi = async (
     }),
   });
 };
+
+
+
+export const fetchRoutesApi = async () => {
+  const response = await fetchApi(endpoints.getRoutes);
+  return response.data || []; 
+};
+
+export const fetchBusesApi = async () => {
+  const response = await fetchApi(endpoints.getBuses);
+  return response.data || [];
+};
