@@ -1,8 +1,10 @@
 import { API_BASE, endpoints } from './apiConfig';
+
 const fetchApi = async (url, options = {}) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000); 
+
     const response = await fetch(`${API_BASE}${url}`, {
       ...options,
       headers: {
@@ -11,7 +13,9 @@ const fetchApi = async (url, options = {}) => {
       },
       signal: controller.signal,
     });
+
     clearTimeout(timeout);
+    
     const data = await response.json();
     if (!response.ok) {
       throw data?.message || 'Request failed';
@@ -34,26 +38,12 @@ export const loginUserApi = async (email, password, role) => {
   });
 };
 
-export const signupUserApi = async (
-  name,
-  email,
-  password,
-  role = '',
-  phone = '' 
-) => {
+export const signupUserApi = async (name, email, password, role = '', phone = '') => {
   return fetchApi(endpoints.signup, {
     method: 'POST',
-    body: JSON.stringify({ 
-        name, 
-        email, 
-        password, 
-        role,
-        phone 
-    }),
+    body: JSON.stringify({ name, email, password, role, phone }),
   });
 };
-
-
 
 export const fetchRoutesApi = async () => {
   const response = await fetchApi(endpoints.getRoutes);
@@ -63,4 +53,46 @@ export const fetchRoutesApi = async () => {
 export const fetchBusesApi = async () => {
   const response = await fetchApi(endpoints.getBuses);
   return response.data || [];
+};
+
+// ==========================================
+// NEW: AUTHENTICATED LOCATION API CALLS
+// ==========================================
+// * Note: Ensure `locations: '/locations'` is added to your apiConfig.js endpoints *
+
+// 1. Get all saved/recent locations for the user
+export const fetchUserLocationsApi = async (token) => {
+  const response = await fetchApi(endpoints.locations, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data || [];
+};
+
+// 2. Save a new recent search
+export const addLocationApi = async (token, locationData) => {
+  const response = await fetchApi(endpoints.locations, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(locationData) // { name, address, latitude, longitude, type }
+  });
+  return response.data;
+};
+
+// 3. Update a location (e.g., change 'recent' to 'favorite')
+export const updateLocationTypeApi = async (token, locationId, type) => {
+  const response = await fetchApi(`${endpoints.locations}/${locationId}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ type })
+  });
+  return response.data;
+};
+
+// 4. Delete a location from history
+export const deleteLocationApi = async (token, locationId) => {
+  return fetchApi(`${endpoints.locations}/${locationId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` }
+  });
 };

@@ -1,15 +1,38 @@
 import express from "express";
-import { createRoute, getAllRoutes, createBus, getAllBuses } from "../controller/data_Controller.js";
+import { 
+  createRoute, 
+  getAllRoutes, 
+  createBus, 
+  getAllBuses 
+} from "../controller/data_Controller.js";
+import { 
+  addLocation, 
+  getUserLocations, 
+  updateLocationType, 
+  deleteLocation 
+} from "../controller/data_Controller.js";
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
 
 const router = express.Router();
 
-// GET routes (Public - No login needed to see map)
+// ==========================================
+// PUBLIC DATA ROUTES (Anyone can view)
+// ==========================================
 router.get("/routes", getAllRoutes);
 router.get("/buses", getAllBuses);
 
-// POST routes (Protected - Must have Token)
+// ==========================================
+// ADMIN DATA ROUTES (Requires Auth)
+// ==========================================
 router.post("/routes", isAuthenticated, createRoute);
 router.post("/buses", isAuthenticated, createBus);
 
+// ==========================================
+// USER LOCATION ROUTES (Requires Auth)
+// ==========================================
+
+router.post('/locations',isAuthenticated, addLocation)
+  router.get('/locations',isAuthenticated, getUserLocations);
+router.put('/locations/:id',isAuthenticated, updateLocationType)
+  router.delete('/locations/:id',isAuthenticated, deleteLocation);
 export default router;
