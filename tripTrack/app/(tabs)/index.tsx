@@ -1,8 +1,4 @@
-if (__DEV__) {
-  require("../../reactotron");
-}
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -12,7 +8,9 @@ import {
   Modal, 
   TextInput, 
   FlatList,
-  SafeAreaView
+  SafeAreaView,
+  Platform,
+  StatusBar
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -22,18 +20,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchRoutesApi } from '../../service/server'; 
 
 export default function PassengerMap() {
+  const mapRef = useRef(null);
   const [userLocation, setUserLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
-
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMenuId, setActiveMenuId] = useState(null); 
 
   // Dummy Data for Recent Locations
   const [recentLocations, setRecentLocations] = useState([
-    { id: '1', name: 'SMIU City Campus', address: 'Aiwan-e-Tijarat Road, Karachi' },
-    { id: '2', name: 'Tower', address: 'M.A Jinnah Road, Karachi' },
-    { id: '3', name: 'Model Colony', address: 'Malir, Karachi' }
+    { id: '1', name: 'SMIU City Campus', address: 'Aiwan-e-Tijarat Road, Karachi', icon: 'school', lat: 24.8504, lng: 67.0011 },
+    { id: '2', name: 'Tower', address: 'M.A Jinnah Road, Karachi', icon: 'business', lat: 24.8485, lng: 66.9990 },
+    { id: '3', name: 'Model Colony', address: 'Malir, Karachi', icon: 'home', lat: 24.9048, lng: 67.1950 }
   ]);
 
   const { data: routes, isLoading: loadingRoutes } = useQuery({
@@ -44,71 +42,85 @@ export default function PassengerMap() {
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        return;
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Permission to access location was denied');
+          return;
+        }
+        let location = await Location.getCurrentPositionAsync({});
+        setUserLocation(location.coords);
+      } catch (err) {
+        setErrorMsg('Error fetching location');
       }
-      let location = await Location.getCurrentPositionAsync({});
-      setUserLocation(location.coords);
     })();
   }, []);
 
-  // --- HANDLERS FOR LOCATION MENU ---
-  const toggleMenu = (id) => {
-    setActiveMenuId(prevId => (prevId === id ? null : id));
-  };
+  // --- FILTERED SEARCH LOGIC ---
+  const filteredRecent = useMemo(() => {
+    return recentLocations.filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.address.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, recentLocations]);
+
+  // --- HANDLERS ---
+  const toggleMenu = (id) => setActiveMenuId(prevId => (prevId === id ? null : id));
 
   const handleDeleteLocation = (id) => {
     setRecentLocations(prev => prev.filter(loc => loc.id !== id));
     setActiveMenuId(null);
   };
 
-  // --- RENDER RECENT LOCATION ITEM ---
+  const handleSelectLocation = (loc) => {
+    setIsSearchVisible(false);
+    mapRef.current?.animateToRegion({
+      latitude: loc.lat,
+      longitude: loc.lng,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    }, 1000);
+  };
+
+  // --- RENDER RECENT ITEM ---
   const renderRecentItem = ({ item }) => {
     const isMenuOpen = activeMenuId === item.id;
-
     return (
-      <View style={styles.recentItemContainer}>
-        <View style={styles.recentItemRow}>
-          <View style={styles.recentIconBox}>
-            <Ionicons name="time-outline" size={20} color="#666" />
+      <View style={styles.cardContainer}>
+        <TouchableOpacity 
+          style={styles.cardRow} 
+          activeOpacity={0.7}
+          onPress={() => handleSelectLocation(item)}
+        >
+          <View style={styles.cardIconBox}>
+            <Ionicons name={item.icon || "location"} size={22} color="#fff" />
           </View>
-          
-          <View style={styles.recentTextContainer}>
-            <Text style={styles.recentTitle}>{item.name}</Text>
-            <Text style={styles.recentSubtitle}>{item.address}</Text>
+          <View style={styles.cardTextContainer}>
+            <Text style={styles.cardTitle}>{item.name}</Text>
+            <Text style={styles.cardSubtitle} numberOfLines={1}>{item.address}</Text>
           </View>
-
-          <TouchableOpacity onPress={() => toggleMenu(item.id)} style={styles.dotsButton}>
-            <Ionicons name="ellipsis-vertical" size={20} color="#666" />
+          <TouchableOpacity style={styles.dotsButton} onPress={() => toggleMenu(item.id)}>
+            <Ionicons name={isMenuOpen ? "chevron-up" : "ellipsis-vertical"} size={20} color="#888" />
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
 
-        {/* EXPANDABLE MENU ACTIONS */}
         {isMenuOpen && (
-          <View style={styles.menuOptionsContainer}>
-            <TouchableOpacity style={styles.menuOptionBtn}>
-              <Ionicons name="navigate-circle-outline" size={18} color="#00C853" />
-              <Text style={styles.menuOptionText}>Direction</Text>
+          <View style={styles.gridOptionsContainer}>
+            <TouchableOpacity style={[styles.gridBtn, styles.gridBtnPrimary]}>
+              <Ionicons name="navigate" size={20} color="#fff" />
+              <Text style={styles.gridBtnTextLight}>Direction</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuOptionBtn}>
-              <Ionicons name="bus-outline" size={18} color="#00C853" />
-              <Text style={styles.menuOptionText}>Nearby Buses</Text>
+            <TouchableOpacity style={styles.gridBtn}>
+              <Ionicons name="bus" size={20} color="#00C853" />
+              <Text style={styles.gridBtnTextDark}>Nearby</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuOptionBtn}>
-              <Ionicons name="heart-outline" size={18} color="#00C853" />
-              <Text style={styles.menuOptionText}>Favorite</Text>
+            <TouchableOpacity style={styles.gridBtn}>
+              <Ionicons name="heart" size={20} color="#00C853" />
+              <Text style={styles.gridBtnTextDark}>Favorite</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.menuOptionBtn} 
-              onPress={() => handleDeleteLocation(item.id)}
-            >
-              <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-              <Text style={[styles.menuOptionText, { color: '#FF3B30' }]}>Delete</Text>
+            <TouchableOpacity style={[styles.gridBtn, styles.gridBtnDanger]} onPress={() => handleDeleteLocation(item.id)}>
+              <Ionicons name="trash" size={20} color="#FF3B30" />
+              <Text style={styles.gridBtnTextDanger}>Delete</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -118,93 +130,101 @@ export default function PassengerMap() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <MapView 
+        ref={mapRef}
         style={styles.map} 
         provider={PROVIDER_GOOGLE} 
         initialRegion={{
           latitude: 24.8607, 
           longitude: 67.0011,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
+          latitudeDelta: 0.15,
+          longitudeDelta: 0.15,
         }}
         showsUserLocation={true} 
-        showsMyLocationButton={true}
       >
-        {!loadingRoutes && routes?.map((route, index) => (
-          <Polyline
-            key={route._id || index}
-            coordinates={route.polyline?.map(p => ({
-              latitude: p.lat || p.latitude, 
-              longitude: p.lng || p.longitude
-            }))}
-            strokeColor={route.color || "#FF0000"} 
-            strokeWidth={4}
-          />
+        {/* Render Routes & Stops */}
+        {!loadingRoutes && routes?.map((route) => (
+          <React.Fragment key={route._id}>
+            <Polyline
+              coordinates={route.polyline?.map(p => ({
+                latitude: p.lat || p.latitude, 
+                longitude: p.lng || p.longitude
+              }))}
+              strokeColor={route.color_hex || '#00C853'} 
+              strokeWidth={5}
+              lineJoin="round"
+            />
+            {/* Optional: Render Stop Markers */}
+            {route.stops?.map((stop, idx) => (
+              <Marker
+                key={`${route._id}-stop-${idx}`}
+                coordinate={{
+                  latitude: stop.lat || stop.latitude,
+                  longitude: stop.lng || stop.longitude
+                }}
+                tracksViewChanges={false}
+              >
+                <View style={[styles.stopDot, { borderColor: route.color_hex }]} />
+              </Marker>
+            ))}
+          </React.Fragment>
         ))}
       </MapView>
 
-      {/* --- FLOATING SEARCH BAR (TRIGGERS MODAL) --- */}
       <TouchableOpacity 
         style={styles.searchContainer} 
-        activeOpacity={0.8}
         onPress={() => setIsSearchVisible(true)}
       >
-        <Ionicons name="search" size={20} color="#555" style={styles.searchIcon} />
+        <Ionicons name="search" size={20} color="#00C853" style={styles.searchIcon} />
         <Text style={styles.searchText}>Where to?</Text>
       </TouchableOpacity>
 
-      {/* --- LOADING INDICATOR --- */}
       {loadingRoutes && (
-        <View style={styles.loadingContainer}>
+        <View style={styles.loadingIndicator}>
           <ActivityIndicator size="small" color="#00C853" />
-          <Text style={{ fontSize: 10, marginTop: 4 }}>Loading Routes...</Text>
+          <Text style={styles.loadingText}>Updating Routes...</Text>
         </View>
       )}
 
-      {/* ========================================= */}
-      {/* --- SLIDING SEARCH FULL-SCREEN MODAL ---- */}
-      {/* ========================================= */}
       <Modal
         visible={isSearchVisible}
         animationType="slide"
-        onRequestClose={() => setIsSearchVisible(false)} 
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsSearchVisible(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
-          
-          {/* Top Search Header */}
+          <View style={styles.dragHandle} />
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setIsSearchVisible(false)} style={styles.backBtn}>
-              <Ionicons name="arrow-back" size={24} color="#333" />
+              <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
-            
             <View style={styles.modalSearchBox}>
               <TextInput 
                 style={styles.modalSearchInput}
-                placeholder="Where do you want to go?"
-                placeholderTextColor="#999"
+                placeholder="Search destination"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                autoFocus={true} 
+                autoFocus
               />
               {searchQuery.length > 0 && (
                 <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={20} color="#ccc" />
+                  <Ionicons name="close-circle" size={18} color="#ccc" />
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
-        
-          <Text style={styles.sectionTitle}>Recent Locations</Text>
-          
-          <FlatList 
-            data={recentLocations}
-            keyExtractor={(item) => item.id}
-            renderItem={renderRecentItem}
-            contentContainerStyle={styles.listContainer}
-            keyboardShouldPersistTaps="handled" 
-          />
-
+          <View style={styles.sheetBody}>
+            <Text style={styles.sectionTitle}>Recent Locations</Text>
+            <FlatList 
+              data={filteredRecent}
+              keyExtractor={(item) => item.id}
+              renderItem={renderRecentItem}
+              contentContainerStyle={styles.listContainer}
+              keyboardShouldPersistTaps="always"
+            />
+          </View>
         </SafeAreaView>
       </Modal>
     </View>
@@ -212,143 +232,80 @@ export default function PassengerMap() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
+  container: { flex: 1, backgroundColor: '#fff' },
+  map: { width: '100%', height: '100%' },
+  stopDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    borderWidth: 2,
   },
   searchContainer: {
     position: 'absolute',
-    top: 60,
-    left: 20,
-    right: 20,
-    backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5, 
+    top: Platform.OS === 'ios' ? 50 : 30,
+    left: 15, right: 15,
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 12,
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchText: {
-    fontSize: 16,
-    color: '#999',
-    fontWeight: '500',
-  },
-  loadingContainer: {
+  searchIcon: { marginRight: 10 },
+  searchText: { fontSize: 16, color: '#666', fontWeight: '500' },
+  loadingIndicator: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 30,
     alignSelf: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     padding: 10,
     borderRadius: 20,
-    elevation: 5,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8
+    elevation: 4,
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingTop: 10,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee'
-  },
-  backBtn: {
-    padding: 5,
-    marginRight: 10,
-  },
+  loadingText: { marginLeft: 8, fontSize: 12, color: '#333' },
+  
+  // Modal Styles
+  modalContainer: { flex: 1, backgroundColor: '#F8F9FA' },
+  dragHandle: { width: 35, height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, alignSelf: 'center', marginTop: 10 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', padding: 15 },
+  backBtn: { marginRight: 10 },
   modalSearchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
     height: 45,
+    borderWidth: 1,
+    borderColor: '#EEE'
   },
-  modalSearchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  listContainer: {
-    paddingHorizontal: 15,
-  },
-  recentItemContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  recentItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-  },
-  recentIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  recentTextContainer: {
-    flex: 1,
-  },
-  recentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  recentSubtitle: {
-    fontSize: 13,
-    color: '#888',
-  },
-  dotsButton: {
-    padding: 10,
-  },
-  menuOptionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    backgroundColor: '#fafafa',
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  menuOptionBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
-    flex: 1,
-  },
-  menuOptionText: {
-    fontSize: 10,
-    marginTop: 4,
-    color: '#00C853',
-    fontWeight: '600'
-  }
+  modalSearchInput: { flex: 1, fontSize: 16, color: '#333' },
+  sheetBody: { flex: 1 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', margin: 20, color: '#444' },
+  listContainer: { paddingHorizontal: 15 },
+  
+  // Card Styles
+  cardContainer: { backgroundColor: '#fff', borderRadius: 14, marginBottom: 12, elevation: 1 },
+  cardRow: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+  cardIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#00C853', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  cardTextContainer: { flex: 1 },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
+  cardSubtitle: { fontSize: 12, color: '#888' },
+  dotsButton: { padding: 5 },
+  
+  // Grid Menu
+  gridOptionsContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', padding: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
+  gridBtn: { width: '48%', backgroundColor: '#F9F9F9', borderRadius: 8, padding: 12, alignItems: 'center', marginBottom: 8 },
+  gridBtnPrimary: { backgroundColor: '#00C853' },
+  gridBtnDanger: { backgroundColor: '#FFF5F5' },
+  gridBtnTextLight: { fontSize: 12, color: '#fff', marginTop: 4, fontWeight: '600' },
+  gridBtnTextDark: { fontSize: 12, color: '#00C853', marginTop: 4, fontWeight: '600' },
+  gridBtnTextDanger: { fontSize: 12, color: '#FF3B30', marginTop: 4, fontWeight: '600' }
 });
