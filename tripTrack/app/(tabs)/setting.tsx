@@ -154,7 +154,7 @@ export default function SettingsScreen() {
       {(!user || user.role === 'driver') && (
         <>
           <ThemedText style={styles.sectionHeader}>PARTNER AREA</ThemedText>
-              <DriverButton/>
+              <DriverButton onPress={() => router.push('/driver/login')} />
           {/* <View style={[styles.listCard, { backgroundColor: activeColors.primary || '#00C853' }]}>
             <TouchableOpacity
               style={styles.driverButton}

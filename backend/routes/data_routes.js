@@ -3,14 +3,14 @@ import {
   createRoute, 
   getAllRoutes, 
   createBus, 
-  getAllBuses 
-} from "../controller/data_Controller.js";
-import { 
-  addLocation, 
+  getAllBuses,
+ getNearbyRoutes,
+    addLocation, 
   getUserLocations, 
   updateLocationType, 
   deleteLocation 
 } from "../controller/data_Controller.js";
+
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
 
 const router = express.Router();
@@ -20,7 +20,7 @@ const router = express.Router();
 // ==========================================
 router.get("/routes", getAllRoutes);
 router.get("/buses", getAllBuses);
-
+router.get("/routes/nearby", getNearbyRoutes);
 // ==========================================
 // ADMIN DATA ROUTES (Requires Auth)
 // ==========================================

@@ -4,52 +4,52 @@ import jwt from "jsonwebtoken";
 
 export const signupController = async (req, res) => {
   try {
-    const { name, email, password, role, phone } = req.body;
+    // 1. Extract the new fields
+    const { name, email, password, role, phone, cnic, driverLicense } = req.body;
 
     const userExists = await user_models.findOne({ email });
     if (userExists) {
-      return res.status(400).json({
-        message: "User Already Exists",
-        success: false,
-      });
+      return res.status(400).json({ message: "User Already Exists", success: false });
     }
 
     const encodedName = encodeURIComponent(name);
     const avatar = `https://avatar.iran.liara.run/username?username=${encodedName}`;
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 2. Security Logic: Drivers are unverified by default.
+    const isUserVerified = role === 'passenger' ? true : false;
+
     const newUser = new user_models({
       name,
       email,
       password: hashedPassword,
       profilePic: avatar,
-      role, 
-      phone: phone || "" 
+      role,
+      phone: phone || "",
+      // 3. Save the new fields
+      cnic: cnic || "",
+      driverLicense: driverLicense || "",
+      isVerified: isUserVerified
     });
 
     await newUser.save();
 
     res.status(201).json({
-      message: "User has been created successfully",
+      message: role === 'driver' ? "Application submitted! Waiting for Admin approval." : "User created successfully",
       user: {
         _id: newUser._id,
         name: newUser.name,
         email: newUser.email,
-        profilePic: newUser.profilePic,
         role: newUser.role,
-        phone: newUser.phone
+        isVerified: newUser.isVerified
       },
       success: true,
     });
   } catch (error) {
     console.log("Error in signup controller:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      success: false,
-    });
+    return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
-
 export const loginController = async (req, res) => {
   try {
   
@@ -73,12 +73,17 @@ export const loginController = async (req, res) => {
       });
     }
 
-    const isPasswordEqual = await bcrypt.compare(password, userExists.password);
+   const isPasswordEqual = await bcrypt.compare(password, userExists.password);
 
     if (!isPasswordEqual) {
-      return res.status(403).json({
-        message: "Auth failed! Email or password is wrong",
-        success: false,
+      return res.status(403).json({ message: "Auth failed! Email or password is wrong", success: false });
+    }
+
+    // NEW: Block unverified drivers
+    if (userExists.role === 'driver' && userExists.isVerified === false) {
+      return res.status(403).json({ 
+        message: "Your account is still pending admin approval. Please wait.", 
+        success: false 
       });
     }
 

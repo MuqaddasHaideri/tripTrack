@@ -44,7 +44,20 @@ export const signupUserApi = async (name, email, password, role = '', phone = ''
     body: JSON.stringify({ name, email, password, role, phone }),
   });
 };
-
+export const signupdriver = async (name, email, password, role, phone, cnic, driverLicense) => {
+  return fetchApi(endpoints.signup, {
+    method: 'POST',
+    body: JSON.stringify({ 
+        name, 
+        email, 
+        password, 
+        role,
+        phone,
+        cnic,             // <-- Added
+        driverLicense     // <-- Added
+    }),
+  });
+};
 export const fetchRoutesApi = async () => {
   const response = await fetchApi(endpoints.getRoutes);
   return response.data || []; 
@@ -58,7 +71,6 @@ export const fetchBusesApi = async () => {
 // ==========================================
 // NEW: AUTHENTICATED LOCATION API CALLS
 // ==========================================
-// * Note: Ensure `locations: '/locations'` is added to your apiConfig.js endpoints *
 
 // 1. Get all saved/recent locations for the user
 export const fetchUserLocationsApi = async (token) => {
@@ -95,4 +107,11 @@ export const deleteLocationApi = async (token, locationId) => {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` }
   });
+};
+
+export const fetchNearbyRoutesApi = async (lat, lng) => {
+  if (!lat || !lng) return []; 
+
+  const response = await fetchApi(`/data/routes/nearby?lat=${lat}&lng=${lng}`);
+  return response.data || [];
 };

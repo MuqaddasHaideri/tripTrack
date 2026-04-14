@@ -1,229 +1,363 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  ActivityIndicator, 
-  TouchableOpacity, 
-  Modal, 
-  TextInput, 
+if (__DEV__) {
+  require("../../reactotron");
+}
+
+import React, { useState, useRef, useMemo } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ActivityIndicator,
+  TouchableOpacity,
+  Modal,
+  TextInput,
   FlatList,
   SafeAreaView,
   Platform,
-  StatusBar
+  StatusBar,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { useQuery } from '@tanstack/react-query'; 
+import * as Linking from 'expo-linking';
+import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 
-import { fetchRoutesApi } from '../../service/server'; 
+import { fetchRoutesApi } from '../../service/server';
+import { UserLocationMarker, StopMarker, TerminalMarker } from '../../components/ui/MapMarkers';
+import LocationPermissionScreen from '../../components/ui/PermissionLocation';
 
 export default function PassengerMap() {
   const mapRef = useRef(null);
+
+  const [permissionState, setPermissionState] = useState('prompt');
   const [userLocation, setUserLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeMenuId, setActiveMenuId] = useState(null); 
+  const [errorType, setErrorType] = useState(null); 
+  
+  // UI States
+  const [isRoutesModalVisible, setIsRoutesModalVisible] = useState(false);
+  const [routeSearchQuery, setRouteSearchQuery] = useState('');
+  const [selectedRouteId, setSelectedRouteId] = useState(null);
 
-  // Dummy Data for Recent Locations
-  const [recentLocations, setRecentLocations] = useState([
-    { id: '1', name: 'SMIU City Campus', address: 'Aiwan-e-Tijarat Road, Karachi', icon: 'school', lat: 24.8504, lng: 67.0011 },
-    { id: '2', name: 'Tower', address: 'M.A Jinnah Road, Karachi', icon: 'business', lat: 24.8485, lng: 66.9990 },
-    { id: '3', name: 'Model Colony', address: 'Malir, Karachi', icon: 'home', lat: 24.9048, lng: 67.1950 }
-  ]);
+  const openAppSettings = async () => {
+    try {
+      await Linking.openSettings();
+    } catch (error) {
+      if (Platform.OS === 'android') {
+        await Linking.openURL('android.settings.APPLICATION_DETAILS_SETTINGS');
+      }
+    }
+  };
 
+  const requestLocation = async () => {
+    setPermissionState('loading');
+    setErrorType(null); 
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setPermissionState('denied');
+        setErrorType('permission'); 
+        return;
+      }
+
+      const isGpsOn = await Location.hasServicesEnabledAsync();
+      if (!isGpsOn) {
+        setPermissionState('denied');
+        setErrorType('gps'); 
+        return;
+      }
+      
+      let loc = await Location.getLastKnownPositionAsync({});
+      
+      if (!loc) {
+        loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced, 
+        });
+      }
+
+      if (!loc) throw new Error('Location is null');
+
+      setUserLocation(loc.coords);
+      setPermissionState('granted');
+      
+      mapRef.current?.animateToRegion({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.04,
+        longitudeDelta: 0.04,
+      }, 800);
+
+    } catch (error) {
+      console.warn('Location Error:', error.message);
+      setPermissionState('denied');
+      setErrorMsg('Could not establish GPS connection. Are you indoors or on an emulator?');
+    }
+  };
+
+  const denyLocation = () => {
+    setPermissionState('denied');
+    setErrorMsg('Location access denied. Enable it in Settings for full features.');
+  };
+
+  // ── FETCH ALL ROUTES ──
   const { data: routes, isLoading: loadingRoutes } = useQuery({
-    queryKey: ['routes'],
-    queryFn: fetchRoutesApi,
-    staleTime: 1000 * 60 * 60, 
+    queryKey: ['routes', 'all'],
+    queryFn:  fetchRoutesApi,
+    staleTime: 1000 * 60 * 60,
   });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setErrorMsg('Permission to access location was denied');
-          return;
-        }
-        let location = await Location.getCurrentPositionAsync({});
-        setUserLocation(location.coords);
-      } catch (err) {
-        setErrorMsg('Error fetching location');
-      }
-    })();
-  }, []);
-
-  // --- FILTERED SEARCH LOGIC ---
-  const filteredRecent = useMemo(() => {
-    return recentLocations.filter(item => 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.address.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter routes
+  const filteredRoutes = useMemo(() => {
+    if (!routes) return [];
+    return routes.filter(route =>
+      (route.origin && route.origin.toLowerCase().includes(routeSearchQuery.toLowerCase())) ||
+      (route.destination && route.destination.toLowerCase().includes(routeSearchQuery.toLowerCase()))
     );
-  }, [searchQuery, recentLocations]);
+  }, [routeSearchQuery, routes]);
 
-  // --- HANDLERS ---
-  const toggleMenu = (id) => setActiveMenuId(prevId => (prevId === id ? null : id));
+  const routeToDisplay = useMemo(() => {
+    return routes?.find(r => r._id === selectedRouteId);
+  }, [selectedRouteId, routes]);
 
-  const handleDeleteLocation = (id) => {
-    setRecentLocations(prev => prev.filter(loc => loc.id !== id));
-    setActiveMenuId(null);
+  const handleSelectRoute = (route) => {
+    setSelectedRouteId(route._id);
+    setIsRoutesModalVisible(false);
+
+    if (route.stops && route.stops.length > 0) {
+      const midIndex = Math.floor(route.stops.length / 2);
+      const midStop = route.stops[midIndex];
+      mapRef.current?.animateToRegion({
+        latitude: midStop.lat ?? midStop.latitude,
+        longitude: midStop.lng ?? midStop.longitude,
+        latitudeDelta: 0.15,
+        longitudeDelta: 0.15,
+      }, 1000);
+    }
   };
 
-  const handleSelectLocation = (loc) => {
-    setIsSearchVisible(false);
-    mapRef.current?.animateToRegion({
-      latitude: loc.lat,
-      longitude: loc.lng,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    }, 1000);
+  const clearSelectedRoute = () => {
+    setSelectedRouteId(null);
+    recenterMap(); 
   };
 
-  // --- RENDER RECENT ITEM ---
-  const renderRecentItem = ({ item }) => {
-    const isMenuOpen = activeMenuId === item.id;
+  const recenterMap = () => {
+    if (!userLocation) return;
+    mapRef.current?.animateToRegion({ 
+      latitude: userLocation.latitude, 
+      longitude: userLocation.longitude, 
+      latitudeDelta: 0.04, 
+      longitudeDelta: 0.04 
+    }, 600);
+  };
+
+  if (permissionState === 'prompt' || permissionState === 'denied') {
     return (
-      <View style={styles.cardContainer}>
-        <TouchableOpacity 
-          style={styles.cardRow} 
-          activeOpacity={0.7}
-          onPress={() => handleSelectLocation(item)}
-        >
-          <View style={styles.cardIconBox}>
-            <Ionicons name={item.icon || "location"} size={22} color="#fff" />
-          </View>
-          <View style={styles.cardTextContainer}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardSubtitle} numberOfLines={1}>{item.address}</Text>
-          </View>
-          <TouchableOpacity style={styles.dotsButton} onPress={() => toggleMenu(item.id)}>
-            <Ionicons name={isMenuOpen ? "chevron-up" : "ellipsis-vertical"} size={20} color="#888" />
-          </TouchableOpacity>
-        </TouchableOpacity>
-
-        {isMenuOpen && (
-          <View style={styles.gridOptionsContainer}>
-            <TouchableOpacity style={[styles.gridBtn, styles.gridBtnPrimary]}>
-              <Ionicons name="navigate" size={20} color="#fff" />
-              <Text style={styles.gridBtnTextLight}>Direction</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.gridBtn}>
-              <Ionicons name="bus" size={20} color="#00C853" />
-              <Text style={styles.gridBtnTextDark}>Nearby</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.gridBtn}>
-              <Ionicons name="heart" size={20} color="#00C853" />
-              <Text style={styles.gridBtnTextDark}>Favorite</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.gridBtn, styles.gridBtnDanger]} onPress={() => handleDeleteLocation(item.id)}>
-              <Ionicons name="trash" size={20} color="#FF3B30" />
-              <Text style={styles.gridBtnTextDanger}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+      <View style={{ flex: 1, backgroundColor: '#021a11' }}>
+        <StatusBar barStyle="light-content" />
+        <LocationPermissionScreen 
+          onAllow={requestLocation} 
+          onDeny={denyLocation}
+          onOpenSettings={openAppSettings}
+          errorType={errorType}
+          errorMsg={errorMsg}
+        />
       </View>
+    );
+  }
+
+  if (permissionState === 'loading') {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#021a11' }}>
+        <ActivityIndicator size="large" color="#00C853" />
+        <Text style={{ marginTop: 14, color: '#81C784', fontSize: 15 }}>Establishing GPS Connection…</Text>
+      </View>
+    );
+  }
+
+  const renderRouteItem = ({ item }) => {
+    const isSelected = selectedRouteId === item._id;
+    const color = item.color_hex || '#00C853';
+
+    return (
+      <TouchableOpacity 
+        style={[styles.cardContainer, isSelected && { borderColor: color, borderWidth: 2 }]} 
+        activeOpacity={0.7} 
+        onPress={() => handleSelectRoute(item)}
+      >
+        <View style={[styles.cardIconBox, { backgroundColor: color }]}>
+          <Ionicons name="bus" size={22} color="white" />
+        </View>
+        <View style={styles.cardTextContainer}>
+          <Text style={styles.cardTitle}>{item.origin || 'Start'} to {item.destination || 'End'} {item.route_name || ''}</Text>
+          <Text style={styles.cardSubtitle}>{item.stops?.length || 0} Stops</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#81C784" />
+      </TouchableOpacity>
     );
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <MapView 
+      <StatusBar barStyle="light-content" />
+
+      <MapView
         ref={mapRef}
-        style={styles.map} 
-        provider={PROVIDER_GOOGLE} 
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
         initialRegion={{
-          latitude: 24.8607, 
-          longitude: 67.0011,
-          latitudeDelta: 0.15,
-          longitudeDelta: 0.15,
+          latitude:      userLocation?.latitude  ?? 24.8607,
+          longitude:     userLocation?.longitude ?? 67.0011,
+          latitudeDelta:  0.08,
+          longitudeDelta: 0.08,
         }}
         showsUserLocation={true} 
+        showsCompass={false}
+        showsMyLocationButton={false}
       >
-        {/* Render Routes & Stops */}
-        {!loadingRoutes && routes?.map((route) => (
-          <React.Fragment key={route._id}>
-            <Polyline
-              coordinates={route.polyline?.map(p => ({
-                latitude: p.lat || p.latitude, 
-                longitude: p.lng || p.longitude
-              }))}
-              strokeColor={route.color_hex || '#00C853'} 
-              strokeWidth={5}
-              lineJoin="round"
-            />
-            {/* Optional: Render Stop Markers */}
-            {route.stops?.map((stop, idx) => (
-              <Marker
-                key={`${route._id}-stop-${idx}`}
-                coordinate={{
-                  latitude: stop.lat || stop.latitude,
-                  longitude: stop.lng || stop.longitude
-                }}
-                tracksViewChanges={false}
-              >
-                <View style={[styles.stopDot, { borderColor: route.color_hex }]} />
-              </Marker>
-            ))}
-          </React.Fragment>
-        ))}
+        {userLocation && (
+          <Marker 
+            coordinate={{ latitude: userLocation.latitude, longitude: userLocation.longitude }} 
+            anchor={{ x: 0.5, y: 0.5 }} 
+            zIndex={100} 
+            tracksViewChanges={false}
+          >
+            <UserLocationMarker />
+          </Marker>
+        )}
+
+        {routeToDisplay && (() => {
+          const color = routeToDisplay.color_hex || '#00C853';
+          const polyCoords = routeToDisplay.polyline?.map(p => ({ latitude: p.lat ?? p.latitude, longitude: p.lng ?? p.longitude })) 
+                          || routeToDisplay.stops?.map(stop => ({ latitude: stop.lat ?? stop.latitude, longitude: stop.lng ?? stop.longitude }));
+          
+          const first = routeToDisplay.stops?.[0] || null;
+          const last  = routeToDisplay.stops?.[routeToDisplay.stops.length - 1];
+
+          return (
+            <React.Fragment key={routeToDisplay._id}>
+              <Polyline
+                coordinates={polyCoords}
+                strokeColor={color}
+                strokeWidth={5}
+                strokeColors={[color]}
+                lineJoin="round"
+                lineCap="round"
+              />
+
+              {routeToDisplay.stops?.slice(1, -1).map((stop, idx) => (
+                <Marker
+                  key={`${routeToDisplay._id}-stop-${idx}`}
+                  coordinate={{ latitude: stop.lat ?? stop.latitude, longitude: stop.lng ?? stop.longitude }}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  tracksViewChanges={false}
+                >
+                  <StopMarker color={color} />
+                </Marker>
+              ))}
+
+              {first && (
+                <Marker
+                  coordinate={{ latitude: first.lat ?? first.latitude, longitude: first.lng ?? first.longitude }}
+                  anchor={{ x: 0.5, y: 1 }}
+                  tracksViewChanges={false}
+                >
+                  <TerminalMarker label={routeToDisplay.origin || 'Start'} color={color} isEnd={false} />
+                </Marker>
+              )}
+
+              {last && last !== first && (
+                <Marker
+                  coordinate={{ latitude: last.lat ?? last.latitude, longitude: last.lng ?? last.longitude }}
+                  anchor={{ x: 0.5, y: 1 }}
+                  tracksViewChanges={false}
+                >
+                  <TerminalMarker label={routeToDisplay.destination || 'End'} color={color} isEnd={true} />
+                </Marker>
+              )}
+            </React.Fragment>
+          );
+        })()}
       </MapView>
 
-      <TouchableOpacity 
-        style={styles.searchContainer} 
-        onPress={() => setIsSearchVisible(true)}
-      >
-        <Ionicons name="search" size={20} color="#00C853" style={styles.searchIcon} />
-        <Text style={styles.searchText}>Where to?</Text>
-      </TouchableOpacity>
+      <View style={styles.topBarContainer}>
+        <TouchableOpacity style={styles.searchContainer} onPress={() => setIsRoutesModalVisible(true)} activeOpacity={0.85}>
+          <View style={styles.searchIconBox}>
+            <Ionicons name="bus" size={16} color="white" />
+          </View>
+          <Text style={styles.searchText}>
+            {selectedRouteId ? "Change Route" : "Select a Route"}
+          </Text>
+          <View style={styles.searchBadge}>
+            <Ionicons name="chevron-down" size={16} color="#00C853" />
+          </View>
+        </TouchableOpacity>
+      </View>
 
-      {loadingRoutes && (
-        <View style={styles.loadingIndicator}>
-          <ActivityIndicator size="small" color="#00C853" />
-          <Text style={styles.loadingText}>Updating Routes...</Text>
-        </View>
+      <View style={styles.mapControls}>
+        <TouchableOpacity style={styles.mapCtrlBtn} onPress={recenterMap}>
+          <Ionicons name="locate" size={22} color="#00C853" />
+        </TouchableOpacity>
+        {loadingRoutes && (
+          <View style={styles.mapCtrlBtn}>
+            <ActivityIndicator size="small" color="#00C853" />
+          </View>
+        )}
+      </View>
+
+      {selectedRouteId && (
+        <TouchableOpacity style={styles.clearRouteBtn} onPress={clearSelectedRoute}>
+          <Ionicons name="close-circle" size={18} color="#FF3B30" />
+          <Text style={styles.clearRouteText}>Clear Map</Text>
+        </TouchableOpacity>
       )}
 
       <Modal
-        visible={isSearchVisible}
+        visible={isRoutesModalVisible}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setIsSearchVisible(false)}
+        onRequestClose={() => setIsRoutesModalVisible(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.dragHandle} />
+
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setIsSearchVisible(false)} style={styles.backBtn}>
-              <Ionicons name="close" size={24} color="#333" />
+            <TouchableOpacity onPress={() => setIsRoutesModalVisible(false)} style={styles.backBtn}>
+              <Ionicons name="close" size={26} color="white" />
             </TouchableOpacity>
             <View style={styles.modalSearchBox}>
-              <TextInput 
+              <Ionicons name="search" size={18} color="#81C784" style={{ marginRight: 8 }} />
+              <TextInput
                 style={styles.modalSearchInput}
-                placeholder="Search destination"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoFocus
+                placeholder="Search buses or areas..."
+                placeholderTextColor="#81C784"
+                value={routeSearchQuery}
+                onChangeText={setRouteSearchQuery}
               />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={18} color="#ccc" />
+              {routeSearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setRouteSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color="#81C784" />
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
           <View style={styles.sheetBody}>
-            <Text style={styles.sectionTitle}>Recent Locations</Text>
-            <FlatList 
-              data={filteredRecent}
-              keyExtractor={(item) => item.id}
-              renderItem={renderRecentItem}
-              contentContainerStyle={styles.listContainer}
-              keyboardShouldPersistTaps="always"
-            />
+            <Text style={styles.sectionTitle}>All Routes ({filteredRoutes?.length || 0})</Text>
+            
+            {loadingRoutes ? (
+              <ActivityIndicator size="large" color="#00C853" style={{ marginTop: 40 }} />
+            ) : (
+              <FlatList
+                data={filteredRoutes}
+                keyExtractor={item => item._id}
+                renderItem={renderRouteItem}
+                contentContainerStyle={styles.listContainer}
+                keyboardShouldPersistTaps="always"
+                ListEmptyComponent={
+                  <Text style={{ textAlign: 'center', color: '#81C784', marginTop: 40 }}>No routes found.</Text>
+                }
+              />
+            )}
           </View>
         </SafeAreaView>
       </Modal>
@@ -232,80 +366,91 @@ export default function PassengerMap() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  map: { width: '100%', height: '100%' },
-  stopDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-    borderWidth: 2,
+  container: { flex: 1, backgroundColor: '#021a11' },
+  map:       { width: '100%', height: '100%' },
+
+  topBarContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 54 : 32,
+    left: 14, right: 14,
   },
   searchContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 30,
-    left: 15, right: 15,
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 12,
+    backgroundColor: '#0A2E1F',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 8,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
-  searchIcon: { marginRight: 10 },
-  searchText: { fontSize: 16, color: '#666', fontWeight: '500' },
-  loadingIndicator: {
+  searchIconBox: {
+    width: 30, height: 30, borderRadius: 8,
+    backgroundColor: '#00C853',
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: 10,
+  },
+  searchText:  { flex: 1, fontSize: 15, color: 'white', fontWeight: '600' },
+  searchBadge: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#021a11', alignItems: 'center', justifyContent: 'center' },
+
+  mapControls: {
+    position: 'absolute',
+    right: 14,
+    bottom: 110,
+    gap: 10,
+    alignItems: 'center',
+  },
+  mapCtrlBtn: {
+    width: 46, height: 46, borderRadius: 14,
+    backgroundColor: '#0A2E1F',
+    alignItems: 'center', justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+  },
+
+  clearRouteBtn: {
     position: 'absolute',
     bottom: 30,
     alignSelf: 'center',
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1a0505',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
     elevation: 4,
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6,
   },
-  loadingText: { marginLeft: 8, fontSize: 12, color: '#333' },
-  
-  // Modal Styles
-  modalContainer: { flex: 1, backgroundColor: '#F8F9FA' },
-  dragHandle: { width: 35, height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, alignSelf: 'center', marginTop: 10 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', padding: 15 },
-  backBtn: { marginRight: 10 },
+  clearRouteText: { fontSize: 14, color: '#FF3B30', fontWeight: '700' },
+
+  modalContainer: { flex: 1, backgroundColor: '#021a11' },
+  dragHandle:     { width: 36, height: 4, backgroundColor: '#81C784', borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 6 },
+  modalHeader:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10 },
+  backBtn:        { marginRight: 10, padding: 4 },
   modalSearchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#0A2E1F',
+    borderRadius: 12,
     paddingHorizontal: 12,
-    height: 45,
-    borderWidth: 1,
-    borderColor: '#EEE'
+    height: 46,
   },
-  modalSearchInput: { flex: 1, fontSize: 16, color: '#333' },
-  sheetBody: { flex: 1 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', margin: 20, color: '#444' },
-  listContainer: { paddingHorizontal: 15 },
-  
-  // Card Styles
-  cardContainer: { backgroundColor: '#fff', borderRadius: 14, marginBottom: 12, elevation: 1 },
-  cardRow: { flexDirection: 'row', alignItems: 'center', padding: 12 },
-  cardIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#00C853', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  modalSearchInput: { flex: 1, fontSize: 15, color: 'white' },
+
+  sheetBody:    { flex: 1, backgroundColor: '#021a11' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', marginLeft: 16, marginTop: 16, marginBottom: 12, color: '#81C784', letterSpacing: 0.8, textTransform: 'uppercase' },
+  listContainer:{ paddingHorizontal: 14, paddingBottom: 30 },
+
+  cardContainer:     { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A2E1F', borderRadius: 16, marginBottom: 10, padding: 13, elevation: 2, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4 },
+  cardIconBox:       { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   cardTextContainer: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
-  cardSubtitle: { fontSize: 12, color: '#888' },
-  dotsButton: { padding: 5 },
-  
-  // Grid Menu
-  gridOptionsContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', padding: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
-  gridBtn: { width: '48%', backgroundColor: '#F9F9F9', borderRadius: 8, padding: 12, alignItems: 'center', marginBottom: 8 },
-  gridBtnPrimary: { backgroundColor: '#00C853' },
-  gridBtnDanger: { backgroundColor: '#FFF5F5' },
-  gridBtnTextLight: { fontSize: 12, color: '#fff', marginTop: 4, fontWeight: '600' },
-  gridBtnTextDark: { fontSize: 12, color: '#00C853', marginTop: 4, fontWeight: '600' },
-  gridBtnTextDanger: { fontSize: 12, color: '#FF3B30', marginTop: 4, fontWeight: '600' }
+  cardTitle:         { fontSize: 15, fontWeight: '600', color: 'white' },
+  cardSubtitle:      { fontSize: 13, color: '#81C784', marginTop: 3 },
 });

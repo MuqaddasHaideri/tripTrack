@@ -57,13 +57,31 @@ export default function DriverLogin() {
         Alert.alert("Success", "Welcome Driver!");
         router.replace('/'); 
       } else {
-        Alert.alert("Login Failed", data.message || "Invalid credentials");
+        // --- NEW: Pending Approval Interceptor ---
+        const errorMsg = data.message ? data.message.toLowerCase() : "";
+        if (errorMsg.includes("verify") || errorMsg.includes("unverified") || errorMsg.includes("pending") || errorMsg.includes("approval")) {
+          Alert.alert(
+            "Pending Approval ⏳", 
+            "Your account is currently under review by our team. Check back later!"
+          );
+        } else {
+          Alert.alert("Login Failed", data.message || "Invalid credentials");
+        }
       }
     },
     onError: (error) => {
       console.log(error);
       const msg = typeof error === 'string' ? error : (error.message || "Login failed");
-      Alert.alert("Error", msg);
+      
+      // --- NEW: Pending Approval Interceptor (Catch-block fallback) ---
+      if (msg.toLowerCase().includes("verify") || msg.toLowerCase().includes("unverified") || msg.toLowerCase().includes("pending") || msg.toLowerCase().includes("approval")) {
+        Alert.alert(
+          "Pending Approval ⏳", 
+          "Your account is currently under review by our team. Check back later!"
+        );
+      } else {
+        Alert.alert("Error", msg);
+      }
     }
   });
 
@@ -74,8 +92,6 @@ export default function DriverLogin() {
     }
     mutation.mutate({ email, password });
   };
-
-
 
   return (
     <ThemedView style={styles.container}>
@@ -134,6 +150,7 @@ export default function DriverLogin() {
             />
           </View>
           
+          {/* Password Input */}
           <View 
             style={[
               styles.inputContainer, 

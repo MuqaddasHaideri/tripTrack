@@ -120,3 +120,68 @@ export const deleteLocation = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// --- HAVERSINE HELPER FUNCTION ---
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+  return R * c; // Distance in km
+};
+
+export const getNearbyRoutes = async (req, res) => {
+  try {
+    // 1. Get user's location and search radius from the query parameters
+    const { lat, lng, radius = 5 } = req.query; // Default radius is 5 km
+
+    if (!lat || !lng) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Latitude (lat) and longitude (lng) are required." 
+      });
+    }
+
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+    const searchRadius = parseFloat(radius);
+
+    // 2. Fetch all routes from the database
+    const allRoutes = await route_model.find();
+    const nearbyRoutes = [];
+
+    // 3. Filter routes based on distance
+    for (let route of allRoutes) {
+      let isNearby = false;
+
+      // Check if ANY stop on this route is within the user's radius
+      for (let stop of route.stops) {
+        const distance = getDistanceFromLatLonInKm(userLat, userLng, stop.latitude, stop.longitude);
+        
+        if (distance <= searchRadius) {
+          isNearby = true;
+          break; // We found a nearby stop, no need to check the rest of the stops for this route
+        }
+      }
+
+      if (isNearby) {
+        nearbyRoutes.push(route);
+      }
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      count: nearbyRoutes.length,
+      radius_km: searchRadius,
+      data: nearbyRoutes 
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
