@@ -17,6 +17,7 @@ function AppWrapper() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="driver/login" options={{ presentation: 'modal' }} />
+               <Stack.Screen name="driver/Map" options={{ presentation: 'modal' }} />
               <Stack.Screen name="passenger/login" options={{ presentation: 'modal' }} />
               <Stack.Screen name="passenger/signup" options={{ presentation: 'modal' }} />
       </Stack>

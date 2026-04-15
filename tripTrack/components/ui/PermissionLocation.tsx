@@ -6,30 +6,29 @@ export default function LocationPermissionScreen({
   onAllow, 
   onDeny, 
   onOpenSettings, 
-  errorType, // NEW: 'permission' | 'gps' | null
+  errorType, 
   errorMsg 
 }) {
   
-  // 1. Default State (First time asking)
   let title = "Allow Location Access";
   let body = "TransitGo needs your location to find nearby bus routes and stops in real time.";
   let primaryAction = onAllow;
   let primaryText = "Allow Location";
   let primaryIcon = "navigate";
 
-  // 2. State: App Permission Denied
+
   if (errorType === 'permission') {
     title = "Permission Required";
     body = "You have denied location access. We cannot show nearby buses without it. Please enable it in your device Settings.";
-    primaryAction = onOpenSettings; // Takes them to Settings
+    primaryAction = onOpenSettings; 
     primaryText = "Open Settings";
     primaryIcon = "settings-outline";
   } 
-  // 3. State: GPS Hardware is Off
+
   else if (errorType === 'gps') {
     title = "Turn On GPS";
     body = "Permission is granted, but your phone's physical GPS is off. Please swipe down, turn on Location, and try again.";
-    primaryAction = onAllow; // Acts as a "Retry" button
+    primaryAction = onAllow; 
     primaryText = "Try Again";
     primaryIcon = "refresh";
   }

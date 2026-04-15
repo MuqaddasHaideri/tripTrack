@@ -1,4 +1,7 @@
 import { API_BASE, endpoints } from './apiConfig';
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = 'http://192.168.0.104:3001:3000'; 
 
 const fetchApi = async (url, options = {}) => {
   try {
@@ -115,3 +118,14 @@ export const fetchNearbyRoutesApi = async (lat, lng) => {
   const response = await fetchApi(`/data/routes/nearby?lat=${lat}&lng=${lng}`);
   return response.data || [];
 };
+
+
+
+// IMPORTANT: Replace this with your computer's local IP address or your hosted backend URL.
+// If using Android Emulator, 10.0.2.2 usually points to localhost.
+// If using a real phone, use your computer's Wi-Fi IP (e.g., http://192.168.1.5:3000)
+
+export const socket = io(SOCKET_URL, {
+  autoConnect: false, // We will connect manually when the map screen opens
+  transports: ['websocket'], // Forces fast websockets instead of slow polling
+});
