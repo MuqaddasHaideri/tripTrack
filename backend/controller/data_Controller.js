@@ -121,17 +121,32 @@ export const deleteLocation = async (req, res) => {
   }
 };
 
-
-const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; 
+export const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
   return R * c; 
 };
 
-export const getNearbyRoutes = async (req, res) => 
+export const formatETAMessage = (distanceKm, stopName) => {
+  const speedKmh = 20; 
+  const timeHours = distanceKm / speedKmh;
+  const timeMinutes = Math.round(timeHours * 60);
+
+  const shortDistance = distanceKm.toFixed(1);
+
+  if (timeMinutes < 1) {
+    const timeSeconds = Math.round(timeHours * 3600);
+    return `This bus is ${shortDistance}km far from ${stopName} and will reach in about ${timeSeconds} secs`;
+  } else {
+    return `This bus is ${shortDistance}km far from ${stopName} and will reach in about ${timeMinutes} mins`;
+  }
+};
+
 
 export const getLiveETA = async (busLat, busLng, stopLat, stopLng) => {
   try {
@@ -141,7 +156,7 @@ export const getLiveETA = async (busLat, busLng, stopLat, stopLng) => {
     const response = await fetch(url);
     const data = await response.json();
 
-  
+    // 4. FIXED: Added to read Google's array correctly
     if (data.status === "OK" && data.rows.elements.status === "OK") {
       const element = data.rows.elements;
       

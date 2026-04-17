@@ -4,7 +4,6 @@ import {
   getAllRoutes, 
   createBus, 
   getAllBuses,
- getNearbyRoutes,
     addLocation, 
   getUserLocations, 
   updateLocationType, 
@@ -20,7 +19,7 @@ const router = express.Router();
 // ==========================================
 router.get("/routes", getAllRoutes);
 router.get("/buses", getAllBuses);
-router.get("/routes/nearby", getNearbyRoutes);
+// router.get("/routes/nearby", getNearbyRoutes);
 // ==========================================
 // ADMIN DATA ROUTES (Requires Auth)
 // ==========================================

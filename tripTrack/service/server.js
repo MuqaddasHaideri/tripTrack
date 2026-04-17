@@ -1,7 +1,7 @@
 import { API_BASE, endpoints } from './apiConfig';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://192.168.0.104:3001:3000'; 
+const SOCKET_URL = 'http://192.168.0.104:3001'; 
 
 const fetchApi = async (url, options = {}) => {
   try {
@@ -56,8 +56,8 @@ export const signupdriver = async (name, email, password, role, phone, cnic, dri
         password, 
         role,
         phone,
-        cnic,             // <-- Added
-        driverLicense     // <-- Added
+        cnic,           
+        driverLicense     
     }),
   });
 };
@@ -71,11 +71,6 @@ export const fetchBusesApi = async () => {
   return response.data || [];
 };
 
-// ==========================================
-// NEW: AUTHENTICATED LOCATION API CALLS
-// ==========================================
-
-// 1. Get all saved/recent locations for the user
 export const fetchUserLocationsApi = async (token) => {
   const response = await fetchApi(endpoints.locations, {
     method: 'GET',
@@ -84,17 +79,15 @@ export const fetchUserLocationsApi = async (token) => {
   return response.data || [];
 };
 
-// 2. Save a new recent search
 export const addLocationApi = async (token, locationData) => {
   const response = await fetchApi(endpoints.locations, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify(locationData) // { name, address, latitude, longitude, type }
+    body: JSON.stringify(locationData) 
   });
   return response.data;
 };
 
-// 3. Update a location (e.g., change 'recent' to 'favorite')
 export const updateLocationTypeApi = async (token, locationId, type) => {
   const response = await fetchApi(`${endpoints.locations}/${locationId}`, {
     method: 'PUT',
@@ -120,12 +113,16 @@ export const fetchNearbyRoutesApi = async (lat, lng) => {
 };
 
 
-
-// IMPORTANT: Replace this with your computer's local IP address or your hosted backend URL.
-// If using Android Emulator, 10.0.2.2 usually points to localhost.
-// If using a real phone, use your computer's Wi-Fi IP (e.g., http://192.168.1.5:3000)
-
 export const socket = io(SOCKET_URL, {
-  autoConnect: false, // We will connect manually when the map screen opens
-  transports: ['websocket'], // Forces fast websockets instead of slow polling
+  autoConnect: false,
+  transports: ['websocket'],
+  reconnectionAttempts: 5,
+});
+
+socket.on('connect', () => {
+  console.log('✅ Socket Connected to Server!');
+});
+
+socket.on('connect_error', (err) => {
+  console.log('❌ Socket Connection Error:', err.message);
 });
