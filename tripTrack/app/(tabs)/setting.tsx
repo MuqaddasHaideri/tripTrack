@@ -148,6 +148,7 @@ export default function SettingsScreen() {
           icon="time-outline" 
           colors={activeColors}
           isLast={true}
+          onPress={() => router.push('/passenger/schedule')}
         />
       </View>
 
