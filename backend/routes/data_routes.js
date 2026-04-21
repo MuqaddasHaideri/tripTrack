@@ -4,14 +4,19 @@ import {
   getAllRoutes, 
   createBus, 
   getAllBuses,
-    addLocation, 
+  addLocation, 
   getUserLocations, 
   updateLocationType, 
-  deleteLocation 
+  deleteLocation,
+  // getNearbyRoutes 
 } from "../controller/data_Controller.js";
-
+import { 
+  getPendingDrivers, 
+  approveDriver, 
+  getAllDrivers 
+} from "../controller/admin_Controller.js";
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
-
+import { isAdmin } from "../middleware/isAdmin.js"; 
 const router = express.Router();
 
 // ==========================================
@@ -19,19 +24,27 @@ const router = express.Router();
 // ==========================================
 router.get("/routes", getAllRoutes);
 router.get("/buses", getAllBuses);
-// router.get("/routes/nearby", getNearbyRoutes);
+// router.get("/routes/nearby", getNearbyRoutes); 
+
 // ==========================================
-// ADMIN DATA ROUTES (Requires Auth)
+// ADMIN DATA ROUTES (Requires Auth AND Admin)
 // ==========================================
-router.post("/routes", isAuthenticated, createRoute);
-router.post("/buses", isAuthenticated, createBus);
+router.post("/routes", isAuthenticated, isAdmin, createRoute);
+router.post("/buses", isAuthenticated, isAdmin, createBus);
+
+// ==========================================
+// DRIVER MANAGEMENT ROUTES (Requires Auth AND Admin)
+// ==========================================
+router.get("/admin/drivers/pending", isAuthenticated, isAdmin, getPendingDrivers);
+router.put("/admin/drivers/approve/:id", isAuthenticated, isAdmin, approveDriver);
+router.get("/admin/drivers/all", isAuthenticated, isAdmin, getAllDrivers);
 
 // ==========================================
 // USER LOCATION ROUTES (Requires Auth)
 // ==========================================
+router.post('/locations', isAuthenticated, addLocation);
+router.get('/locations', isAuthenticated, getUserLocations);
+router.put('/locations/:id', isAuthenticated, updateLocationType);
+router.delete('/locations/:id', isAuthenticated, deleteLocation);
 
-router.post('/locations',isAuthenticated, addLocation)
-  router.get('/locations',isAuthenticated, getUserLocations);
-router.put('/locations/:id',isAuthenticated, updateLocationType)
-  router.delete('/locations/:id',isAuthenticated, deleteLocation);
 export default router;

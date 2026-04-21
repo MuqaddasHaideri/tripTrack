@@ -40,7 +40,7 @@ const activeBusesCache = {};
 io.on("connection", (socket) => {
   console.log(`🟢 New device connected: ${socket.id}`);
 
-  // 1. PASSENGER JOINS ROUTE
+  // PASSENGER JOINS ROUTE
   socket.on("join_route", (routeId) => {
     socket.join(routeId);
     console.log(`User joined room: ${routeId}`);
@@ -53,7 +53,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  // 2. DRIVER SENDS LIVE LOCATION
+  //  DRIVER SENDS LIVE LOCATION
   socket.on("driver_location_update", async (data) => {
     try {
       const driverLat = data.lat;

@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 
 export const signupController = async (req, res) => {
   try {
-    // 1. Extract the new fields
     const { name, email, password, role, phone, cnic, driverLicense } = req.body;
 
     const userExists = await user_models.findOne({ email });
@@ -16,7 +15,6 @@ export const signupController = async (req, res) => {
     const avatar = `https://avatar.iran.liara.run/username?username=${encodedName}`;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 2. Security Logic: Drivers are unverified by default.
     const isUserVerified = role === 'passenger' ? true : false;
 
     const newUser = new user_models({
@@ -26,7 +24,6 @@ export const signupController = async (req, res) => {
       profilePic: avatar,
       role,
       phone: phone || "",
-      // 3. Save the new fields
       cnic: cnic || "",
       driverLicense: driverLicense || "",
       isVerified: isUserVerified
@@ -79,7 +76,6 @@ export const loginController = async (req, res) => {
       return res.status(403).json({ message: "Auth failed! Email or password is wrong", success: false });
     }
 
-    // NEW: Block unverified drivers
     if (userExists.role === 'driver' && userExists.isVerified === false) {
       return res.status(403).json({ 
         message: "Your account is still pending admin approval. Please wait.", 

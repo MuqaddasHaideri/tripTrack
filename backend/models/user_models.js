@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
+  // ==========================
+  // SHARED FIELDS
+  // ==========================
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -8,21 +11,26 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, enum: ['passenger', 'driver', 'admin'], required: true },
   phone: { type: String, default: '' },
   
-  // NEW FIELDS FOR DRIVERS
+  // ==========================
+  // DRIVER-ONLY FIELDS
+  // ==========================
   cnic: { 
     type: String, 
-    default: "" 
+    required: function() { return this.role === 'driver'; } 
   },
   driverLicense: { 
     type: String, 
-    default: "" 
+    required: function() { return this.role === 'driver'; } 
   },
   isVerified: { 
     type: Boolean, 
-    default: true 
+    default: false 
   },
-
-  assignedBusId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bus', default: null },
+  assignedBusId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'buses', 
+    default: null 
+  },
 }, { timestamps: true }); 
 
 export default mongoose.model('users', UserSchema);
