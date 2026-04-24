@@ -15,7 +15,10 @@ function AppWrapper() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
+                   <Stack.Screen name="onBoarding" options={{ presentation: 'modal' }} />
         <Stack.Screen name="(tabs)" />
+     
+
         <Stack.Screen name="driver/login" options={{ presentation: 'modal' }} />
                <Stack.Screen name="driver/Map" options={{ presentation: 'modal' }} />
               <Stack.Screen name="passenger/login" options={{ presentation: 'modal' }} />
