@@ -49,31 +49,21 @@ export const signupController = async (req, res) => {
 };
 export const loginController = async (req, res) => {
   try {
-  
-    const { email, password, role } = req.body;
-
-
+    const { email, password } = req.body;
     const userExists = await user_models.findOne({ email });
-
     if (!userExists) {
       return res.status(403).json({
         message: "Auth failed! Email or password is wrong",
         success: false,
       });
     }
-
-
-    if (userExists.role !== role) {
-      return res.status(403).json({
-        message: `Access Denied! You are registered as a ${userExists.role}, not a ${role}.`,
-        success: false,
-      });
-    }
-
-   const isPasswordEqual = await bcrypt.compare(password, userExists.password);
+    const isPasswordEqual = await bcrypt.compare(password, userExists.password);
 
     if (!isPasswordEqual) {
-      return res.status(403).json({ message: "Auth failed! Email or password is wrong", success: false });
+      return res.status(403).json({ 
+        message: "Auth failed! Email or password is wrong", 
+        success: false 
+      });
     }
 
     if (userExists.role === 'driver' && userExists.isVerified === false) {
@@ -103,6 +93,7 @@ export const loginController = async (req, res) => {
       role: userExists.role, 
       profilePic: userExists.profilePic
     });
+    
   } catch (error) {
     console.log("Error in login controller : ", error);
     return res.status(500).json({

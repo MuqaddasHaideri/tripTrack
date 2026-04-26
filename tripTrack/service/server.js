@@ -34,10 +34,10 @@ const fetchApi = async (url, options = {}) => {
   }
 };
 
-export const loginUserApi = async (email, password, role) => {
+export const loginUserApi = async (email, password) => {
   return fetchApi(endpoints.login, {
     method: 'POST',
-    body: JSON.stringify({ email, password, role }), 
+    body: JSON.stringify({ email, password }), 
   });
 };
 

@@ -62,12 +62,12 @@ export default function OnboardingScreen() {
         animated: true,
       });
     } else {
-      router.push('/passenger/login');
+      router.push('/(auth)/login');
     }
   };
 
   const skipOnboarding = () => {
-    router.push('/passenger/login');
+    router.push('/(auth)/login');
   };
 
   const renderItem = ({ item, index }) => {
@@ -271,15 +271,15 @@ const styles = StyleSheet.create({
   },
 
   dot: {
-    width: 8,
+    width: 5,
     height: 8,
-    borderRadius: 4,
+    borderRadius: 5,
     marginHorizontal: 5,
-    backgroundColor: '#00C853',
+    backgroundColor: '#196F31',
   },
   nextButton: {
     width: '100%',
-    backgroundColor: '#00C853',
+    backgroundColor: '#196F31',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
