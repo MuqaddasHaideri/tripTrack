@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: TAB_WIDTH - 4,
     height: 46,
-    backgroundColor: '#2d5a4c',
+    backgroundColor: '#196F31',
     borderRadius: 23,
     zIndex: 1,
   },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2d5a4c',
+    color: '#196F31',
   },
   activeText: {
     color: '#fff',

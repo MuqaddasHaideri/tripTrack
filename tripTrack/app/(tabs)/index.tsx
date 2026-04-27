@@ -19,7 +19,6 @@ export default function HomeScreenSwitcher() {
     );
   }
 
-  // ── THE SWITCH LOGIC ──
   // If a user is logged in AND their role in the database is 'driver', show the Driver UI.
   if (user && user.role === 'driver') {
     return <DriverMapScreen />;

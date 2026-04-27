@@ -208,12 +208,12 @@ const styles = StyleSheet.create({
     },
 
     forgotText: {
-        color: '#2d5a4c',
+        color: '#196F31',
         fontWeight: '600'
     },
 
     primaryBtn: {
-        backgroundColor: '#2d5a4c',
+        backgroundColor: '#196F31',
         height: 55,
         borderRadius: 25,
         justifyContent: 'center',
@@ -234,11 +234,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#2d5a4c'
+        borderColor: '#196F31'
     },
 
     guestBtnText: {
-        color: '#2d5a4c',
+        color: '#196F31',
         fontWeight: '600'
     }
 });

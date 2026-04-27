@@ -12,108 +12,119 @@ import {
   Modal,
   TextInput,
   FlatList,
-  SafeAreaView,
   StatusBar,
   Alert,
   Platform,
-  Linking
+  Linking,
+  AppState
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as IntentLauncher from 'expo-intent-launcher';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+
+// Service & Component Imports
 import { fetchRoutesApi, socket } from '../../service/server';
 import { UserLocationMarker, StopMarker } from '../../components/ui/MapMarkers';
 import LocationPermissionScreen from '../../components/ui/PermissionLocation';
 
-const darkMapStyle = [
-  { "elementType": "geometry", "stylers": [{ "color": "#021a11" }] },
-  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
-  { "elementType": "labels.text.fill", "stylers": [{ "color": "#81C784" }] },
-  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#021a11" }] },
-  { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#0A2E1F" }] },
-  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#01120b" }] }
-];
 
 export default function PassengerMap() {
   const mapRef = useRef<MapView>(null);
+  const appState = useRef(AppState.currentState);
 
+  // --- STATE ---
   const [permissionState, setPermissionState] = useState<'loading' | 'granted' | 'denied'>('loading');
+  const [errorType, setErrorType] = useState<'permission' | 'gps' | null>(null);
   const [userLocation, setUserLocation] = useState<any>(null);
   const [liveBuses, setLiveBuses] = useState<Record<string, any>>({});
   const [isRoutesModalVisible, setIsRoutesModalVisible] = useState(false);
   const [routeSearchQuery, setRouteSearchQuery] = useState('');
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
 
+  // --- 1. LOCATION & PERMISSION LOGIC ---
   useEffect(() => {
-    requestLocation();
+    checkLocationStatus();
+
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        checkLocationStatus();
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => subscription.remove();
   }, []);
 
-  // --- SOCKET: ROOM MANAGEMENT & LIVE BUS UPDATES ---
-  useEffect(() => {
-    if (!socket.connected) socket.connect();
-
-    const handleBusMoved = (busData: any) => {
-  
-      if (selectedRouteId && busData.routeId === selectedRouteId) {
-        const busKey = busData.busId || busData.routeId || 'live';
-        setLiveBuses((prev) => ({
-          ...prev,
-          [busKey]: busData,
-        }));
-      }
-    };
-
-    const handleBusOffline = (data: any) => {
-
-      setLiveBuses((prev) => {
-        const newBuses = { ...prev };
-        const busKey = data.busId || 'live';
-        delete newBuses[busKey];
-        return newBuses;
-      });
-    };
-
-    const handleReconnect = () => {
-      if (selectedRouteId && socket.connected) {
-        socket.emit('join_route', selectedRouteId);
-      }
-    };
-
-    socket.on('bus_moved', handleBusMoved);
-    socket.on('bus_offline', handleBusOffline);
-    socket.on('connect', handleReconnect);
-    if (selectedRouteId) {
-      setLiveBuses({}); 
-      if (socket.connected) socket.emit('join_route', selectedRouteId);
-    }
-
-    return () => {
-      socket.off('bus_moved', handleBusMoved);
-      socket.off('bus_offline', handleBusOffline);
-      socket.off('connect', handleReconnect);
-      if (selectedRouteId) socket.emit('leave_route', selectedRouteId);
-    };
-  }, [selectedRouteId]);
-
-  const requestLocation = async () => {
-    setPermissionState('loading');
+  const checkLocationStatus = async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return setPermissionState('denied');
-      const isGpsOn = await Location.hasServicesEnabledAsync();
-      if (!isGpsOn) return setPermissionState('denied');
+      const { status } = await Location.getForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        setErrorType('permission');
+        setPermissionState('denied');
+        return;
+      }
+
+      const gpsEnabled = await Location.hasServicesEnabledAsync();
+      if (!gpsEnabled) {
+        setErrorType('gps');
+        setPermissionState('denied');
+        return;
+      }
+
+      setErrorType(null);
+      await startTracking();
+    } catch (err) {
+      setPermissionState('denied');
+    }
+  };
+
+  const startTracking = async () => {
+    try {
       let loc = await Location.getLastKnownPositionAsync({});
-      if (!loc) loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      if (!loc) {
+        loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      }
+
       setUserLocation(loc.coords);
       setPermissionState('granted');
+      
       mapRef.current?.animateToRegion({
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
         latitudeDelta: 0.04,
         longitudeDelta: 0.04,
-      }, 800);
-    } catch { setPermissionState('denied'); }
+      }, 1000);
+    } catch (e) {
+      setPermissionState('denied');
+    }
+  };
+
+  // --- 2. ACTION HANDLERS ---
+  const handlePrimaryAction = async () => {
+    if (errorType === 'permission') {
+      Linking.openSettings();
+    } else if (errorType === 'gps') {
+      if (Platform.OS === 'android') {
+        IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.LOCATION_SOURCE_SETTINGS);
+      } else {
+        Linking.openURL('App-Prefs:Privacy&path=LOCATION');
+      }
+    } else {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') checkLocationStatus();
+    }
+  };
+
+  const handleNotNow = () => {
+    Alert.alert("TransitGo", "Nearby routes won't be visible without location.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Enable", onPress: handlePrimaryAction }
+    ]);
   };
 
   const clearSelectedRoute = () => {
@@ -133,6 +144,50 @@ export default function PassengerMap() {
     }, 600);
   };
 
+  // --- 3. SOCKET LOGIC ---
+  useEffect(() => {
+    if (!socket.connected) socket.connect();
+
+    const handleBusMoved = (busData: any) => {
+      if (selectedRouteId && busData.routeId === selectedRouteId) {
+        const busKey = busData.busId || busData.routeId || 'live';
+        setLiveBuses((prev) => ({ ...prev, [busKey]: busData }));
+      }
+    };
+
+    const handleBusOffline = (data: any) => {
+      setLiveBuses((prev) => {
+        const newBuses = { ...prev };
+        const busKey = data.busId || 'live';
+        delete newBuses[busKey];
+        return newBuses;
+      });
+    };
+
+    const handleReconnect = () => {
+      if (selectedRouteId && socket.connected) {
+        socket.emit('join_route', selectedRouteId);
+      }
+    };
+
+    socket.on('bus_moved', handleBusMoved);
+    socket.on('bus_offline', handleBusOffline);
+    socket.on('connect', handleReconnect);
+
+    if (selectedRouteId) {
+      setLiveBuses({}); 
+      if (socket.connected) socket.emit('join_route', selectedRouteId);
+    }
+
+    return () => {
+      socket.off('bus_moved', handleBusMoved);
+      socket.off('bus_offline', handleBusOffline);
+      socket.off('connect', handleReconnect);
+      if (selectedRouteId) socket.emit('leave_route', selectedRouteId);
+    };
+  }, [selectedRouteId]);
+
+  // --- 4. DATA FETCHING ---
   const { data: routes } = useQuery({
     queryKey: ['routes', 'all'],
     queryFn: fetchRoutesApi,
@@ -152,8 +207,24 @@ export default function PassengerMap() {
     [selectedRouteId, routes]
   );
 
+  // --- 5. RENDER CONDITIONALS ---
+  if (permissionState === 'loading' && !userLocation) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#196F31" />
+      </View>
+    );
+  }
+
   if (permissionState === 'denied') {
-    return <LocationPermissionScreen onAllow={requestLocation} onDeny={() => setPermissionState('denied')} onOpenSettings={() => Linking.openSettings()} />;
+    return (
+      <LocationPermissionScreen 
+        errorType={errorType}
+        onAllow={handlePrimaryAction}
+        onDeny={handleNotNow}
+        onOpenSettings={handlePrimaryAction} 
+      />
+    );
   }
 
   return (
@@ -164,14 +235,14 @@ export default function PassengerMap() {
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        customMapStyle={darkMapStyle}
         initialRegion={{ latitude: 24.8607, longitude: 67.0011, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
       >
         {userLocation && (
-          <Marker coordinate={userLocation} anchor={{ x: 0.5, y: 0.5 }} zIndex={100}><UserLocationMarker /></Marker>
+          <Marker coordinate={userLocation} anchor={{ x: 0.5, y: 0.5 }} zIndex={100}>
+            <UserLocationMarker />
+          </Marker>
         )}
 
-        {/* Render live buses only if a route is active */}
         {selectedRouteId && Object.entries(liveBuses).map(([busKey, bus]: [string, any]) => (
           <Marker
             key={busKey}
@@ -213,7 +284,7 @@ export default function PassengerMap() {
         <View style={styles.liveTrackerCard}>
           {Object.keys(liveBuses).length === 0 ? (
             <View style={styles.waitingRow}>
-              <Ionicons name="radio-outline" size={16} color="#81C784" />
+              <Ionicons name="radio-outline" size={16} color="#123D1F" />
               <Text style={styles.waitingText}>Waiting for live bus data...</Text>
             </View>
           ) : (
@@ -239,10 +310,10 @@ export default function PassengerMap() {
       <Modal visible={isRoutesModalVisible} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setIsRoutesModalVisible(false)}><Ionicons name="close" size={26} color="white" /></TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsRoutesModalVisible(false)}><Ionicons name="close" size={28} color="#123D1F" /></TouchableOpacity>
             <View style={styles.modalSearchBox}>
-              <Ionicons name="search" size={18} color="#81C784" />
-              <TextInput style={styles.modalSearchInput} placeholder="Search routes..." placeholderTextColor="#81C784" value={routeSearchQuery} onChangeText={setRouteSearchQuery} />
+              <Ionicons name="search" size={18} color="#123D1F" />
+              <TextInput style={styles.modalSearchInput} placeholder="Search routes..." placeholderTextColor="#123D1F" value={routeSearchQuery} onChangeText={setRouteSearchQuery} />
             </View>
           </View>
           <FlatList
@@ -263,29 +334,125 @@ export default function PassengerMap() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#021a11' },
+  // Main background (Mint)
+  container: { flex: 1, backgroundColor: '#F0F9F4' },
+  centered: { justifyContent: 'center', alignItems: 'center' },
   map: { width: '100%', height: '100%' },
-  liveBusMarker: { backgroundColor: '#00C853', padding: 8, borderRadius: 20, borderWidth: 2, borderColor: 'white', elevation: 5 },
-  liveTrackerCard: { position: 'absolute', bottom: 30, left: 14, right: 14, backgroundColor: '#0A2E1F', borderRadius: 16, padding: 16, borderLeftWidth: 4, borderLeftColor: '#00C853', elevation: 10 },
+
+  // Markers - using the Primary Green
+  liveBusMarker: { 
+    backgroundColor: '#196F31', 
+    padding: 8, 
+    borderRadius: 20, 
+    borderWidth: 2, 
+    borderColor: 'white', 
+    elevation: 5 
+  },
+
+  // Live Tracker Card (Now Light Themed to match)
+  liveTrackerCard: { 
+    position: 'absolute', 
+    bottom: 140, 
+    left: 14, 
+    right: 14, 
+    backgroundColor: '#FFFFFF', // Clean white card
+    borderRadius: 16, 
+    padding: 16, 
+    borderLeftWidth: 4, 
+    borderLeftColor: '#196F31', 
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
   waitingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  waitingText: { color: '#81C784', fontWeight: '500' },
+  waitingText: { color: '#123D1F', fontWeight: '500' },
   etaContainer: { marginBottom: 12 },
   etaHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 },
-  etaTitle: { color: 'white', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
-  busIdBadge: { color: '#00C853', fontSize: 12, fontWeight: '600', backgroundColor: '#021a11', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  backendMessage: { color: 'white', fontSize: 16, lineHeight: 22, fontWeight: '500' },
+  etaTitle: { color: '#196F31', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
+  busIdBadge: { 
+    color: '#FFFFFF', 
+    fontSize: 12, 
+    fontWeight: '700', 
+    backgroundColor: '#196F31', 
+    paddingHorizontal: 8, 
+    paddingVertical: 2, 
+    borderRadius: 6 
+  },
+  backendMessage: { color: '#123D1F', fontSize: 16, lineHeight: 22, fontWeight: '600' },
+
+  // Top Search Bar
   topBarContainer: { position: 'absolute', top: 50, left: 14, right: 14 },
-  searchContainer: { backgroundColor: '#0A2E1F', padding: 12, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 5 },
-  searchIconBox: { width: 30, height: 30, borderRadius: 8, backgroundColor: '#00C853', alignItems: 'center', justifyContent: 'center' },
-  searchText: { flex: 1, fontSize: 15, color: 'white', fontWeight: '600' },
-  clearRouteBtnInCard: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#021a11' },
+  searchContainer: { 
+    backgroundColor: '#FFFFFF', 
+    padding: 12, 
+    borderRadius: 16, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 10, 
+    elevation: 8,
+    shadowColor: '#196F31',
+    shadowOpacity: 0.15,
+  },
+  searchIconBox: { 
+    width: 30, 
+    height: 30, 
+    borderRadius: 8, 
+    backgroundColor: '#196F31', 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  searchText: { flex: 1, fontSize: 15, color: '#123D1F', fontWeight: '600' },
+
+  // Card Controls
+  clearRouteBtnInCard: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    marginTop: 8, 
+    paddingTop: 8, 
+    borderTopWidth: 1, 
+    borderTopColor: '#E0E0E0' 
+  },
   clearRouteText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 13 },
-  modalContainer: { flex: 1, backgroundColor: '#021a11' },
+
+  // Modal (Mint & White)
+  modalContainer: { flex: 1, backgroundColor: '#F0F9F4' },
   modalHeader: { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  modalSearchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A2E1F', borderRadius: 12, paddingHorizontal: 12, height: 46 },
-  modalSearchInput: { flex: 1, color: 'white', marginLeft: 8 },
-  cardContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A2E1F', borderRadius: 16, marginBottom: 10, padding: 13 },
-  cardIconBox: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: 'white' },
-  cardSubtitle: { fontSize: 13, color: '#81C784' },
+  modalSearchBox: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 12, 
+    paddingHorizontal: 12, 
+    height: 46,
+    borderWidth: 1,
+    borderColor: '#D1E8D9'
+  },
+  modalSearchInput: { flex: 1, color: '#123D1F', marginLeft: 8 },
+
+  // List Cards (Light Theme for better readability)
+  cardContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 16, 
+    marginBottom: 10, 
+    padding: 13,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  cardIconBox: { 
+    width: 42, 
+    height: 42, 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 12 
+  },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: '#123D1F' },
+  cardSubtitle: { fontSize: 13, color: '#4A6B54' }, // Subtle green-grey
 });

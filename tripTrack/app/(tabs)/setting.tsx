@@ -152,11 +152,11 @@ export default function SettingsScreen() {
         />
       </View>
 
-      {(!user || user.role === 'driver') && (
+      {/* {(!user || user.role === 'driver') && (
         <>
           <ThemedText style={styles.sectionHeader}>PARTNER AREA</ThemedText>
               <DriverButton onPress={() => router.push('/driver/login')} />
-          {/* <View style={[styles.listCard, { backgroundColor: activeColors.primary || '#00C853' }]}>
+          <View style={[styles.listCard, { backgroundColor: activeColors.primary || '#00C853' }]}>
             <TouchableOpacity
               style={styles.driverButton}
               onPress={() => router.push('/driver/login')}
@@ -168,9 +168,9 @@ export default function SettingsScreen() {
               </View>
               <Ionicons name="chevron-forward" size={24} color="white" />
             </TouchableOpacity>
-          </View> */}
+          </View> 
         </>
-      )}
+      )} */}
 
       {/* Log Out Button */}
       {user && (

@@ -267,8 +267,6 @@ export default function SignupScreen() {
                             </TouchableOpacity>
                         </View>
                     </View>
-
-                    {/* ✅ Linked button to handleSignup */}
                     <TouchableOpacity
                         style={[styles.primaryBtn, isBusy && { opacity: 0.7 }]}
                         onPress={handleSignup}
@@ -309,7 +307,7 @@ const styles = StyleSheet.create({
     icon: { marginRight: 10 },
     input: { flex: 1, fontSize: 16, color: '#000' },
     primaryBtn: {
-        backgroundColor: '#2d5a4c',
+        backgroundColor: '#196F31',
         height: 55,
         borderRadius: 25,
         justifyContent: 'center',
@@ -330,7 +328,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#eee'
     },
-    dropdownHeaderText: { fontSize: 16, color: '#2d5a4c', fontWeight: 'bold', marginLeft: 10 },
+    dropdownHeaderText: { fontSize: 16, color: '#196F31', fontWeight: 'bold', marginLeft: 10 },
     dropdownList: {
         backgroundColor: '#fff',
         borderRadius: 15,
@@ -348,7 +346,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#f0f0f0'
     },
     itemText: { fontSize: 15, color: '#666' },
-    activeItemText: { color: '#2d5a4c', fontWeight: 'bold' },
+    activeItemText: { color: '#196F31', fontWeight: 'bold' },
     uploadBox: {
         height: 150,
         backgroundColor: '#fff',
