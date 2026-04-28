@@ -8,4 +8,6 @@ export const endpoints = {
   getRoutes: '/data/routes',  
   getBuses: '/data/buses',    
   locations: '/data/locations',
+  verify : 'api/auth/verify',
+  profile:"/auth/profile"
 };

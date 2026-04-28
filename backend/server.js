@@ -99,7 +99,7 @@ io.on("connection", (socket) => {
     
     if (activeBusesCache[busId]) {
       delete activeBusesCache[busId];
-      console.log(`🗑️ Cache invalidated for Bus ID: ${busId}`);
+      console.log(` Cache invalidated for Bus ID: ${busId}`);
     }
 
     io.to(routeId).emit("bus_offline", { busId: busId });
@@ -123,5 +123,5 @@ io.on("connection", (socket) => {
 // START SERVER
 // ==========================================
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server & Live Tracking Engine running on port = ${PORT}`);
+  console.log(`Server & Live Tracking Engine running on port = ${PORT}`);
 });

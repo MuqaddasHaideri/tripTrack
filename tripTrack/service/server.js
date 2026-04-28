@@ -97,7 +97,6 @@ export const updateLocationTypeApi = async (token, locationId, type) => {
   return response.data;
 };
 
-// 4. Delete a location from history
 export const deleteLocationApi = async (token, locationId) => {
   return fetchApi(`${endpoints.locations}/${locationId}`, {
     method: 'DELETE',
@@ -112,7 +111,6 @@ export const fetchNearbyRoutesApi = async (lat, lng) => {
   return response.data || [];
 };
 
-
 export const socket = io(SOCKET_URL, {
   autoConnect: false,
   transports: ['websocket'],
@@ -126,3 +124,84 @@ socket.on('connect', () => {
 socket.on('connect_error', (err) => {
   console.log('❌ Socket Connection Error:', err.message);
 });
+
+// export const verifyEmailApi = async (email, otp) => {
+//   try {
+//     const response = await fetchApi(endpoints.locations, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({ email, otp }),
+//     });
+
+//     const data = await response.json();
+//     return data;
+//   } catch (error) {
+//     console.error("Verification API Error:", error);
+//     return { success: false, message: "Network error occurred." };
+//   }
+// };
+
+// ==========================================
+// GET PROFILE
+// ==========================================
+export const getUserProfileApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.profile}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, 
+      },
+    });
+
+    console.log("Profile GET Response:", data);
+    return data; 
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    return { success: false, message: error.message || "Network error occurred." };
+  }
+};
+
+// ==========================================
+// UPDATE PROFILE
+// ==========================================
+export const updateUserProfileApi = async (updateData, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.profile}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(updateData), 
+    });
+    console.log("Profile UPDATE Response:", data);
+    return data;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return { success: false, message: error.message || "Network error occurred." };
+  }
+};
+
+// ==========================================
+// DELETE PROFILE
+// ==========================================
+export const deleteUserProfileApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.profile}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    console.log("Profile DELETE Response:", data);
+    return data;
+  } catch (error) {
+    console.error("Error deleting profile:", error);
+    return { success: false, message: error.message || "Network error occurred." };
+  }
+};

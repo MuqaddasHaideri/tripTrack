@@ -69,7 +69,6 @@ export default function SignupScreen() {
         }
     };
  const handleSignup = async () => {
-    //  Basic Validation for EVERYONE
     if (!name || !email || !password || !phone) {
         Alert.alert("Missing Input", "Please fill in all basic text fields.");
         return;
@@ -209,7 +208,7 @@ export default function SignupScreen() {
                             <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="jullyanshark70@gmail.com"
+                                placeholder="example@gmail.com"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 value={email}

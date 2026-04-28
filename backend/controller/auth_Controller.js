@@ -2,6 +2,9 @@ import user_models from "../models/user_models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+// ==========================================
+// SINGUP
+// ==========================================
 export const signupController = async (req, res) => {
   try {
     const { name, email, password, role, phone, cnic, driverLicense } = req.body;
@@ -12,7 +15,8 @@ export const signupController = async (req, res) => {
     }
 
     const encodedName = encodeURIComponent(name);
-    const avatar = `https://avatar.iran.liara.run/username?username=${encodedName}`;
+    const avatar = `https://ui-avatars.com/api/?name=${encodedName}&background=2d5a4c&color=fff&size=256`;
+    
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const isUserVerified = role === 'passenger' ? true : false;
@@ -24,8 +28,7 @@ export const signupController = async (req, res) => {
       profilePic: avatar,
       role,
       phone: phone || "",
-      cnic: cnic || "",
-      driverLicense: driverLicense || "",
+      ...(role === 'driver' && { cnic, driverLicense }),
       isVerified: isUserVerified
     });
 
@@ -38,15 +41,28 @@ export const signupController = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-        isVerified: newUser.isVerified
+        isVerified: newUser.isVerified,
+        profilePic: newUser.profilePic 
       },
       success: true,
     });
   } catch (error) {
     console.log("Error in signup controller:", error);
+    
+    // Catch Mongoose Validation errors (like missing CNIC) safely
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: Object.values(error.errors).map(val => val.message).join(', ')
+      });
+    }
+
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
+// ==========================================
+// LOGIN
+// ==========================================
 export const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -100,5 +116,85 @@ export const loginController = async (req, res) => {
       message: "Internal server error",
       success: false,
     });
+  }
+};
+
+// ==========================================
+// VIEW PROFILE
+// ==========================================
+export const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id; 
+
+    const user = await user_models.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found", success: false });
+    }
+
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.log("Error in getUserProfile: ", error);
+    res.status(500).json({ message: "Internal server error", success: false });
+  }
+};
+
+// ==========================================
+// EDIT PROFILE
+// ==========================================
+export const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const { 
+      role, 
+      isVerified, 
+      password, 
+      email, 
+      cnic,  
+      ...allowedUpdates 
+    } = req.body;
+
+    const updatedUser = await user_models.findByIdAndUpdate(
+      userId,
+      { $set: allowedUpdates },
+      { new: true, runValidators: true } 
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found", success: false });
+    }
+
+    res.status(200).json({ 
+      message: "Profile updated successfully", 
+      success: true, 
+      user: updatedUser 
+    });
+  } catch (error) {
+    console.log("Error in updateUserProfile: ", error);
+    res.status(500).json({ message: "Internal server error", success: false });
+  }
+};
+
+// ==========================================
+// DELETE PROFILE
+// ==========================================
+export const deleteUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const deletedUser = await user_models.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found", success: false });
+    }
+
+    res.status(200).json({ 
+      message: "Account deleted successfully", 
+      success: true 
+    });
+  } catch (error) {
+    console.log("Error in deleteUserProfile: ", error);
+    res.status(500).json({ message: "Internal server error", success: false });
   }
 };

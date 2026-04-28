@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AuthTabSwitcher from '../../components/authSwitcher';
 import { useDispatch } from 'react-redux';
 import { loginUserApi } from '../../service/server';
-import { setCredentials } from '../../redux/authSlice';
+import { continueAsGuest, setCredentials } from '../../redux/authSlice';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -49,7 +49,8 @@ export default function LoginScreen() {
                     id: user?._id,
                     name: user?.name,
                     email: user?.email,
-                    role: user?.role
+                    role: user?.role,
+                    profilePic: user?.profilePic
                 };
 
                 dispatch(setCredentials({
@@ -69,7 +70,7 @@ export default function LoginScreen() {
                 Alert.alert("Login Failed", data?.message || "Invalid credentials");
             }
         } catch (error) {
-            const msg = error?.message || "Login failed...";
+            const msg = error?.message || "Login failed. Please try again.";
             Alert.alert("Error", msg);
         } finally {
             setLoading(false);
@@ -152,8 +153,11 @@ export default function LoginScreen() {
 
                     {/* Guest */}
                     <TouchableOpacity
-                        style={styles.guestBtn}
-                        onPress={() => router.replace('/(tabs)')}
+                    style={styles.guestBtn}
+                        onPress={() => {
+                            dispatch(continueAsGuest());
+                            router.replace('/(tabs)');
+                        }}
                     >
                         <Text style={styles.guestBtnText}>Continue as Guest</Text>
                     </TouchableOpacity>

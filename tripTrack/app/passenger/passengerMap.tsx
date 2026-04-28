@@ -334,12 +334,11 @@ export default function PassengerMap() {
 }
 
 const styles = StyleSheet.create({
-  // Main background (Mint)
+ 
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   centered: { justifyContent: 'center', alignItems: 'center' },
   map: { width: '100%', height: '100%' },
 
-  // Markers - using the Primary Green
   liveBusMarker: { 
     backgroundColor: '#196F31', 
     padding: 8, 
@@ -349,13 +348,12 @@ const styles = StyleSheet.create({
     elevation: 5 
   },
 
-  // Live Tracker Card (Now Light Themed to match)
   liveTrackerCard: { 
     position: 'absolute', 
-    bottom: 140, 
+    bottom: 60, 
     left: 14, 
     right: 14, 
-    backgroundColor: '#FFFFFF', // Clean white card
+    backgroundColor: '#FFFFFF', 
     borderRadius: 16, 
     padding: 16, 
     borderLeftWidth: 4, 
@@ -404,7 +402,6 @@ const styles = StyleSheet.create({
   },
   searchText: { flex: 1, fontSize: 15, color: '#123D1F', fontWeight: '600' },
 
-  // Card Controls
   clearRouteBtnInCard: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -415,8 +412,6 @@ const styles = StyleSheet.create({
     borderTopColor: '#E0E0E0' 
   },
   clearRouteText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 13 },
-
-  // Modal (Mint & White)
   modalContainer: { flex: 1, backgroundColor: '#F0F9F4' },
   modalHeader: { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   modalSearchBox: { 
@@ -431,28 +426,39 @@ const styles = StyleSheet.create({
     borderColor: '#D1E8D9'
   },
   modalSearchInput: { flex: 1, color: '#123D1F', marginLeft: 8 },
-
-  // List Cards (Light Theme for better readability)
-  cardContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 16, 
-    marginBottom: 10, 
-    padding: 13,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-  },
-  cardIconBox: { 
-    width: 42, 
-    height: 42, 
-    borderRadius: 12, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginRight: 12 
-  },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: '#123D1F' },
-  cardSubtitle: { fontSize: 13, color: '#4A6B54' }, // Subtle green-grey
+cardContainer: { 
+  flexDirection: 'row', 
+  alignItems: 'center', 
+  backgroundColor: '#FFFFFF', 
+  borderRadius: 20, 
+  marginBottom: 12, 
+  padding: 14,
+  borderWidth: 1.5,
+  borderColor: '#196F31',
+  elevation: 4,
+  shadowColor: '#196F31',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 6,
+  marginHorizontal: 8
+},
+cardIconBox: { 
+  width: 44, 
+  height: 44, 
+  borderRadius: 12, 
+  justifyContent: 'center', 
+  alignItems: 'center', 
+  marginRight: 15 
+},
+cardTitle: { 
+  fontSize: 16, 
+  fontWeight: '800', // Bold True Black
+  color: '#000000' 
+},
+cardSubtitle: { 
+  fontSize: 13, 
+  color: '#8E8E93', // Gray subtext
+  fontWeight: '600',
+  marginTop: 2
+},
 });

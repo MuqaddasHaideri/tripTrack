@@ -5,58 +5,39 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  useColorScheme
+  StatusBar,
+  Image,
+  Text,
+  Platform,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
-import { ThemedText } from '../../components/themed-text';
-import { Colors } from '../../constants/theme';
 import { logout } from '../../redux/authSlice';
-import DriverButton from '@/components/ui/driverButton';
 
+const { width } = Dimensions.get('window');
 
-// Saved for later use
-const GridOption = ({ title, icons, onPress }) => (
+const ListOption = ({ title, subtitle, icon, onPress, isLast, isDestructive, showChevron = true }) => (
   <TouchableOpacity
-    style={[styles.gridCard, { backgroundColor: '#0A2E1F' }]}
-    onPress={onPress}
-  >
-    <View style={styles.gridIconRow}>
-      {icons.map((icon, index) => (
-        <View key={index} style={[styles.iconBadge, { backgroundColor: icon.bg }]}>
-          <Ionicons name={icon.name} size={18} color="white" />
-        </View>
-      ))}
-    </View>
-    <ThemedText style={styles.gridTitle}>{title}</ThemedText>
-  </TouchableOpacity>
-);
-
-const ListOption = ({ title, subtitle, icon, colors, onPress, isLast, isDestructive, showChevron = true }) => (
-  <TouchableOpacity
+    activeOpacity={0.7}
     style={[
       styles.listRow,
-      !isLast && { borderBottomWidth: 1, borderBottomColor: colors.separator }
+      !isLast && { borderBottomWidth: 1, borderBottomColor: '#E8F3EB' }
     ]}
     onPress={onPress}
   >
-    {icon && (
-      <View style={styles.listIconBox}>
-        <Ionicons name={icon} size={22} color={isDestructive ? '#FF3B30' : colors.icon} />
-      </View>
-    )}
+    <View style={[styles.listIconBox, { backgroundColor: isDestructive ? '#FFF1F0' : '#F0F9F4' }]}>
+      <Ionicons name={icon} size={20} color={isDestructive ? '#FF3B30' : '#196F31'} />
+    </View>
     <View style={styles.listTextContent}>
-      <ThemedText
-        type="defaultSemiBold"
-        style={[styles.listTitle, isDestructive && { color: '#FF3B30', textAlign: 'center', width: '100%' }]}
-      >
+      <Text style={[styles.listTitle, isDestructive && { color: '#FF3B30' }]}>
         {title}
-      </ThemedText>
-      {subtitle && <ThemedText style={styles.listSubtitle}>{subtitle}</ThemedText>}
+      </Text>
+      {subtitle && <Text style={styles.listSubtitle}>{subtitle}</Text>}
     </View>
     {!isDestructive && showChevron && (
-      <Ionicons name="chevron-forward" size={20} color={colors.icon} style={{ opacity: 0.3 }} />
+      <Ionicons name="chevron-forward" size={18} color="#A0B4A5" />
     )}
   </TouchableOpacity>
 );
@@ -64,12 +45,10 @@ const ListOption = ({ title, subtitle, icon, colors, onPress, isLast, isDestruct
 export default function SettingsScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const theme = useColorScheme() ?? 'dark';
-  const activeColors = Colors[theme];
   const { user } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
-    Alert.alert("Log Out", "Are you sure?", [
+    Alert.alert("Log Out", "Are you sure you want to log out of TripTrack?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Log Out", style: "destructive", onPress: () => {
@@ -82,157 +61,234 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: '#021a11' }]}
+      style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
     >
-      <ThemedText type="title" style={styles.header}>Settings</ThemedText>
-       {user ? (
-        <View style={[styles.profileCard, { backgroundColor: '#0A2E1F' }]}>
-          <View style={styles.avatar}>
+      <StatusBar barStyle="dark-content" />
+      
+      <Text style={styles.header}>Settings</Text>
 
-            <ThemedText style={styles.avatarText}>
-              {user.name ? user.name[0].toUpperCase() : 'U'}
-            </ThemedText>
-          </View>
-          
-          <View style={styles.userName}>
-            <ThemedText type="subtitle">
-              {user.name || "User"}
-            </ThemedText>
-            
-            <ThemedText style={styles.userEmail}>
-              {user.email}
-            </ThemedText>
-            
-            <View style={styles.badgeContainer}>
-              <ThemedText style={styles.roleText}>
-                {user.role ? user.role.toUpperCase() : "PASSENGER"}
-              </ThemedText>
+      {/* --- PREMIUM PROFILE SECTION --- */}
+      {user ? (
+   <TouchableOpacity 
+          activeOpacity={0.9}
+          onPress={() => router.push('/passenger/profileScreen')} 
+          style={styles.profileCard}
+        >
+          <View style={styles.profileBackgroundDecor} />
+          <View style={styles.profileInner}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatarBorder}>
+                <Image 
+                  source={{ uri: user.profilePic || 'https://via.placeholder.com/150' }} 
+                  style={styles.avatarImg} 
+                />
+              </View>
+              <TouchableOpacity style={styles.editBadge}>
+                <Ionicons name="camera" size={12} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.profileInfo}>
+              <Text style={styles.userName}>{user.name || "user"}</Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
+              <View style={styles.roleTag}>
+                <Ionicons name="person-outline" size={12} color="#196F31" style={{marginRight: 4}} />
+                <Text style={styles.roleText}>
+                  {user.role ? user.role.toUpperCase() : "PASSENGER"}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+       </TouchableOpacity >
       ) : (
-        <View style={[styles.guestCard, { backgroundColor: '#0A2E1F' }]}>
-          <Ionicons name="star" size={30} color="#FFD700" />
-          <View style={styles.guestContent}>
-            <ThemedText style={styles.guestTitle}>Unlock Smart Features</ThemedText>
-            <ThemedText style={styles.guestSubtitle}>Save routes & get alerts.</ThemedText>
+        <TouchableOpacity style={styles.guestCard} onPress={() => router.push('/(auth)/login')}>
+          <View style={styles.guestIconCircle}>
+            <Ionicons name="leaf" size={24} color="#196F31" />
           </View>
-          <TouchableOpacity
-            style={styles.loginBtnSmall}
-            onPress={() => router.push('/passenger/login')}
-          >
-            <ThemedText style={styles.loginBtnText}>Login</ThemedText>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.guestContent}>
+            <Text style={styles.guestTitle}>Sign in to TripTrack</Text>
+            <Text style={styles.guestSubtitle}>Track your routes & save favorite stops</Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color="#196F31" />
+        </TouchableOpacity>
       )}
 
-      {/* Main Options List */}
-      <View style={[styles.listCard, { backgroundColor: '#0A2E1F' }]}>
-        <ListOption
-          title="Favorite Routes"
-          subtitle="Manage your saved lines"
-          icon="heart-outline"
-          colors={activeColors}
-          // onPress={() router.push('/favorites')}
-        />
-        <ListOption
-          title="Report Issue"
-          subtitle="Traffic, Accidents, Bugs"
-          icon="alert-circle-outline" 
-          colors={activeColors}
-        />
-        <ListOption
-          title="Schedules"
-          subtitle="View static time tables"
-          icon="time-outline" 
-          colors={activeColors}
-          isLast={true}
-          onPress={() => router.push('/passenger/schedule')}
-        />
+      {/* --- MENU SECTIONS --- */}
+      {user?.role !== 'driver' && (
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>ACCOUNT PREFERENCES</Text>
+        <View style={styles.cardGroup}>
+          <ListOption
+            title="Favorite Routes"
+            subtitle="Manage your saved bus lines"
+            icon="heart-outline"
+            //colors={activeColors}
+          />
+          <ListOption
+            title="Schedules"
+            subtitle="View static bus time-tables"
+            icon="time-outline"
+            isLast={true}
+            onPress={() => router.push('/passenger/schedule')}
+          />
+        </View>
+      </View>
+      )}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>APP & SUPPORT</Text>
+        <View style={styles.cardGroup}>
+          <ListOption
+            title="Report an Issue"
+            subtitle="Traffic, bugs or suggestions"
+            icon="alert-circle-outline"
+          />
+          {/* <ListOption
+            title="Help Center"
+            subtitle="FAQs and Guide"
+            icon="help-circle-outline"
+            isLast={true}
+          /> */}
+        </View>
       </View>
 
-      {/* {(!user || user.role === 'driver') && (
-        <>
-          <ThemedText style={styles.sectionHeader}>PARTNER AREA</ThemedText>
-              <DriverButton onPress={() => router.push('/driver/login')} />
-          <View style={[styles.listCard, { backgroundColor: activeColors.primary || '#00C853' }]}>
-            <TouchableOpacity
-              style={styles.driverButton}
-              onPress={() => router.push('/driver/login')}
-            >
-              <Ionicons name="bus" size={24} color="white" />
-              <View style={styles.driverContent}>
-                <ThemedText style={styles.driverTitle}>Driver Mode</ThemedText>
-                <ThemedText style={styles.driverSubtitle}>Broadcast live location</ThemedText>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color="white" />
-            </TouchableOpacity>
-          </View> 
-        </>
-      )} */}
-
-      {/* Log Out Button */}
       {user && (
-        <View style={[styles.listCard, { backgroundColor: '#0A2E1F', marginTop: 10 }]}>
+        <View style={[styles.cardGroup, { marginTop: 10, borderColor: '#FF3B30' }]}>
           <ListOption
-            title="Log Out"
-            colors={activeColors}
+            title="Sign Out"
+            icon="power"
             isDestructive={true}
             isLast={true}
+            showChevron={false}
             onPress={handleLogout}
           />
         </View>
       )}
 
-      <ThemedText style={styles.version}>MetroLive v1.0.0 (Beta)</ThemedText>
+      <Text style={styles.version}>tripTrack • v1.0.0 (Beta)</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#F0F9F4' },
   contentContainer: { padding: 20, paddingVertical: 60 },
-  header: { marginBottom: 20, fontSize: 28, fontWeight: 'bold', color: 'white' },
+  header: { 
+    fontSize: 34, 
+    fontWeight: '900', 
+    color: '#000', 
+    marginBottom: 35,
+    letterSpacing: -1,
+  },
 
-  // Profile Styling
-  profileCard: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, marginBottom: 25 },
-  avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#00C853', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  avatarText: { color: 'white', fontSize: 28, fontWeight: 'bold' },
-  profileInfo: { flex: 1 },
-  userName: { color: 'white', fontSize: 20, fontWeight: 'bold' },
-  userEmail: { color: '#81C784', fontSize: 13, marginBottom: 8 },
-  roleBadge: { backgroundColor: '#e8f5e9', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 5, alignSelf: 'flex-start' },
-  roleText: { color: '#00C853', fontSize: 10, fontWeight: 'bold' },
+  // --- Profile Styling ---
+  profileCard: { 
+    backgroundColor: '#FFF',
+    borderRadius: 28, 
+    marginBottom: 35,
+    borderWidth: 2,
+    borderColor: '#196F31',
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#196F31',
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+  },
+  profileBackgroundDecor: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#F0F9F4',
+  },
+  profileInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  avatarContainer: { position: 'relative' },
+  avatarBorder: { 
+    width: 86, 
+    height: 86, 
+    borderRadius: 43, 
+    borderWidth: 3,
+    borderColor: '#196F31',
+    padding: 3,
+    backgroundColor: '#FFF'
+  },
+  avatarImg: { width: '100%', height: '100%', borderRadius: 40 },
+  editBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    backgroundColor: '#196F31',
+    padding: 6,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FFF'
+  },
+  profileInfo: { flex: 1, marginLeft: 18 },
+  userName: { color: '#000', fontSize: 24, fontWeight: '800', marginBottom: 2 },
+  userEmail: { color: '#8E8E93', fontSize: 14, marginBottom: 12 },
+  roleTag: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#F0F9F4', 
+    paddingHorizontal: 10, 
+    paddingVertical: 5, 
+    borderRadius: 10, 
+    alignSelf: 'flex-start' 
+  },
+  roleText: { color: '#196F31', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
 
-  // Guest Styling
-  guestCard: { borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
-  guestContent: { flex: 1, marginLeft: 15 },
-  guestTitle: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  guestSubtitle: { color: '#81C784', fontSize: 12 },
-  loginBtnSmall: { backgroundColor: 'white', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
-  loginBtnText: { fontWeight: 'bold', color: '#021a11', fontSize: 12 },
-
-  // List Layout
-  listCard: { borderRadius: 20, overflow: 'hidden', marginBottom: 15 },
-  listRow: { flexDirection: 'row', alignItems: 'center', padding: 18, justifyContent: 'space-between' },
+  // --- List/Card Styling ---
+  section: { marginBottom: 30 },
+  sectionLabel: { 
+    fontSize: 13, 
+    fontWeight: '800', 
+    color: '#8E8E93', 
+    marginBottom: 12, 
+    marginLeft: 10, 
+    letterSpacing: 1.2 
+  },
+  cardGroup: { 
+    backgroundColor: '#FFF', 
+    borderRadius: 24, 
+    borderWidth: 2,
+    borderColor: '#196F31',
+    overflow: 'hidden',
+  },
+  listRow: { flexDirection: 'row', alignItems: 'center', padding: 18 },
+  listIconBox: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 14, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 16 
+  },
   listTextContent: { flex: 1 },
-  listTitle: { fontSize: 16, color: 'white' },
-  listSubtitle: { fontSize: 12, color: '#81C784', marginTop: 4 },
-  listIconBox: { marginRight: 15 },
+  listTitle: { fontSize: 17, color: '#000', fontWeight: '700' },
+  listSubtitle: { fontSize: 13, color: '#8E8E93', marginTop: 3 },
 
-  // Driver Section
-  sectionHeader: { fontSize: 13, fontWeight: '700', color: '#4CAF50', marginBottom: 8, marginLeft: 5, letterSpacing: 0.5 },
-  driverButton: { flexDirection: 'row', alignItems: 'center', padding: 20 },
-  driverContent: { flex: 1, marginLeft: 15 },
-  driverTitle: { fontSize: 16, fontWeight: 'bold', color: 'white' },
-  driverSubtitle: { fontSize: 12, color: '#e0e0e0' },
+  // --- Guest ---
+  guestCard: { 
+    backgroundColor: '#FFF', 
+    borderRadius: 24, 
+    padding: 20, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 35,
+    borderWidth: 2,
+    borderColor: '#196F31'
+  },
+  guestIconCircle: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0F9F4', justifyContent: 'center', alignItems: 'center' },
+  guestContent: { flex: 1, marginLeft: 16 },
+  guestTitle: { color: '#000', fontWeight: '800', fontSize: 18 },
+  guestSubtitle: { color: '#8E8E93', fontSize: 13, marginTop: 2 },
 
-  // Grid (Hidden for now as requested)
-  gridCard: { width: '48%', borderRadius: 20, padding: 16, marginBottom: 15, height: 110, justifyContent: 'flex-end' },
-  gridTitle: { color: 'white', fontWeight: 'bold', fontSize: 15 },
-  gridIconRow: { flexDirection: 'row', position: 'absolute', top: 12, left: 12 },
-  iconBadge: { padding: 5, borderRadius: 12, marginRight: -5, borderWidth: 2, borderColor: '#0A2E1F' },
-
-  version: { textAlign: 'center', color: '#4CAF50', opacity: 0.5, marginTop: 20, fontSize: 12 }
+  version: { textAlign: 'center', color: '#A0B4A5', marginTop: 20, fontSize: 13, fontWeight: '700' }
 });
