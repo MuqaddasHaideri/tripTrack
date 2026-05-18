@@ -87,3 +87,57 @@ export const getAllReports = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// ==========================================
+// ADMIN: UPDATE REPORT STATUS
+// ==========================================
+export const updateReportStatus = async (req, res) => {
+  try {
+    const { id } = req.params; // The ID of the report in the URL
+    const { status, adminResponse } = req.body;
+
+    // Validate the new status
+    if (!['pending', 'reviewed', 'resolved', 'dismissed'].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status update" });
+    }
+
+    const updatedReport = await report_models.findByIdAndUpdate(
+      id,
+      { status, adminResponse },
+      { new: true }
+    );
+
+    if (!updatedReport) {
+      return res.status(404).json({ success: false, message: "Report not found" });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Report updated successfully", 
+      report: updatedReport 
+    });
+  } catch (error) {
+    console.error("Error updating report:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ==========================================
+// PASSENGER: GET MY PAST REPORTS
+// ==========================================
+export const getMyReports = async (req, res) => {
+  try {
+    // req.user._id comes from your isAuthenticated middleware
+    const userId = req.user._id;
+
+    // Find all reports created by this specific user, newest first
+    const myReports = await report_models.find({ reportedBy: userId })
+      .populate('busRoute', 'routeName') // Get the bus name if it was a transit issue
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, reports: myReports });
+  } catch (error) {
+    console.error("Error fetching user reports:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

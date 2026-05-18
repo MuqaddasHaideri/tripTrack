@@ -205,12 +205,11 @@ export const deleteUserProfileApi = async (token) => {
     return { success: false, message: error.message || "Network error occurred." };
   }
 };
-
-// ─── Submit Report API ───────────────────────────────────────────────────────
-export const submitReportApi = async (reportData: any) => {
-  try {
-    const token = await AsyncStorage.getItem('userToken');
-    
+// ==========================================
+//  Submit Report API
+// ==========================================
+export const submitReportApi = async (reportData, token) => {
+  try { 
     // Configured for your backend reporting route endpoint layout
        const data = await fetchApi(`${endpoints.report}`, {
       method: 'POST',
@@ -220,9 +219,28 @@ export const submitReportApi = async (reportData: any) => {
       },
       body: JSON.stringify(reportData)
     });
-    
+    return data;
   } catch (error) {
     console.error("Submit Report Error:", error);
     return { success: false, message: "Network error occurred." };
+  }
+};
+// ==========================================
+//  Fetch Past User Reports API
+// ==========================================
+export const getMyReportsApi = async ( token) => {
+ try {
+    const data = await fetchApi(`${endpoints.myreport}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    console.log("My Reports Response:", data);
+    return data;
+  } catch (error) {
+    console.error("Get Past Reports Error:", error);
+    return { success: false, reports: [], message: "Network error occurred." };
   }
 };

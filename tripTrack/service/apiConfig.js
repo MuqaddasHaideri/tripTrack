@@ -10,5 +10,6 @@ export const endpoints = {
   locations: '/data/locations',
   verify : 'api/auth/verify',
   profile:"/auth/profile",
-  report : "/data/report",
+  report : "/data/reports",
+  myreport : "/data/reports/my-reports"
 };

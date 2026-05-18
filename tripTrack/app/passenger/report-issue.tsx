@@ -13,11 +13,9 @@ import * as Location from 'expo-location';
 import { useQuery } from '@tanstack/react-query';
 
 // Custom utilities & API hooks
-import { fetchRoutesApi, submitReportApi } from '@/service/server';
+import { fetchRoutesApi, getMyReportsApi, submitReportApi } from '@/service/server';
 import { pickImage, uploadToCloudinary } from '@/utils/pickImage';
-
-// ─── API Integration Function ───────────────────────────────────────────────
-
+import { useSelector } from 'react-redux';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Category = 'traffic' | 'bug' | 'suggestion' | null;
@@ -64,17 +62,37 @@ export default function ReportIssueScreen() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   // Feature state
-  const [priority, setPriority] = useState<Priority>('medium'); // Set 'medium' default
+  const [priority, setPriority] = useState<Priority>('medium');
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<any>(null); // Changed to 'any' for object map
+  const [selectedRoute, setSelectedRoute] = useState<any>(null);
   const [routeModalVisible, setRouteModalVisible] = useState(false);
   const [routeSearch, setRouteSearch] = useState('');
   const [lastReport, setLastReport] = useState<LastReport | null>(null);
-
+const [pastReports, setPastReports] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const successAnim = useRef(new Animated.Value(0)).current;
+  const { token } = useSelector((state) => state.auth);
 
+  useEffect(() => {
+    fetchReportHistory();
+  }, []);
+
+  const fetchReportHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const data = await getMyReportsApi(token);
+      if (data.success) {
+        setPastReports(data.reports); 
+      }
+    } catch (e) {
+      console.log("Error displaying history state:", e);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+  
   const { data: routes } = useQuery({
     queryKey: ['routes', 'all'],
     queryFn: fetchRoutesApi,
@@ -146,25 +164,24 @@ export default function ReportIssueScreen() {
         attachmentUrl = await uploadToCloudinary(imageUri);
       }
 
-      // Payload compilation matching backend expectations
+      // Payload compilation matching backend Mongoose expectations precisely
       const payload = {
         reportType: category === 'traffic' ? 'transit_issue' : category === 'bug' ? 'app_bug' : 'suggestion',
         description,
         isAnonymous,
         ...(category !== 'suggestion' && { priority }),
         ...(category === 'traffic' && {
-          busRoute: selectedRoute?._id || null, 
+          busRoute: selectedRoute?._id || null,
           issueType: quickSelect,
           location: latitude && longitude ? { lat: latitude, lng: longitude } : null
         }),
         ...(attachmentUrl && { attachment: attachmentUrl })
       };
 
-      const data = await submitReportApi(payload);
-
+      const data = await submitReportApi(payload, token);
+      console.log("Report submission response:", data);
       if (data.success) {
-        setIsSubmitting(false);
-
+        // Trigger smooth success layout animations
         Animated.sequence([
           Animated.spring(successAnim, { toValue: 1, useNativeDriver: true }),
           Animated.delay(1200),
@@ -185,7 +202,7 @@ export default function ReportIssueScreen() {
           ]);
         }, 1400);
       } else {
-        Alert.alert("Submission Failed", data.message || "Failed to process form processing.");
+        Alert.alert("Submission Failed", data.message || "Failed to process form parameters.");
       }
     } catch (err) {
       Alert.alert("Network Error", "Could not submit report to server layout.");
@@ -277,6 +294,20 @@ export default function ReportIssueScreen() {
     </View>
   );
 
+  const CategoryCard = ({ title, sub, icon, onPress }: {
+    title: string; sub: string; icon: string; onPress: () => void;
+  }) => (
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+      <View style={styles.iconCircle}>
+        <Ionicons name={icon as any} size={24} color="#196F31" />
+      </View>
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardSub}>{sub}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#196F31" />
+    </TouchableOpacity>
+  );
   const renderCharCount = () => (
     <Text style={[
       styles.charCount,
@@ -286,21 +317,47 @@ export default function ReportIssueScreen() {
     </Text>
   );
 
-  const renderLastReportCard = () => {
-    if (!lastReport) return null;
-    const statusColor =
-      lastReport.status === 'resolved' ? '#196F31' :
-        lastReport.status === 'under_review' ? '#854F0B' : '#4A6B54';
+const renderLastReportCard = () => {
+    if (pastReports.length === 0) return null;
+
     return (
-      <View style={styles.lastReportCard}>
-        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.lastReportId}>Report {lastReport.id}</Text>
-          <Text style={[styles.lastReportStatus, { color: statusColor }]}>
-            {STATUS_LABELS[lastReport.status]}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={14} color="#A0B4A5" />
+      <View style={{ marginBottom: 10 }}>
+        <Text style={styles.sectionLabel}>Your Recent Submissions</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={{ gap: 12, paddingBottom: 5 }}
+        >
+          {pastReports.map((report) => {
+            // Map Mongoose status directly to theme indicators
+            const statusColor =
+              report.status === 'resolved' ? '#196F31' :
+              report.status === 'under_review' ? '#854F0B' : '#4A6B54';
+
+            // Clean format for type display tag strings
+            const displayTag = report.reportType?.replace('_', ' ').toUpperCase() || 'REPORT';
+
+            return (
+              <View key={report._id} style={styles.lastReportCard}>
+                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                <View style={{ width: 200 }}>
+                  <Text style={styles.lastReportId}>{displayTag}</Text>
+                  <Text style={styles.cardSub} numberOfLines={1}>{report.description}</Text>
+                  
+                  {report.busRoute?.routeName && (
+                    <Text style={[styles.cardSub, { color: '#196F31', fontWeight: '700' }]}>
+                      🚌 {report.busRoute.routeName}
+                    </Text>
+                  )}
+                  
+                  <Text style={[styles.lastReportStatus, { color: statusColor }]}>
+                    {report.status === 'resolved' ? 'Resolved ✓' : report.status === 'under_review' ? 'Under Review' : 'Submitted'}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
       </View>
     );
   };
@@ -313,7 +370,10 @@ export default function ReportIssueScreen() {
         {
           opacity: successAnim,
           transform: [{
-            scale: successAnim.interpolate({ inputRange:, outputRange: [0.8, 1] }),
+            scale: successAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.8, 1],
+            }),
           }],
         },
       ]}
@@ -384,8 +444,6 @@ export default function ReportIssueScreen() {
     </Modal>
   );
 
-  // ── Category-specific content ─────────────────────────────────────────────
-
   const renderContent = () => {
     switch (category) {
       case 'traffic':
@@ -424,7 +482,6 @@ export default function ReportIssueScreen() {
               </View>
             </View>
 
-            {/* LIVE DEVICE LOCATION CAPTURE STATUS HEADER */}
             <View style={styles.locationCard}>
               {isGettingLocation ? (
                 <>
@@ -547,8 +604,6 @@ export default function ReportIssueScreen() {
     }
   };
 
-  // ── Root render ───────────────────────────────────────────────────────────
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -573,7 +628,6 @@ export default function ReportIssueScreen() {
           {renderContent()}
         </ScrollView>
 
-        {/* Footer submit */}
         {category && (
           <View style={styles.footer}>
             <TouchableOpacity
@@ -604,28 +658,9 @@ export default function ReportIssueScreen() {
   );
 }
 
-// ─── Category Card ────────────────────────────────────────────────────────────
-
-const CategoryCard = ({ title, sub, icon, onPress }: {
-  title: string; sub: string; icon: string; onPress: () => void;
-}) => (
-  <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-    <View style={styles.iconCircle}>
-      <Ionicons name={icon as any} size={24} color="#196F31" />
-    </View>
-    <View style={styles.cardContent}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardSub}>{sub}</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={20} color="#196F31" />
-  </TouchableOpacity>
-);
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F4' },
-
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingVertical: 15,
@@ -637,12 +672,9 @@ const styles = StyleSheet.create({
     elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5,
   },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#123D1F' },
-
   scroll: { padding: 20, paddingBottom: 40 },
-
   categoryPicker: { gap: 16 },
   mainPrompt: { fontSize: 24, fontWeight: '900', color: '#123D1F', marginBottom: 8, marginTop: 6 },
-
   card: {
     backgroundColor: '#fff', padding: 20, borderRadius: 24,
     flexDirection: 'row', alignItems: 'center',
@@ -656,7 +688,6 @@ const styles = StyleSheet.create({
   cardContent: { flex: 1 },
   cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F' },
   cardSub: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-
   lastReportCard: {
     backgroundColor: '#fff', borderRadius: 16, padding: 14,
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -665,19 +696,16 @@ const styles = StyleSheet.create({
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   lastReportId: { fontSize: 13, fontWeight: '800', color: '#123D1F' },
   lastReportStatus: { fontSize: 12, fontWeight: '600', marginTop: 1 },
-
   formSection: { gap: 22 },
   sectionLabel: {
     fontSize: 11, fontWeight: '800', color: '#A0B4A5',
     textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10,
   },
-
   priorityChip: {
     paddingHorizontal: 16, paddingVertical: 10,
     borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5,
   },
   priorityChipText: { fontWeight: '700', fontSize: 13 },
-
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
     paddingHorizontal: 18, paddingVertical: 12, borderRadius: 16,
@@ -686,21 +714,18 @@ const styles = StyleSheet.create({
   activeChip: { backgroundColor: '#196F31', borderColor: '#196F31' },
   chipText: { color: '#4A6B54', fontWeight: '700' },
   activeChipText: { color: '#fff', fontWeight: 'bold' },
-
   routeSelector: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#fff', borderRadius: 16, padding: 14,
     borderWidth: 1.5, borderColor: '#196F31',
   },
   routeSelectorText: { flex: 1, fontSize: 14, fontWeight: '700', color: '#123D1F' },
-
   locationCard: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#fff', padding: 15, borderRadius: 16,
     borderWidth: 2, borderColor: '#196F31', gap: 10,
   },
   locationText: { color: '#196F31', fontSize: 14, fontWeight: '700' },
-
   textAreaWrap: { position: 'relative' },
   textArea: {
     backgroundColor: '#fff', borderRadius: 20, padding: 20,
@@ -712,7 +737,6 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 10, right: 14,
     fontSize: 11, color: '#A0B4A5', fontWeight: '600',
   },
-
   uploadBox: {
     width: '100%', height: 180, borderRadius: 20,
     borderWidth: 2, borderColor: '#E8F3EB', borderStyle: 'dashed',
@@ -726,7 +750,6 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 10, right: 10,
     backgroundColor: '#fff', borderRadius: 12,
   },
-
   toggleCard: {
     backgroundColor: '#fff', borderRadius: 18, padding: 16,
     flexDirection: 'row', alignItems: 'center',
@@ -734,7 +757,6 @@ const styles = StyleSheet.create({
   },
   toggleTitle: { fontSize: 15, fontWeight: '700', color: '#123D1F' },
   toggleSub: { fontSize: 12, color: '#A0B4A5', marginTop: 2 },
-
   footer: {
     padding: 20, backgroundColor: '#fff',
     borderTopWidth: 1.5, borderTopColor: '#E8F3EB',
@@ -746,7 +768,6 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { backgroundColor: '#A0B4A5', elevation: 0 },
   btnContent: { flexDirection: 'row', alignItems: 'center' },
   submitBtnText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
-
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end',
   },
@@ -774,7 +795,6 @@ const styles = StyleSheet.create({
   routeItemTextActive: { color: '#fff' },
   clearRouteBtn: { marginTop: 8, alignItems: 'center', padding: 12 },
   clearRouteTxt: { color: '#E24B4A', fontWeight: '700', fontSize: 14 },
-
   successOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center', alignItems: 'center',
@@ -787,4 +807,5 @@ const styles = StyleSheet.create({
     elevation: 8, shadowColor: '#196F31', shadowOpacity: 0.3, shadowRadius: 20,
   },
   successText: { fontSize: 22, fontWeight: '900', color: '#123D1F' },
+
 });
