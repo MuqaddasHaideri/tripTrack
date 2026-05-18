@@ -1,0 +1,712 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet, View, Text, TextInput, TouchableOpacity,
+  ScrollView, Alert, ActivityIndicator, Image,
+  KeyboardAvoidingView, Platform, Switch, Animated,
+  Modal, FlatList,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchRoutesApi } from '@/service/server';
+import { useQuery } from '@tanstack/react-query';
+import {
+  pickImage,
+  uploadToCloudinary
+} from '@/utils/pickImage';
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type Category = 'traffic' | 'bug' | 'suggestion' | null;
+type Priority = 'low' | 'medium' | 'high' | 'critical' | null;
+
+interface LastReport {
+  id: string;
+  status: 'submitted' | 'under_review' | 'resolved';
+  category: string;
+  timestamp: number;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const MAX_CHARS = 300;
+
+
+const PRIORITY_CONFIG: Record<
+  NonNullable<Priority>,
+  { label: string; color: string; bg: string; border: string }
+> = {
+  low: { label: 'Low', color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB' },
+  medium: { label: 'Medium', color: '#854F0B', bg: '#FAEEDA', border: '#FAC775' },
+  high: { label: 'High', color: '#E65100', bg: '#FFF3E0', border: '#FFAB40' },
+  critical: { label: 'Critical', color: '#791F1F', bg: '#F7C1C1', border: '#E24B4A' },
+};
+
+const STATUS_LABELS: Record<LastReport['status'], string> = {
+  submitted: 'Submitted — awaiting review',
+  under_review: 'Under review by our team',
+  resolved: 'Resolved ✓',
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function ReportIssueScreen() {
+  const router = useRouter();
+
+  // Core form state
+  const [category, setCategory] = useState<Category>(null);
+  const [description, setDescription] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [quickSelect, setQuickSelect] = useState('');
+
+  // Feature state
+  const [priority, setPriority] = useState<Priority>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [routeModalVisible, setRouteModalVisible] = useState(false);
+  const [routeSearch, setRouteSearch] = useState('');
+  const [lastReport, setLastReport] = useState<LastReport | null>(null);
+
+  // UI state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const successAnim = useRef(new Animated.Value(0)).current;
+  const { data: routes } = useQuery({
+    queryKey: ['routes', 'all'],
+    queryFn: fetchRoutesApi,
+    staleTime: 1000 * 60 * 60, // Reuses cache from map/schedule screens
+  });
+  useEffect(() => {
+    loadLastReport();
+  }, []);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  const loadLastReport = async () => {
+    try {
+      const raw = await AsyncStorage.getItem('last_report');
+      if (raw) setLastReport(JSON.parse(raw));
+    } catch (_) { }
+  };
+
+  const saveLastReport = async (report: LastReport) => {
+    try {
+      await AsyncStorage.setItem('last_report', JSON.stringify(report));
+    } catch (_) { }
+  };
+
+
+  const isSubmitEnabled = () => {
+    if (!category) return false;
+    if (category === 'traffic') return !!quickSelect;
+    return description.trim().length > 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!isSubmitEnabled()) {
+      Alert.alert('Missing Info', 'Please fill in the required details before submitting.');
+      return;
+    }
+    setIsSubmitting(true);
+
+    setTimeout(async () => {
+      setIsSubmitting(false);
+
+      Animated.sequence([
+        Animated.spring(successAnim, { toValue: 1, useNativeDriver: true }),
+        Animated.delay(1200),
+        Animated.timing(successAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start();
+
+      const newReport: LastReport = {
+        id: `#${1000 + Math.floor(Math.random() * 9000)}`,
+        status: 'submitted',
+        category: category!,
+        timestamp: Date.now(),
+      };
+      await saveLastReport(newReport);
+
+      setTimeout(() => {
+        Alert.alert('Report Submitted!', `Your report ${newReport.id} has been received.`, [
+          { text: 'Done', onPress: () => router.back() },
+        ]);
+      }, 1400);
+    }, 1500);
+  };
+
+  const handleBack = () => {
+    if (category) {
+      setCategory(null);
+      setDescription('');
+      setQuickSelect('');
+      setPriority(null);
+      setSelectedRoute(null);
+    } else {
+      router.back();
+    }
+  };
+
+  // ── Filtered routes ───────────────────────────────────────────────────────
+
+  // 2. FILTER DYNAMIC ROUTES BASED ON INPUT
+  const filteredRoutes = React.useMemo(() => {
+    if (!routes) return [];
+    return routes.filter((r: any) =>
+      r.origin?.toLowerCase().includes(routeSearch.toLowerCase()) ||
+      r.destination?.toLowerCase().includes(routeSearch.toLowerCase()) ||
+      r.route_name?.toLowerCase().includes(routeSearch.toLowerCase())
+    );
+  }, [routeSearch, routes]);
+  // ─── Sub-renders ──────────────────────────────────────────────────────────
+
+  const renderPrioritySelector = () => (
+    <View>
+      <Text style={styles.sectionLabel}>Priority</Text>
+      <View style={styles.chipContainer}>
+        {(Object.keys(PRIORITY_CONFIG) as NonNullable<Priority>[]).map((p) => {
+          const cfg = PRIORITY_CONFIG[p];
+          const active = priority === p;
+          return (
+            <TouchableOpacity
+              key={p}
+              onPress={() => setPriority(active ? null : p)}
+              style={[
+                styles.priorityChip,
+                { borderColor: cfg.border },
+                active && { backgroundColor: cfg.bg },
+              ]}
+            >
+              <Text style={[styles.priorityChipText, { color: active ? cfg.color : '#4A6B54' }]}>
+                {cfg.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  const renderRouteSelector = () => (
+    <View>
+      <Text style={styles.sectionLabel}>Route / Bus (optional)</Text>
+      <TouchableOpacity
+        style={styles.routeSelector}
+        onPress={() => setRouteModalVisible(true)}
+      >
+        <Ionicons name="bus" size={16} color="#196F31" />
+        <Text style={[styles.routeSelectorText, !selectedRoute && { color: '#A0B4A5' }]}>
+          {selectedRoute || 'Select a route...'}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color="#196F31" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderAnonymousToggle = () => (
+    <View style={styles.toggleCard}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.toggleTitle}>Submit anonymously</Text>
+        <Text style={styles.toggleSub}>No name or account attached to report</Text>
+      </View>
+      <Switch
+        value={isAnonymous}
+        onValueChange={setIsAnonymous}
+        trackColor={{ false: '#E8F3EB', true: '#196F31' }}
+        thumbColor="#fff"
+      />
+    </View>
+  );
+
+  const renderCharCount = () => (
+    <Text style={[
+      styles.charCount,
+      description.length > MAX_CHARS * 0.9 && { color: '#E24B4A' },
+    ]}>
+      {description.length} / {MAX_CHARS}
+    </Text>
+  );
+
+  const renderLastReportCard = () => {
+    if (!lastReport) return null;
+    const statusColor =
+      lastReport.status === 'resolved' ? '#196F31' :
+        lastReport.status === 'under_review' ? '#854F0B' : '#4A6B54';
+    return (
+      <View style={styles.lastReportCard}>
+        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.lastReportId}>Report {lastReport.id}</Text>
+          <Text style={[styles.lastReportStatus, { color: statusColor }]}>
+            {STATUS_LABELS[lastReport.status]}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={14} color="#A0B4A5" />
+      </View>
+    );
+  };
+
+  const renderSuccessOverlay = () => (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.successOverlay,
+        {
+          opacity: successAnim,
+          transform: [{
+            scale: successAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }),
+          }],
+        },
+      ]}
+    >
+      <View style={styles.successCircle}>
+        <Ionicons name="checkmark" size={40} color="#fff" />
+      </View>
+      <Text style={styles.successText}>Report Sent!</Text>
+    </Animated.View>
+  );
+
+  const renderRouteModal = () => (
+    <Modal
+      visible={routeModalVisible}
+      animationType="slide"
+      transparent
+      onRequestClose={() => setRouteModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <Text style={styles.modalTitle}>Select Route</Text>
+          <TextInput
+            style={styles.modalSearch}
+            placeholder="Search routes..."
+            placeholderTextColor="#A0B4A5"
+            value={routeSearch}
+            onChangeText={setRouteSearch}
+          />
+          <FlatList
+            data={filteredRoutes}
+            keyExtractor={(item) => item._id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[styles.routeItem, selectedRoute === item && styles.routeItemActive]}
+                onPress={() => {
+                  setSelectedRoute(item);
+                  setRouteModalVisible(false);
+                  setRouteSearch('');
+                }}
+              >
+                <Ionicons name="bus" size={16} color={selectedRoute === item ? '#fff' : '#196F31'} />
+                <Text style={[
+                  styles.routeItemText,
+                  selectedRoute === item && styles.routeItemTextActive,
+                ]}>
+                  {item}
+                </Text>
+                {selectedRoute === item && <Ionicons name="checkmark" size={16} color="#fff" />}
+              </TouchableOpacity>
+            )}
+            style={{ maxHeight: 320 }}
+            showsVerticalScrollIndicator={false}
+          />
+          {selectedRoute && (
+            <TouchableOpacity
+              style={styles.clearRouteBtn}
+              onPress={() => { setSelectedRoute(null); setRouteModalVisible(false); }}
+            >
+              <Text style={styles.clearRouteTxt}>Clear selection</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // ── Category-specific content ─────────────────────────────────────────────
+
+  const renderContent = () => {
+    switch (category) {
+      case 'traffic':
+        return (
+          <View style={styles.formSection}>
+            {renderPrioritySelector()}
+            {renderRouteSelector()}
+            <View>
+              <Text style={styles.sectionLabel}>Select the issue</Text>
+              <View style={styles.chipContainer}>
+                {['Bus Delayed', 'Route Closed', 'Heavy Traffic', 'Accident', 'Bus Full'].map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={[styles.chip, quickSelect === item && styles.activeChip]}
+                    onPress={() => setQuickSelect(quickSelect === item ? '' : item)}
+                  >
+                    <Text style={[styles.chipText, quickSelect === item && styles.activeChipText]}>
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>Additional details (optional)</Text>
+              <View style={styles.textAreaWrap}>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="Any extra context..."
+                  placeholderTextColor="#A0B4A5"
+                  multiline
+                  value={description}
+                  onChangeText={(t) => t.length <= MAX_CHARS && setDescription(t)}
+                />
+                {renderCharCount()}
+              </View>
+            </View>
+            <View style={styles.locationCard}>
+              <Ionicons name="location" size={18} color="#196F31" />
+              <Text style={styles.locationText}>Location attached automatically</Text>
+            </View>
+            {renderAnonymousToggle()}
+          </View>
+        );
+
+      case 'bug':
+        return (
+          <View style={styles.formSection}>
+            {renderPrioritySelector()}
+            <View>
+              <Text style={styles.sectionLabel}>
+                Describe the bug <Text style={{ color: '#E24B4A' }}>*</Text>
+              </Text>
+              <View style={styles.textAreaWrap}>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="What went wrong? (e.g. Map not loading, App crashed)"
+                  placeholderTextColor="#A0B4A5"
+                  multiline
+                  value={description}
+                  onChangeText={(t) => t.length <= MAX_CHARS && setDescription(t)}
+                />
+                {renderCharCount()}
+              </View>
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>Screenshot (optional)</Text>
+              <TouchableOpacity
+                style={[styles.uploadBox, imageUri && styles.uploadBoxActive]}
+                onPress={async () => {
+                  const uri = await pickImage();
+
+                  if (uri) {
+                    setImageUri(uri);
+                  }
+                }}
+              >
+                {imageUri ? (
+                  <Image source={{ uri: imageUri }} style={styles.previewImage} />
+                ) : (
+                  <View style={styles.uploadPlaceholder}>
+                    <Ionicons name="cloud-upload-outline" size={32} color="#196F31" />
+                    <Text style={styles.uploadText}>Tap to attach screenshot</Text>
+                  </View>
+                )}
+                {imageUri && (
+                  <TouchableOpacity style={styles.removeImg} onPress={() => setImageUri(null)}>
+                    <Ionicons name="close-circle" size={24} color="#FF3B30" />
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            </View>
+            {renderAnonymousToggle()}
+          </View>
+        );
+
+      case 'suggestion':
+        return (
+          <View style={styles.formSection}>
+            <View>
+              <Text style={styles.sectionLabel}>
+                Your idea <Text style={{ color: '#E24B4A' }}>*</Text>
+              </Text>
+              <View style={styles.textAreaWrap}>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="New routes, features, or UI improvements..."
+                  placeholderTextColor="#A0B4A5"
+                  multiline
+                  value={description}
+                  onChangeText={(t) => t.length <= MAX_CHARS && setDescription(t)}
+                />
+                {renderCharCount()}
+              </View>
+            </View>
+            {renderAnonymousToggle()}
+          </View>
+        );
+
+      default:
+        return (
+          <View style={styles.categoryPicker}>
+            {renderLastReportCard()}
+            <Text style={styles.mainPrompt}>How can we help you today?</Text>
+            <CategoryCard
+              title="Traffic / Transit Issue"
+              sub="Delays, closed roads, accidents"
+              icon="bus"
+              onPress={() => setCategory('traffic')}
+            />
+            <CategoryCard
+              title="Report an App Bug"
+              sub="Crashes, errors, or map issues"
+              icon="bug"
+              onPress={() => setCategory('bug')}
+            />
+            <CategoryCard
+              title="Give a Suggestion"
+              sub="Ideas to make TripTrack better"
+              icon="bulb"
+              onPress={() => setCategory('suggestion')}
+            />
+          </View>
+        );
+    }
+  };
+
+  // ── Root render ───────────────────────────────────────────────────────────
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.headerCircleBtn}>
+            <Ionicons name={category ? 'arrow-back' : 'close'} size={22} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{category ? 'Details' : 'Report Issue'}</Text>
+          <View style={{ width: 44 }} />
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {renderContent()}
+        </ScrollView>
+
+        {/* Footer submit */}
+        {category && (
+          <View style={styles.footer}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[
+                styles.submitBtn,
+                (!isSubmitEnabled() || isSubmitting) && styles.submitBtnDisabled,
+              ]}
+              onPress={handleSubmit}
+              disabled={isSubmitting || !isSubmitEnabled()}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <View style={styles.btnContent}>
+                  <Text style={styles.submitBtnText}>Submit Report</Text>
+                  <Ionicons name="send" size={18} color="#fff" style={{ marginLeft: 8 }} />
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+
+      {renderRouteModal()}
+      {renderSuccessOverlay()}
+    </SafeAreaView>
+  );
+}
+
+// ─── Category Card ────────────────────────────────────────────────────────────
+
+const CategoryCard = ({ title, sub, icon, onPress }: {
+  title: string; sub: string; icon: string; onPress: () => void;
+}) => (
+  <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <View style={styles.iconCircle}>
+      <Ionicons name={icon as any} size={24} color="#196F31" />
+    </View>
+    <View style={styles.cardContent}>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={styles.cardSub}>{sub}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={20} color="#196F31" />
+  </TouchableOpacity>
+);
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F0F9F4' },
+
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 15,
+  },
+  headerCircleBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E8F3EB',
+    elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#123D1F' },
+
+  scroll: { padding: 20, paddingBottom: 40 },
+
+  categoryPicker: { gap: 16 },
+  mainPrompt: { fontSize: 24, fontWeight: '900', color: '#123D1F', marginBottom: 8, marginTop: 6 },
+
+  card: {
+    backgroundColor: '#fff', padding: 20, borderRadius: 24,
+    flexDirection: 'row', alignItems: 'center',
+    borderWidth: 2, borderColor: '#196F31',
+    elevation: 4, shadowColor: '#196F31', shadowOpacity: 0.1, shadowRadius: 10,
+  },
+  iconCircle: {
+    width: 52, height: 52, borderRadius: 18,
+    backgroundColor: '#F0F9F4', justifyContent: 'center', alignItems: 'center', marginRight: 16,
+  },
+  cardContent: { flex: 1 },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F' },
+  cardSub: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
+
+  lastReportCard: {
+    backgroundColor: '#fff', borderRadius: 16, padding: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderWidth: 1.5, borderColor: '#9FE1CB', marginBottom: 4,
+  },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  lastReportId: { fontSize: 13, fontWeight: '800', color: '#123D1F' },
+  lastReportStatus: { fontSize: 12, fontWeight: '600', marginTop: 1 },
+
+  formSection: { gap: 22 },
+  sectionLabel: {
+    fontSize: 11, fontWeight: '800', color: '#A0B4A5',
+    textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10,
+  },
+
+  priorityChip: {
+    paddingHorizontal: 16, paddingVertical: 10,
+    borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5,
+  },
+  priorityChipText: { fontWeight: '700', fontSize: 13 },
+
+  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: {
+    paddingHorizontal: 18, paddingVertical: 12, borderRadius: 16,
+    backgroundColor: '#fff', borderWidth: 2, borderColor: '#E8F3EB',
+  },
+  activeChip: { backgroundColor: '#196F31', borderColor: '#196F31' },
+  chipText: { color: '#4A6B54', fontWeight: '700' },
+  activeChipText: { color: '#fff', fontWeight: 'bold' },
+
+  routeSelector: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#fff', borderRadius: 16, padding: 14,
+    borderWidth: 1.5, borderColor: '#196F31',
+  },
+  routeSelectorText: { flex: 1, fontSize: 14, fontWeight: '700', color: '#123D1F' },
+
+  locationCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff', padding: 15, borderRadius: 16,
+    borderWidth: 2, borderColor: '#196F31', gap: 10,
+  },
+  locationText: { color: '#196F31', fontSize: 14, fontWeight: '700' },
+
+  textAreaWrap: { position: 'relative' },
+  textArea: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 20,
+    borderWidth: 2, borderColor: '#196F31',
+    textAlignVertical: 'top', fontSize: 16, color: '#123D1F',
+    minHeight: 150, paddingBottom: 30,
+  },
+  charCount: {
+    position: 'absolute', bottom: 10, right: 14,
+    fontSize: 11, color: '#A0B4A5', fontWeight: '600',
+  },
+
+  uploadBox: {
+    width: '100%', height: 180, borderRadius: 20,
+    borderWidth: 2, borderColor: '#E8F3EB', borderStyle: 'dashed',
+    backgroundColor: '#fff', overflow: 'hidden',
+  },
+  uploadBoxActive: { borderStyle: 'solid', borderColor: '#196F31' },
+  uploadPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 },
+  uploadText: { color: '#196F31', fontWeight: '700' },
+  previewImage: { width: '100%', height: '100%' },
+  removeImg: {
+    position: 'absolute', top: 10, right: 10,
+    backgroundColor: '#fff', borderRadius: 12,
+  },
+
+  toggleCard: {
+    backgroundColor: '#fff', borderRadius: 18, padding: 16,
+    flexDirection: 'row', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E8F3EB', gap: 12,
+  },
+  toggleTitle: { fontSize: 15, fontWeight: '700', color: '#123D1F' },
+  toggleSub: { fontSize: 12, color: '#A0B4A5', marginTop: 2 },
+
+  footer: {
+    padding: 20, backgroundColor: '#fff',
+    borderTopWidth: 1.5, borderTopColor: '#E8F3EB',
+  },
+  submitBtn: {
+    backgroundColor: '#196F31', height: 60, borderRadius: 20,
+    justifyContent: 'center', alignItems: 'center', elevation: 4,
+  },
+  submitBtnDisabled: { backgroundColor: '#A0B4A5', elevation: 0 },
+  btnContent: { flexDirection: 'row', alignItems: 'center' },
+  submitBtnText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
+
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#F0F9F4', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 20, paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40, height: 4, borderRadius: 2, backgroundColor: '#C5D9C9',
+    alignSelf: 'center', marginBottom: 16,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#123D1F', marginBottom: 14 },
+  modalSearch: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 12,
+    borderWidth: 1.5, borderColor: '#E8F3EB',
+    fontSize: 15, color: '#123D1F', marginBottom: 12,
+  },
+  routeItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    padding: 14, borderRadius: 14, marginBottom: 8,
+    backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E8F3EB',
+  },
+  routeItemActive: { backgroundColor: '#196F31', borderColor: '#196F31' },
+  routeItemText: { flex: 1, fontSize: 14, fontWeight: '600', color: '#123D1F' },
+  routeItemTextActive: { color: '#fff' },
+  clearRouteBtn: { marginTop: 8, alignItems: 'center', padding: 12 },
+  clearRouteTxt: { color: '#E24B4A', fontWeight: '700', fontSize: 14 },
+
+  successOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(240,249,244,0.92)', zIndex: 999,
+  },
+  successCircle: {
+    width: 90, height: 90, borderRadius: 45,
+    backgroundColor: '#196F31', justifyContent: 'center', alignItems: 'center',
+    marginBottom: 16,
+    elevation: 8, shadowColor: '#196F31', shadowOpacity: 0.3, shadowRadius: 20,
+  },
+  successText: { fontSize: 22, fontWeight: '900', color: '#123D1F' },
+});

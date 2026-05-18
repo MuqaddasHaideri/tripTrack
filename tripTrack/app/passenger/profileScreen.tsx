@@ -6,7 +6,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
+import {
+    pickImage,
+    uploadToCloudinary,
+} from '@/utils/pickImage';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     getUserProfileApi,
@@ -59,50 +62,6 @@ export default function ProfileScreen() {
             Alert.alert("Connection Error", "Cannot reach the server.");
         } finally {
             setLoading(false);
-        }
-    };
-    const uploadToCloudinary = async (uri) => {
-        const data = new FormData();
-        data.append('file', {
-            uri: uri,
-            type: 'image/jpeg',
-            name: 'profile_update.jpg',
-        });
-
-        const cloudName = "dsrl10j73";
-        data.append('upload_preset', 'transit-app');
-
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-            method: 'POST',
-            body: data,
-        });
-
-        const result = await response.json();
-        if (result.secure_url) {
-            return result.secure_url;
-        } else {
-            throw new Error("Failed to upload image to Cloudinary");
-        }
-    };
-
-    const pickImage = async () => {
-        const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!granted) {
-            Alert.alert("Permission Denied", "Gallery access is needed to change photos.");
-            return;
-        }
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.5,
-        });
-
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-            const selectedUri = result.assets[0].uri;
-            setNewImageUri(selectedUri);
-            setProfile(prev => ({ ...prev, profilePic: selectedUri }));
         }
     };
 
@@ -216,7 +175,18 @@ export default function ProfileScreen() {
                                 style={styles.avatarImg}
                             />
                             {isEditing && (
-                                <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
+                                <TouchableOpacity style={styles.cameraIcon} onPress={async () => {
+                                    const uri = await pickImage();
+
+                                    if (uri) {
+                                        setNewImageUri(uri);
+
+                                        setProfile(prev => ({
+                                            ...prev,
+                                            profilePic: uri
+                                        }));
+                                    }
+                                }}>
                                     <Ionicons name="camera" size={20} color="white" />
                                 </TouchableOpacity>
                             )}
@@ -329,7 +299,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: '#196F31', 
+        borderColor: '#196F31',
         gap: 8,
     },
     editHeaderText: {
@@ -400,7 +370,7 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         borderRadius: 18,
         borderWidth: 2,
-        borderColor: '#FF3B30', 
+        borderColor: '#FF3B30',
         backgroundColor: '#FFF',
         gap: 10,
     },
@@ -413,7 +383,7 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         borderRadius: 18,
         borderWidth: 2,
-        borderColor: '#8E8E93', 
+        borderColor: '#8E8E93',
         backgroundColor: '#FFF',
         gap: 10,
     },

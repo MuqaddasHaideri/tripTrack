@@ -123,7 +123,7 @@ export default function SchedulesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F9F4', // Mint Background
+    backgroundColor: '#F0F9F4', 
   },
   center: {
     flex: 1,

@@ -66,23 +66,23 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <StatusBar barStyle="dark-content" />
-      
+
       <Text style={styles.header}>Settings</Text>
 
       {/* --- PREMIUM PROFILE SECTION --- */}
       {user ? (
-   <TouchableOpacity 
+        <TouchableOpacity
           activeOpacity={0.9}
-          onPress={() => router.push('/passenger/profileScreen')} 
+          onPress={() => router.push('/passenger/profileScreen')}
           style={styles.profileCard}
         >
           <View style={styles.profileBackgroundDecor} />
           <View style={styles.profileInner}>
             <View style={styles.avatarContainer}>
               <View style={styles.avatarBorder}>
-                <Image 
-                  source={{ uri: user.profilePic || 'https://via.placeholder.com/150' }} 
-                  style={styles.avatarImg} 
+                <Image
+                  source={{ uri: user.profilePic || 'https://via.placeholder.com/150' }}
+                  style={styles.avatarImg}
                 />
               </View>
               <TouchableOpacity style={styles.editBadge}>
@@ -94,14 +94,14 @@ export default function SettingsScreen() {
               <Text style={styles.userName}>{user.name || "user"}</Text>
               <Text style={styles.userEmail}>{user.email}</Text>
               <View style={styles.roleTag}>
-                <Ionicons name="person-outline" size={12} color="#196F31" style={{marginRight: 4}} />
+                <Ionicons name="person-outline" size={12} color="#196F31" style={{ marginRight: 4 }} />
                 <Text style={styles.roleText}>
                   {user.role ? user.role.toUpperCase() : "PASSENGER"}
                 </Text>
               </View>
             </View>
           </View>
-       </TouchableOpacity >
+        </TouchableOpacity >
       ) : (
         <TouchableOpacity style={styles.guestCard} onPress={() => router.push('/(auth)/login')}>
           <View style={styles.guestIconCircle}>
@@ -117,24 +117,24 @@ export default function SettingsScreen() {
 
       {/* --- MENU SECTIONS --- */}
       {user?.role !== 'driver' && (
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>ACCOUNT PREFERENCES</Text>
-        <View style={styles.cardGroup}>
-          <ListOption
-            title="Favorite Routes"
-            subtitle="Manage your saved bus lines"
-            icon="heart-outline"
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>ACCOUNT PREFERENCES</Text>
+          <View style={styles.cardGroup}>
+            <ListOption
+              title="Favorite Routes"
+              subtitle="Manage your saved bus lines"
+              icon="heart-outline"
             //colors={activeColors}
-          />
-          <ListOption
-            title="Schedules"
-            subtitle="View static bus time-tables"
-            icon="time-outline"
-            isLast={true}
-            onPress={() => router.push('/passenger/schedule')}
-          />
+            />
+            <ListOption
+              title="Schedules"
+              subtitle="View static bus time-tables"
+              icon="time-outline"
+              isLast={true}
+              onPress={() => router.push('/passenger/schedule')}
+            />
+          </View>
         </View>
-      </View>
       )}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>APP & SUPPORT</Text>
@@ -143,6 +143,8 @@ export default function SettingsScreen() {
             title="Report an Issue"
             subtitle="Traffic, bugs or suggestions"
             icon="alert-circle-outline"
+            onPress={() => router.push('/passenger/report-issue')}
+
           />
           {/* <ListOption
             title="Help Center"
@@ -174,18 +176,18 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   contentContainer: { padding: 20, paddingVertical: 60 },
-  header: { 
-    fontSize: 34, 
-    fontWeight: '900', 
-    color: '#000', 
+  header: {
+    fontSize: 34,
+    fontWeight: '900',
+    color: '#000',
     marginBottom: 35,
     letterSpacing: -1,
   },
 
   // --- Profile Styling ---
-  profileCard: { 
+  profileCard: {
     backgroundColor: '#FFF',
-    borderRadius: 28, 
+    borderRadius: 28,
     marginBottom: 35,
     borderWidth: 2,
     borderColor: '#196F31',
@@ -210,10 +212,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   avatarContainer: { position: 'relative' },
-  avatarBorder: { 
-    width: 86, 
-    height: 86, 
-    borderRadius: 43, 
+  avatarBorder: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     borderWidth: 3,
     borderColor: '#196F31',
     padding: 3,
@@ -233,54 +235,54 @@ const styles = StyleSheet.create({
   profileInfo: { flex: 1, marginLeft: 18 },
   userName: { color: '#000', fontSize: 24, fontWeight: '800', marginBottom: 2 },
   userEmail: { color: '#8E8E93', fontSize: 14, marginBottom: 12 },
-  roleTag: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#F0F9F4', 
-    paddingHorizontal: 10, 
-    paddingVertical: 5, 
-    borderRadius: 10, 
-    alignSelf: 'flex-start' 
+  roleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F9F4',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    alignSelf: 'flex-start'
   },
   roleText: { color: '#196F31', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
 
   // --- List/Card Styling ---
   section: { marginBottom: 30 },
-  sectionLabel: { 
-    fontSize: 13, 
-    fontWeight: '800', 
-    color: '#8E8E93', 
-    marginBottom: 12, 
-    marginLeft: 10, 
-    letterSpacing: 1.2 
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#8E8E93',
+    marginBottom: 12,
+    marginLeft: 10,
+    letterSpacing: 1.2
   },
-  cardGroup: { 
-    backgroundColor: '#FFF', 
-    borderRadius: 24, 
+  cardGroup: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
     borderWidth: 2,
     borderColor: '#196F31',
     overflow: 'hidden',
   },
   listRow: { flexDirection: 'row', alignItems: 'center', padding: 18 },
-  listIconBox: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 14, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginRight: 16 
+  listIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16
   },
   listTextContent: { flex: 1 },
   listTitle: { fontSize: 17, color: '#000', fontWeight: '700' },
   listSubtitle: { fontSize: 13, color: '#8E8E93', marginTop: 3 },
 
   // --- Guest ---
-  guestCard: { 
-    backgroundColor: '#FFF', 
-    borderRadius: 24, 
-    padding: 20, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  guestCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 35,
     borderWidth: 2,
     borderColor: '#196F31'

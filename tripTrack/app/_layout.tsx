@@ -70,6 +70,8 @@ function AppWrapper() {
         <Stack.Screen name="driver/Map" />
         <Stack.Screen name="passenger/schedule" options={{ presentation: 'modal' }} />
  <Stack.Screen name="passenger/profileScreen" options={{ presentation: 'modal' }} />
+         <Stack.Screen name="passenger/report-issue" options={{ presentation: 'modal' }} />
+
       </Stack>
 
       <StatusBar style="auto" />

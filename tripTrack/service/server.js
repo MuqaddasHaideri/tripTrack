@@ -1,7 +1,7 @@
 import { API_BASE, endpoints } from './apiConfig';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://192.168.0.104:3001'; 
+const SOCKET_URL = 'https://fyp-atio.onrender.com'; 
 
 const fetchApi = async (url, options = {}) => {
   try {

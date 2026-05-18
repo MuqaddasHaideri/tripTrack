@@ -7,10 +7,13 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker'; 
+import * as ImagePicker from 'expo-image-picker';
 import AuthTabSwitcher from '../../components/authSwitcher';
 import { signupdriver, signupUserApi } from '@/service/server';
-
+import {
+    pickImage,
+    uploadToCloudinary,
+} from '@/utils/pickImage';
 export default function SignupScreen() {
     const router = useRouter();
 
@@ -24,116 +27,72 @@ export default function SignupScreen() {
     const [showPassword, setShowPassword] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [imageUri, setImageUri] = useState(null);
-
-    const uploadToCloudinary = async (uri) => {
-        const data = new FormData();
-        data.append('file', {
-            uri: uri,
-            type: 'image/jpeg',
-            name: 'driver_license.jpg',
-        });
-
-        const cloudName = "dsrl10j73";
-        data.append('upload_preset', 'transit-app');
-
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-            method: 'POST',
-            body: data,
-        });
-
-        const result = await response.json();
-        console.log("Cloudinary response:", result);
-        if (result.secure_url) {
-            return result.secure_url;
-        } else {
-            throw new Error("Failed to upload image");
-        }
-    };
-
-    // Image Picker
-    const pickImage = async () => {
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (permissionResult.granted === false) {
-            Alert.alert("Permission Required", "You need to allow camera roll access to upload your license.");
+    const handleSignup = async () => {
+        if (!name || !email || !password || !phone) {
+            Alert.alert("Missing Input", "Please fill in all basic text fields.");
             return;
         }
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.5,
-        });
-        if (!result.canceled) {
-            setImageUri(result.assets[0].uri);
-        }
-    };
- const handleSignup = async () => {
-    if (!name || !email || !password || !phone) {
-        Alert.alert("Missing Input", "Please fill in all basic text fields.");
-        return;
-    }
-    if (role === 'driver') {
-        // Driver Validation
-        if (!cnic) {
-            Alert.alert("Missing Input", "CNIC is required for drivers.");
-            return;
-        }
-        if (!imageUri) {
-            Alert.alert("License Required", "Please upload a photo of your Driver's License.");
-            return;
-        }
-
-        try {
-            setIsUploading(true);
-            const uploadedLicenseUrl = await uploadToCloudinary(imageUri);
-            const data = await signupdriver(
-                name, 
-                email, 
-                password, 
-                'driver', 
-                phone, 
-                cnic, 
-                uploadedLicenseUrl 
-            );
-
-            if (data.success) {
-                Alert.alert("Success", "Driver account created successfully, wait for admin approval.", [
-                    { text: "Login", onPress: () => router.replace('/(auth)/login') }
-                ]);
-            } else { 
-                Alert.alert("Signup Failed", data.message || "Could not register driver.");
+        if (role === 'driver') {
+            // Driver Validation
+            if (!cnic) {
+                Alert.alert("Missing Input", "CNIC is required for drivers.");
+                return;
+            }
+            if (!imageUri) {
+                Alert.alert("License Required", "Please upload a photo of your Driver's License.");
+                return;
             }
 
-        } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "There was a problem during driver registration.");
-        } finally {
-            setIsUploading(false);
-        }
-
-    } else {
-        // PASSENGER Signup
-        try {
-            const data = await signupUserApi(name, email, password, "passenger", phone);
-            
-            if (data.success) {
-                Alert.alert(
-                    "Account Created",
-                    "Passenger account created successfully!",
-                    [{ text: "Login", onPress: () => router.replace('/(auth)/login') }]
+            try {
+                setIsUploading(true);
+                const uploadedLicenseUrl = await uploadToCloudinary(imageUri);
+                const data = await signupdriver(
+                    name,
+                    email,
+                    password,
+                    'driver',
+                    phone,
+                    cnic,
+                    uploadedLicenseUrl
                 );
-            } else {
-                Alert.alert("Error", data.message || "Signup failed");
-            }
-        } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "Something went wrong during passenger signup.");
-        }
-    }
-};
 
-    const isBusy = isUploading; 
+                if (data.success) {
+                    Alert.alert("Success", "Driver account created successfully, wait for admin approval.", [
+                        { text: "Login", onPress: () => router.replace('/(auth)/login') }
+                    ]);
+                } else {
+                    Alert.alert("Signup Failed", data.message || "Could not register driver.");
+                }
+
+            } catch (error) {
+                console.error(error);
+                Alert.alert("Error", "There was a problem during driver registration.");
+            } finally {
+                setIsUploading(false);
+            }
+
+        } else {
+            // PASSENGER Signup
+            try {
+                const data = await signupUserApi(name, email, password, "passenger", phone);
+
+                if (data.success) {
+                    Alert.alert(
+                        "Account Created",
+                        "Passenger account created successfully!",
+                        [{ text: "Login", onPress: () => router.replace('/(auth)/login') }]
+                    );
+                } else {
+                    Alert.alert("Error", data.message || "Signup failed");
+                }
+            } catch (error) {
+                console.error(error);
+                Alert.alert("Error", "Something went wrong during passenger signup.");
+            }
+        }
+    };
+
+    const isBusy = isUploading;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -233,7 +192,13 @@ export default function SignupScreen() {
                                 <Text style={styles.label}>Driver's License Photo</Text>
                                 <TouchableOpacity
                                     style={styles.uploadBox}
-                                    onPress={pickImage}
+                                    onPress={async () => {
+                                        const uri = await pickImage();
+
+                                        if (uri) {
+                                            setImageUri(uri);
+                                        }
+                                    }}
                                 >
                                     {imageUri ? (
                                         <Image source={{ uri: imageUri }} style={styles.previewImage} />
