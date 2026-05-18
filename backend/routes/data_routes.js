@@ -15,6 +15,7 @@ import {
   approveDriver, 
   getAllDrivers 
 } from "../controller/admin_Controller.js";
+import { createReport, getAllReports } from "../controller/report_Controller.js"; 
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
 import { isAdmin } from "../middleware/isAdmin.js"; 
 const router = express.Router();
@@ -38,10 +39,11 @@ router.post("/buses", isAuthenticated, isAdmin, createBus);
 router.get("/admin/drivers/pending", isAuthenticated, isAdmin, getPendingDrivers);
 router.put("/admin/drivers/approve/:id", isAuthenticated, isAdmin, approveDriver);
 router.get("/admin/drivers/all", isAuthenticated, isAdmin, getAllDrivers);
-
+router.get('/admin/reports', isAuthenticated, isAdmin, getAllReports);
 // ==========================================
 // USER LOCATION ROUTES (Requires Auth)
 // ==========================================
+router.post('/reports', isAuthenticated, createReport);
 router.post('/locations', isAuthenticated, addLocation);
 router.get('/locations', isAuthenticated, getUserLocations);
 router.put('/locations/:id', isAuthenticated, updateLocationType);
