@@ -205,3 +205,24 @@ export const deleteUserProfileApi = async (token) => {
     return { success: false, message: error.message || "Network error occurred." };
   }
 };
+
+// ─── Submit Report API ───────────────────────────────────────────────────────
+export const submitReportApi = async (reportData: any) => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    
+    // Configured for your backend reporting route endpoint layout
+       const data = await fetchApi(`${endpoints.report}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(reportData)
+    });
+    
+  } catch (error) {
+    console.error("Submit Report Error:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};

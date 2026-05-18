@@ -10,5 +10,5 @@ export const endpoints = {
   locations: '/data/locations',
   verify : 'api/auth/verify',
   profile:"/auth/profile",
-  report : "/report",
+  report : "/data/report",
 };

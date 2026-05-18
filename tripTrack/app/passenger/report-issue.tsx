@@ -3,21 +3,23 @@ import {
   StyleSheet, View, Text, TextInput, TouchableOpacity,
   ScrollView, Alert, ActivityIndicator, Image,
   KeyboardAvoidingView, Platform, Switch, Animated,
-  Modal, FlatList,
+  Modal, FlatList, StatusBar
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchRoutesApi } from '@/service/server';
+import * as Location from 'expo-location';
 import { useQuery } from '@tanstack/react-query';
-import {
-  pickImage,
-  uploadToCloudinary
-} from '@/utils/pickImage';
-// ─── Types ───────────────────────────────────────────────────────────────────
 
+// Custom utilities & API hooks
+import { fetchRoutesApi, submitReportApi } from '@/service/server';
+import { pickImage, uploadToCloudinary } from '@/utils/pickImage';
+
+// ─── API Integration Function ───────────────────────────────────────────────
+
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 type Category = 'traffic' | 'bug' | 'suggestion' | null;
 type Priority = 'low' | 'medium' | 'high' | 'critical' | null;
 
@@ -29,9 +31,7 @@ interface LastReport {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
 const MAX_CHARS = 300;
-
 
 const PRIORITY_CONFIG: Record<
   NonNullable<Priority>,
@@ -49,8 +49,6 @@ const STATUS_LABELS: Record<LastReport['status'], string> = {
   resolved: 'Resolved ✓',
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function ReportIssueScreen() {
   const router = useRouter();
 
@@ -60,10 +58,15 @@ export default function ReportIssueScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [quickSelect, setQuickSelect] = useState('');
 
+  // Location tracking state
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+
   // Feature state
-  const [priority, setPriority] = useState<Priority>(null);
+  const [priority, setPriority] = useState<Priority>('medium'); // Set 'medium' default
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<any>(null); // Changed to 'any' for object map
   const [routeModalVisible, setRouteModalVisible] = useState(false);
   const [routeSearch, setRouteSearch] = useState('');
   const [lastReport, setLastReport] = useState<LastReport | null>(null);
@@ -71,16 +74,43 @@ export default function ReportIssueScreen() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const successAnim = useRef(new Animated.Value(0)).current;
+
   const { data: routes } = useQuery({
     queryKey: ['routes', 'all'],
     queryFn: fetchRoutesApi,
-    staleTime: 1000 * 60 * 60, // Reuses cache from map/schedule screens
+    staleTime: 1000 * 60 * 60,
   });
+
   useEffect(() => {
     loadLastReport();
   }, []);
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── Helpers & Trackers ──────────────────────────────────────────────────────
+
+  const selectCategory = (selectedCat: Category) => {
+    setCategory(selectedCat);
+    if (selectedCat === 'traffic' || selectedCat === 'bug') {
+      captureLocation();
+    }
+  };
+
+  const captureLocation = async () => {
+    setIsGettingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setIsGettingLocation(false);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setLatitude(loc.coords.latitude);
+      setLongitude(loc.coords.longitude);
+    } catch (e) {
+      console.log("Location lock skipped or failed", e);
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
 
   const loadLastReport = async () => {
     try {
@@ -95,7 +125,6 @@ export default function ReportIssueScreen() {
     } catch (_) { }
   };
 
-
   const isSubmitEnabled = () => {
     if (!category) return false;
     if (category === 'traffic') return !!quickSelect;
@@ -109,29 +138,60 @@ export default function ReportIssueScreen() {
     }
     setIsSubmitting(true);
 
-    setTimeout(async () => {
-      setIsSubmitting(false);
+    try {
+      let attachmentUrl = '';
 
-      Animated.sequence([
-        Animated.spring(successAnim, { toValue: 1, useNativeDriver: true }),
-        Animated.delay(1200),
-        Animated.timing(successAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-      ]).start();
+      // Upload attachment to Cloudinary if image exists
+      if (category === 'bug' && imageUri) {
+        attachmentUrl = await uploadToCloudinary(imageUri);
+      }
 
-      const newReport: LastReport = {
-        id: `#${1000 + Math.floor(Math.random() * 9000)}`,
-        status: 'submitted',
-        category: category!,
-        timestamp: Date.now(),
+      // Payload compilation matching backend expectations
+      const payload = {
+        reportType: category === 'traffic' ? 'transit_issue' : category === 'bug' ? 'app_bug' : 'suggestion',
+        description,
+        isAnonymous,
+        ...(category !== 'suggestion' && { priority }),
+        ...(category === 'traffic' && {
+          busRoute: selectedRoute?._id || null, 
+          issueType: quickSelect,
+          location: latitude && longitude ? { lat: latitude, lng: longitude } : null
+        }),
+        ...(attachmentUrl && { attachment: attachmentUrl })
       };
-      await saveLastReport(newReport);
 
-      setTimeout(() => {
-        Alert.alert('Report Submitted!', `Your report ${newReport.id} has been received.`, [
-          { text: 'Done', onPress: () => router.back() },
-        ]);
-      }, 1400);
-    }, 1500);
+      const data = await submitReportApi(payload);
+
+      if (data.success) {
+        setIsSubmitting(false);
+
+        Animated.sequence([
+          Animated.spring(successAnim, { toValue: 1, useNativeDriver: true }),
+          Animated.delay(1200),
+          Animated.timing(successAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]).start();
+
+        const newReport: LastReport = {
+          id: `#${1000 + Math.floor(Math.random() * 9000)}`,
+          status: 'submitted',
+          category: category!,
+          timestamp: Date.now(),
+        };
+        await saveLastReport(newReport);
+
+        setTimeout(() => {
+          Alert.alert('Report Submitted!', `Your report ${newReport.id} has been received.`, [
+            { text: 'Done', onPress: () => router.back() },
+          ]);
+        }, 1400);
+      } else {
+        Alert.alert("Submission Failed", data.message || "Failed to process form processing.");
+      }
+    } catch (err) {
+      Alert.alert("Network Error", "Could not submit report to server layout.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBack = () => {
@@ -139,16 +199,15 @@ export default function ReportIssueScreen() {
       setCategory(null);
       setDescription('');
       setQuickSelect('');
-      setPriority(null);
+      setPriority('medium');
       setSelectedRoute(null);
+      setLatitude(null);
+      setLongitude(null);
     } else {
       router.back();
     }
   };
 
-  // ── Filtered routes ───────────────────────────────────────────────────────
-
-  // 2. FILTER DYNAMIC ROUTES BASED ON INPUT
   const filteredRoutes = React.useMemo(() => {
     if (!routes) return [];
     return routes.filter((r: any) =>
@@ -157,6 +216,7 @@ export default function ReportIssueScreen() {
       r.route_name?.toLowerCase().includes(routeSearch.toLowerCase())
     );
   }, [routeSearch, routes]);
+
   // ─── Sub-renders ──────────────────────────────────────────────────────────
 
   const renderPrioritySelector = () => (
@@ -169,7 +229,7 @@ export default function ReportIssueScreen() {
           return (
             <TouchableOpacity
               key={p}
-              onPress={() => setPriority(active ? null : p)}
+              onPress={() => setPriority(p)}
               style={[
                 styles.priorityChip,
                 { borderColor: cfg.border },
@@ -195,7 +255,7 @@ export default function ReportIssueScreen() {
       >
         <Ionicons name="bus" size={16} color="#196F31" />
         <Text style={[styles.routeSelectorText, !selectedRoute && { color: '#A0B4A5' }]}>
-          {selectedRoute || 'Select a route...'}
+          {selectedRoute ? `${selectedRoute.origin} ➔ ${selectedRoute.destination}` : 'Select an active route...'}
         </Text>
         <Ionicons name="chevron-down" size={16} color="#196F31" />
       </TouchableOpacity>
@@ -253,7 +313,7 @@ export default function ReportIssueScreen() {
         {
           opacity: successAnim,
           transform: [{
-            scale: successAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }),
+            scale: successAnim.interpolate({ inputRange:, outputRange: [0.8, 1] }),
           }],
         },
       ]}
@@ -285,26 +345,29 @@ export default function ReportIssueScreen() {
           />
           <FlatList
             data={filteredRoutes}
-            keyExtractor={(item) => item._id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.routeItem, selectedRoute === item && styles.routeItemActive]}
-                onPress={() => {
-                  setSelectedRoute(item);
-                  setRouteModalVisible(false);
-                  setRouteSearch('');
-                }}
-              >
-                <Ionicons name="bus" size={16} color={selectedRoute === item ? '#fff' : '#196F31'} />
-                <Text style={[
-                  styles.routeItemText,
-                  selectedRoute === item && styles.routeItemTextActive,
-                ]}>
-                  {item}
-                </Text>
-                {selectedRoute === item && <Ionicons name="checkmark" size={16} color="#fff" />}
-              </TouchableOpacity>
-            )}
+            keyExtractor={(item: any) => item._id}
+            renderItem={({ item }: any) => {
+              const isSelected = selectedRoute?._id === item._id;
+              return (
+                <TouchableOpacity
+                  style={[styles.routeItem, isSelected && styles.routeItemActive]}
+                  onPress={() => {
+                    setSelectedRoute(item);
+                    setRouteModalVisible(false);
+                    setRouteSearch('');
+                  }}
+                >
+                  <Ionicons name="bus" size={16} color={isSelected ? '#fff' : '#196F31'} />
+                  <Text style={[
+                    styles.routeItemText,
+                    isSelected && styles.routeItemTextActive,
+                  ]}>
+                    {item.origin} to {item.destination} ({item.route_name || 'Active'})
+                  </Text>
+                  {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
+                </TouchableOpacity>
+              );
+            }}
             style={{ maxHeight: 320 }}
             showsVerticalScrollIndicator={false}
           />
@@ -360,10 +423,27 @@ export default function ReportIssueScreen() {
                 {renderCharCount()}
               </View>
             </View>
+
+            {/* LIVE DEVICE LOCATION CAPTURE STATUS HEADER */}
             <View style={styles.locationCard}>
-              <Ionicons name="location" size={18} color="#196F31" />
-              <Text style={styles.locationText}>Location attached automatically</Text>
+              {isGettingLocation ? (
+                <>
+                  <ActivityIndicator size="small" color="#196F31" />
+                  <Text style={styles.locationText}>Verifying device coordinates...</Text>
+                </>
+              ) : latitude && longitude ? (
+                <>
+                  <Ionicons name="checkmark-circle" size={18} color="#196F31" />
+                  <Text style={styles.locationText}>Live location attached coordinates</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="alert-circle" size={18} color="#854F0B" />
+                  <Text style={[styles.locationText, { color: '#854F0B' }]}>GPS tracking skipped</Text>
+                </>
+              )}
             </View>
+
             {renderAnonymousToggle()}
           </View>
         );
@@ -394,10 +474,7 @@ export default function ReportIssueScreen() {
                 style={[styles.uploadBox, imageUri && styles.uploadBoxActive]}
                 onPress={async () => {
                   const uri = await pickImage();
-
-                  if (uri) {
-                    setImageUri(uri);
-                  }
+                  if (uri) setImageUri(uri);
                 }}
               >
                 {imageUri ? (
@@ -451,19 +528,19 @@ export default function ReportIssueScreen() {
               title="Traffic / Transit Issue"
               sub="Delays, closed roads, accidents"
               icon="bus"
-              onPress={() => setCategory('traffic')}
+              onPress={() => selectCategory('traffic')}
             />
             <CategoryCard
               title="Report an App Bug"
               sub="Crashes, errors, or map issues"
               icon="bug"
-              onPress={() => setCategory('bug')}
+              onPress={() => selectCategory('bug')}
             />
             <CategoryCard
               title="Give a Suggestion"
               sub="Ideas to make TripTrack better"
               icon="bulb"
-              onPress={() => setCategory('suggestion')}
+              onPress={() => selectCategory('suggestion')}
             />
           </View>
         );
@@ -474,6 +551,7 @@ export default function ReportIssueScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
