@@ -27,9 +27,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 // Service & Component Imports
-import { fetchRoutesApi, socket } from '../../service/server';
+import { fetchRoutesApi, socket, fetchMyFavoritesApi, addFavoriteRouteApi, removeFavoriteApi } from '../../service/server';
 import { UserLocationMarker, StopMarker } from '../../components/ui/MapMarkers';
 import LocationPermissionScreen from '../../components/ui/PermissionLocation';
+import { useSelector } from 'react-redux';
 
 
 export default function PassengerMap() {
@@ -44,11 +45,13 @@ export default function PassengerMap() {
   const [isRoutesModalVisible, setIsRoutesModalVisible] = useState(false);
   const [routeSearchQuery, setRouteSearchQuery] = useState('');
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-
+  const [favoriteRouteIds, setFavoriteRouteIds] = useState<string[]>([]);
+  const [isFavoriting, setIsFavoriting] = useState(false);
+  const { token } = useSelector((state) => state.auth);
   // --- 1. LOCATION & PERMISSION LOGIC ---
   useEffect(() => {
     checkLocationStatus();
-
+    loadUserFavorites();
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         checkLocationStatus();
@@ -58,11 +61,57 @@ export default function PassengerMap() {
 
     return () => subscription.remove();
   }, []);
+  const loadUserFavorites = async () => {
+    try {
+      const data = await fetchMyFavoritesApi(token);
+      if (data.success && data.favorites) {
+        // Store just the string array of IDs to make checking dynamic styles fast
+        const ids = data.favorites.map((f: any) => f._id);
+        setFavoriteRouteIds(ids);
+      }
+    } catch (e) {
+      console.log("Error checking user favorites locally", e);
+    }
+  };
 
+  // Check if current route is saved in state
+  const isCurrentRouteFavorited = useMemo(() => {
+    return selectedRouteId ? favoriteRouteIds.includes(selectedRouteId) : false;
+  }, [selectedRouteId, favoriteRouteIds]);
+
+  // --- 3. NATIVE TOGGLE FAVORITE LOGIC ---
+  const handleToggleFavorite = async () => {
+    if (!selectedRouteId || isFavoriting) return;
+    setIsFavoriting(true);
+
+    try {
+      if (isCurrentRouteFavorited) {
+        // DELETE Network Request
+        const data = await removeFavoriteApi(selectedRouteId, token);
+        if (data.success) {
+          setFavoriteRouteIds(prev => prev.filter(id => id !== selectedRouteId));
+        } else {
+          Alert.alert("Error", data.message || "Failed to remove route from favorites.");
+        }
+      } else {
+        // POST Network Request
+        const data = await addFavoriteRouteApi(selectedRouteId, token);
+        if (data.success) {
+          setFavoriteRouteIds(prev => [...prev, selectedRouteId]);
+        } else {
+          Alert.alert("Error", data.message || "Failed to add route to favorites.");
+        }
+      }
+    } catch (err) {
+      Alert.alert("Network Error", "Could not synchronize bookmark status.");
+    } finally {
+      setIsFavoriting(false);
+    }
+  };
   const checkLocationStatus = async () => {
     try {
       const { status } = await Location.getForegroundPermissionsAsync();
-      
+
       if (status !== 'granted') {
         setErrorType('permission');
         setPermissionState('denied');
@@ -92,7 +141,7 @@ export default function PassengerMap() {
 
       setUserLocation(loc.coords);
       setPermissionState('granted');
-      
+
       mapRef.current?.animateToRegion({
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
@@ -130,7 +179,7 @@ export default function PassengerMap() {
   const clearSelectedRoute = () => {
     if (selectedRouteId) socket.emit('leave_route', selectedRouteId);
     setSelectedRouteId(null);
-    setLiveBuses({}); 
+    setLiveBuses({});
     recenterMap();
   };
 
@@ -175,7 +224,7 @@ export default function PassengerMap() {
     socket.on('connect', handleReconnect);
 
     if (selectedRouteId) {
-      setLiveBuses({}); 
+      setLiveBuses({});
       if (socket.connected) socket.emit('join_route', selectedRouteId);
     }
 
@@ -218,11 +267,11 @@ export default function PassengerMap() {
 
   if (permissionState === 'denied') {
     return (
-      <LocationPermissionScreen 
+      <LocationPermissionScreen
         errorType={errorType}
         onAllow={handlePrimaryAction}
         onDeny={handleNotNow}
-        onOpenSettings={handlePrimaryAction} 
+        onOpenSettings={handlePrimaryAction}
       />
     );
   }
@@ -282,24 +331,54 @@ export default function PassengerMap() {
 
       {selectedRouteId && routeToDisplay && (
         <View style={styles.liveTrackerCard}>
-          {Object.keys(liveBuses).length === 0 ? (
-            <View style={styles.waitingRow}>
-              <Ionicons name="radio-outline" size={16} color="#123D1F" />
-              <Text style={styles.waitingText}>Waiting for live bus data...</Text>
+
+          {/* 1. CARD FIXED HEADER CONTAINER */}
+          <View style={styles.cardMainHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardMainTitle}>{routeToDisplay.route_name || 'Active Transit'}</Text>
+              <Text style={styles.cardMainSubtitle}>{routeToDisplay.origin} to {routeToDisplay.destination}</Text>
             </View>
-          ) : (
-            Object.entries(liveBuses).map(([busKey, bus]: [string, any]) => (
-              <View key={busKey} style={styles.etaContainer}>
-                <View style={styles.etaHeader}>
-                  <Ionicons name="radio" size={18} color="#FF3B30" />
-                  <Text style={styles.etaTitle}>Live Update</Text>
-                  {bus.busId && <Text style={styles.busIdBadge}>{bus.busId}</Text>}
-                </View>
-                <Text style={styles.backendMessage}>{bus.displayMessage || 'Connecting to bus GPS...'}</Text>
+
+            {/* HEART TOGGLE ACCESSED SEPARATELY ON RIGHT RAIL */}
+            <TouchableOpacity
+              style={styles.floatingHeartBtn}
+              onPress={handleToggleFavorite}
+              disabled={isFavoriting}
+            >
+              {isFavoriting ? (
+                <ActivityIndicator size="small" color="#196F31" />
+              ) : (
+                <Ionicons
+                  name={isCurrentRouteFavorited ? "heart" : "heart-outline"}
+                  size={26}
+                  color={isCurrentRouteFavorited ? "#FF3B30" : "#196F31"}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* 2. DYNAMIC SOCKET BUS FEED LAYOUT */}
+          <View style={{ marginTop: 12 }}>
+            {Object.keys(liveBuses).length === 0 ? (
+              <View style={styles.waitingRow}>
+                <Ionicons name="radio-outline" size={16} color="#123D1F" />
+                <Text style={styles.waitingText}>Waiting for live bus data...</Text>
               </View>
-            ))
-          )}
-          
+            ) : (
+              Object.entries(liveBuses).map(([busKey, bus]: [string, any]) => (
+                <View key={busKey} style={styles.etaContainer}>
+                  <View style={styles.etaHeader}>
+                    <Ionicons name="radio" size={18} color="#FF3B30" />
+                    <Text style={styles.etaTitle}>Live Update</Text>
+                    {bus.busId && <Text style={styles.busIdBadge}>{bus.busId}</Text>}
+                  </View>
+                  <Text style={styles.backendMessage}>{bus.displayMessage || 'Connecting to bus GPS...'}</Text>
+                </View>
+              ))
+            )}
+          </View>
+
+          {/* 3. CARD ACTION ROOT CLOSURE */}
           <TouchableOpacity style={styles.clearRouteBtnInCard} onPress={clearSelectedRoute}>
             <Ionicons name="close-circle" size={16} color="#FF3B30" />
             <Text style={styles.clearRouteText}>Clear Route</Text>
@@ -334,30 +413,30 @@ export default function PassengerMap() {
 }
 
 const styles = StyleSheet.create({
- 
+
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   centered: { justifyContent: 'center', alignItems: 'center' },
   map: { width: '100%', height: '100%' },
 
-  liveBusMarker: { 
-    backgroundColor: '#196F31', 
-    padding: 8, 
-    borderRadius: 20, 
-    borderWidth: 2, 
-    borderColor: 'white', 
-    elevation: 5 
+  liveBusMarker: {
+    backgroundColor: '#196F31',
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'white',
+    elevation: 5
   },
 
-  liveTrackerCard: { 
-    position: 'absolute', 
-    bottom: 60, 
-    left: 14, 
-    right: 14, 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 16, 
-    padding: 16, 
-    borderLeftWidth: 4, 
-    borderLeftColor: '#196F31', 
+  liveTrackerCard: {
+    position: 'absolute',
+    bottom: 60,
+    left: 14,
+    right: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#196F31',
     elevation: 10,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -368,97 +447,101 @@ const styles = StyleSheet.create({
   etaContainer: { marginBottom: 12 },
   etaHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 },
   etaTitle: { color: '#196F31', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
-  busIdBadge: { 
-    color: '#FFFFFF', 
-    fontSize: 12, 
-    fontWeight: '700', 
-    backgroundColor: '#196F31', 
-    paddingHorizontal: 8, 
-    paddingVertical: 2, 
-    borderRadius: 6 
+  busIdBadge: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    backgroundColor: '#196F31',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6
   },
   backendMessage: { color: '#123D1F', fontSize: 16, lineHeight: 22, fontWeight: '600' },
 
   // Top Search Bar
   topBarContainer: { position: 'absolute', top: 50, left: 14, right: 14 },
-  searchContainer: { 
-    backgroundColor: '#FFFFFF', 
-    padding: 12, 
-    borderRadius: 16, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 10, 
+  searchContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     elevation: 8,
     shadowColor: '#196F31',
     shadowOpacity: 0.15,
   },
-  searchIconBox: { 
-    width: 30, 
-    height: 30, 
-    borderRadius: 8, 
-    backgroundColor: '#196F31', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  searchIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: '#196F31',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   searchText: { flex: 1, fontSize: 15, color: '#123D1F', fontWeight: '600' },
 
-  clearRouteBtnInCard: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 6, 
-    marginTop: 8, 
-    paddingTop: 8, 
-    borderTopWidth: 1, 
-    borderTopColor: '#E0E0E0' 
+  clearRouteBtnInCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0'
   },
   clearRouteText: { color: '#FF3B30', fontWeight: 'bold', fontSize: 13 },
   modalContainer: { flex: 1, backgroundColor: '#F0F9F4' },
   modalHeader: { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  modalSearchBox: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 12, 
-    paddingHorizontal: 12, 
+  modalSearchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
     height: 46,
     borderWidth: 1,
     borderColor: '#D1E8D9'
   },
   modalSearchInput: { flex: 1, color: '#123D1F', marginLeft: 8 },
-cardContainer: { 
-  flexDirection: 'row', 
-  alignItems: 'center', 
-  backgroundColor: '#FFFFFF', 
-  borderRadius: 20, 
-  marginBottom: 12, 
-  padding: 14,
-  borderWidth: 1.5,
-  borderColor: '#196F31',
-  elevation: 4,
-  shadowColor: '#196F31',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.1,
-  shadowRadius: 6,
-  marginHorizontal: 8
-},
-cardIconBox: { 
-  width: 44, 
-  height: 44, 
-  borderRadius: 12, 
-  justifyContent: 'center', 
-  alignItems: 'center', 
-  marginRight: 15 
-},
-cardTitle: { 
-  fontSize: 16, 
-  fontWeight: '800', // Bold True Black
-  color: '#000000' 
-},
-cardSubtitle: { 
-  fontSize: 13, 
-  color: '#8E8E93', // Gray subtext
-  fontWeight: '600',
-  marginTop: 2
-},
+  cardContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginBottom: 12,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: '#196F31',
+    elevation: 4,
+    shadowColor: '#196F31',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    marginHorizontal: 8
+  },
+  cardIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '800', 
+    color: '#000000'
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: '#8E8E93', 
+    fontWeight: '600',
+    marginTop: 2
+  },
+  floatingHeartBtn: { padding: 4, marginRight: 2, minWidth: 30, alignItems: 'center' },
+  cardMainHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#F0F9F4', paddingBottom: 10 },
+  cardMainTitle: { fontSize: 18, fontWeight: '900', color: '#123D1F' },
+  cardMainSubtitle: { fontSize: 13, color: '#6A8E75', fontWeight: '600', marginTop: 2 },
 });

@@ -297,7 +297,7 @@ export const removeFavoriteApi = async (routeId, token) => {
         'Authorization': `Bearer ${token}`,
       },
     });
-    return await response.json();
+    return data;
   } catch (error) {
     console.error("Error removing favorite route service call:", error);
     return { success: false, message: "Network error occurred." };

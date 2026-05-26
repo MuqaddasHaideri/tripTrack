@@ -241,7 +241,7 @@ export const getFavoriteRoutes = async (req, res) => {
     const userId = req.user._id;
 
     const user = await user_models.findById(userId)
-      .populate('favoriteRoutes', 'routeName startLocation endLocation fare'); 
+      .populate('favoriteRoutes', 'route_name stops origin destination color_hex'); 
 
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
