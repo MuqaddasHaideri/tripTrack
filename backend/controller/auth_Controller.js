@@ -198,3 +198,96 @@ export const deleteUserProfile = async (req, res) => {
     res.status(500).json({ message: "Internal server error", success: false });
   }
 };
+
+// ==========================================
+// ADD TO FAVORITES 
+// ==========================================
+export const addFavoriteRoute = async (req, res) => {
+  try {
+    const userId = req.user._id; // From your isAuthenticated middleware
+    const { routeId } = req.body;
+
+    if (!routeId) {
+      return res.status(400).json({ success: false, message: "Route ID is required" });
+    }
+
+    const updatedUser = await user_models.findByIdAndUpdate(
+      userId,
+      { $addToSet: { favoriteRoutes: routeId } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Route added to favorites",
+      favoriteRoutes: updatedUser.favoriteRoutes 
+    });
+
+  } catch (error) {
+    console.error("Error adding favorite route:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// ==========================================
+//  GET FAVORITES 
+// ==========================================
+export const getFavoriteRoutes = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await user_models.findById(userId)
+      .populate('favoriteRoutes', 'routeName startLocation endLocation fare'); 
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      favorites: user.favoriteRoutes 
+    });
+
+  } catch (error) {
+    console.error("Error fetching favorite routes:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// ==========================================
+//REMOVE FROM FAVORITES 
+// ==========================================
+export const removeFavoriteRoute = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { routeId } = req.params; 
+
+    if (!routeId) {
+      return res.status(400).json({ success: false, message: "Route ID is required" });
+    }
+
+    const updatedUser = await user_models.findByIdAndUpdate(
+      userId,
+      { $pull: { favoriteRoutes: routeId } }, 
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Route removed from favorites",
+      favoriteRoutes: updatedUser.favoriteRoutes
+    });
+
+  } catch (error) {
+    console.error("Error removing favorite route:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

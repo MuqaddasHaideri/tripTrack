@@ -244,3 +244,62 @@ export const getMyReportsApi = async ( token) => {
     return { success: false, reports: [], message: "Network error occurred." };
   }
 };
+// ==========================================
+//  POST: ADD ROUTE TO FAVORITES
+// ==========================================
+export const addFavoriteRouteApi = async (routeId, token) => {
+  try {
+     const data = await fetchApi(`${endpoints.favourites}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ routeId })
+    });
+    return data;
+  } catch (error) {
+    console.error("Error adding favorite route service call:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// 2. GET: FETCH USER'S FAVORITE ROUTES
+// ==========================================
+export const fetchMyFavoritesApi = async (token) => {
+  try {
+  const data = await fetchApi(`${endpoints.favourites}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    console.log("My Favorites Response:", data);
+    return data;
+
+  } catch (error) {
+    console.error("Error fetching favorites service call:", error);
+    return { success: false, favorites: [], message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// 3. DELETE: REMOVE ROUTE FROM FAVORITES
+// ==========================================
+export const removeFavoriteApi = async (routeId, token) => {
+    try {
+    const data = await fetchApi(`${endpoints.favourites}/${routeId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error removing favorite route service call:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};

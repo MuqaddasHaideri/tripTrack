@@ -27,8 +27,8 @@ const ReportSchema = new mongoose.Schema({
     }
   },
  busRoute: { 
-    type: mongoose.Schema.Types.ObjectId, // ✅ Changed from String to ObjectId
-    ref: 'routes',                        // ✅ Put your exact bus route model name here!
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'routes',                        
     default: null 
   },
   issueType: { 

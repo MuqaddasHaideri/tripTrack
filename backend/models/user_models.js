@@ -31,6 +31,10 @@ const UserSchema = new mongoose.Schema({
     ref: 'buses', 
     default: null 
   },
+  favoriteRoutes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'routes'
+  }]
 }, { timestamps: true }); 
 
 export default mongoose.model('users', UserSchema);

@@ -11,5 +11,6 @@ export const endpoints = {
   verify : 'api/auth/verify',
   profile:"/auth/profile",
   report : "/data/reports",
-  myreport : "/data/reports/my-reports"
+  myreport : "/data/reports/my-reports",
+  favourites : "/data/favorites"
 };

@@ -71,6 +71,7 @@ function AppWrapper() {
         <Stack.Screen name="passenger/schedule" options={{ presentation: 'modal' }} />
  <Stack.Screen name="passenger/profileScreen" options={{ presentation: 'modal' }} />
          <Stack.Screen name="passenger/report-issue" options={{ presentation: 'modal' }} />
+         <Stack.Screen name="passenger/favouriteRoutes" options={{ presentation: 'modal' }} />
 
       </Stack>
 

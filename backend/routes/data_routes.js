@@ -18,6 +18,11 @@ import {
 import { createReport, getAllReports, getMyReports, updateReportStatus } from "../controller/report_Controller.js"; 
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
 import { isAdmin } from "../middleware/isAdmin.js"; 
+import { 
+  addFavoriteRoute, 
+  getFavoriteRoutes, 
+  removeFavoriteRoute 
+} from "../controller/auth_Controller.js";
 const router = express.Router();
 
 // ==========================================
@@ -50,5 +55,8 @@ router.post('/locations', isAuthenticated, addLocation);
 router.get('/locations', isAuthenticated, getUserLocations);
 router.put('/locations/:id', isAuthenticated, updateLocationType);
 router.delete('/locations/:id', isAuthenticated, deleteLocation);
+router.post('/favorites', isAuthenticated, addFavoriteRoute);
+router.get('/favorites', isAuthenticated, getFavoriteRoutes);
+router.delete('/favorites/:routeId', isAuthenticated, removeFavoriteRoute);
 
 export default router;

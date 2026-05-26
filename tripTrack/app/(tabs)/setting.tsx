@@ -124,6 +124,7 @@ export default function SettingsScreen() {
               title="Favorite Routes"
               subtitle="Manage your saved bus lines"
               icon="heart-outline"
+              onPress={() => router.push('/passenger/favouriteRoutes')}
             //colors={activeColors}
             />
             <ListOption

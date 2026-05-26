@@ -41,10 +41,14 @@ const PRIORITY_CONFIG: Record<
   critical: { label: 'Critical', color: '#791F1F', bg: '#F7C1C1', border: '#E24B4A' },
 };
 
-const STATUS_LABELS: Record<LastReport['status'], string> = {
-  submitted: 'Submitted — awaiting review',
-  under_review: 'Under review by our team',
-  resolved: 'Resolved ✓',
+const STATUS_CONFIG: Record<
+  'pending' | 'reviewed' | 'resolved' | 'dismissed',
+  { label: string; color: string }
+> = {
+  pending:   { label: 'Pending Review',  color: '#4A6B54' }, // Subtle green-gray
+  reviewed:  { label: 'Under Review',   color: '#854F0B' }, // Amber/Orange
+  resolved:  { label: 'Resolved ✓',     color: '#196F31' }, // Vibrant Green
+  dismissed: { label: 'Dismissed',      color: '#791F1F' }, // Subtle Muted Red
 };
 
 export default function ReportIssueScreen() {
@@ -329,29 +333,30 @@ const renderLastReportCard = () => {
           contentContainerStyle={{ gap: 12, paddingBottom: 5 }}
         >
           {pastReports.map((report) => {
-            // Map Mongoose status directly to theme indicators
-            const statusColor =
-              report.status === 'resolved' ? '#196F31' :
-              report.status === 'under_review' ? '#854F0B' : '#4A6B54';
+            // Safe fallback configuration lookup using the schema enum string
+            const statusType = (report.status || 'pending') as 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+            const statusCfg = STATUS_CONFIG[statusType];
 
-            // Clean format for type display tag strings
+            // Clean format for type display tag strings (e.g. transit_issue -> TRANSIT ISSUE)
             const displayTag = report.reportType?.replace('_', ' ').toUpperCase() || 'REPORT';
 
             return (
               <View key={report._id} style={styles.lastReportCard}>
-                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                <View style={[styles.statusDot, { backgroundColor: statusCfg.color }]} />
+                
                 <View style={{ width: 200 }}>
                   <Text style={styles.lastReportId}>{displayTag}</Text>
                   <Text style={styles.cardSub} numberOfLines={1}>{report.description}</Text>
                   
                   {report.busRoute?.routeName && (
-                    <Text style={[styles.cardSub, { color: '#196F31', fontWeight: '700' }]}>
+                    <Text style={[styles.cardSub, { color: '#196F31', fontWeight: '700', marginTop: 2 }]}>
                       🚌 {report.busRoute.routeName}
                     </Text>
                   )}
                   
-                  <Text style={[styles.lastReportStatus, { color: statusColor }]}>
-                    {report.status === 'resolved' ? 'Resolved ✓' : report.status === 'under_review' ? 'Under Review' : 'Submitted'}
+                  {/* DYNAMIC RENDER LINKED DIRECTLY TO SCHEMA ENUMS */}
+                  <Text style={[styles.lastReportStatus, { color: statusCfg.color }]}>
+                    {statusCfg.label}
                   </Text>
                 </View>
               </View>
