@@ -14,7 +14,6 @@ import { fetchMyFavoritesApi, removeFavoriteApi } from '../../service/server';
 export default function FavoriteRoutesScreen() {
   const router = useRouter();
   
-
   const { token } = useSelector((state: any) => state.auth);
 
 
