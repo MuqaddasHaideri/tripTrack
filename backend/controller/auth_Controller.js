@@ -20,8 +20,8 @@ export const signupController = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const isUserVerified = role === 'passenger' ? true : false;
-//const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    //const otpExpires = new Date(Date.now() + 10 * 60000);
+const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60000);
     const newUser = new user_models({
       name,
       email,
@@ -31,13 +31,13 @@ export const signupController = async (req, res) => {
       phone: phone || "",
       ...(role === 'driver' && { cnic, driverLicense }),
       isVerified: isUserVerified,
-      //isEmailVerified: false, 
-      //otp: otp,
-      //otpExpires: otpExpires
+      isEmailVerified: false, 
+      otp: otp,
+      otpExpires: otpExpires
     });
 
     await newUser.save();
-    //await sendVerificationEmail(newUser.email, otp);
+    await sendVerificationEmail(newUser.email, otp);
     res.status(201).json({
       message: role === 'driver' ? "Application submitted! Waiting for Admin approval." : "User created successfully",
       user: {
