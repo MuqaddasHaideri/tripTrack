@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1074396477569",
+    "project_id": "muqfyp-c33c2",
+    "storage_bucket": "muqfyp-c33c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1074396477569:android:d01084aa9c9681a8687580",
+        "android_client_info": {
+          "package_name": "com.triptrack.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbSGFY6G9ip8b9XQIe8kh_vZif4ST_IBw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

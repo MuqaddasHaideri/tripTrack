@@ -55,10 +55,7 @@ export default function SignupScreen() {
                     uploadedLicenseUrl
                 );
                 if (data.success) {
-                    Alert.alert("Success", "Driver account created successfully, wait for admin approval.", [
-
-                        { text: "Login", onPress: () => router.replace('/(auth)/login') }
-                    ]);
+                    router.replace('/driver/PendingApproval');
                 } else {
                     Alert.alert("Signup Failed", data.message || "Could not register driver.");
                 }

@@ -18,6 +18,7 @@ import AuthTabSwitcher from '../../components/authSwitcher';
 import { useDispatch } from 'react-redux';
 import { loginUserApi } from '../../service/server';
 import { continueAsGuest, setCredentials } from '../../redux/authSlice';
+import { registerForPushNotifications } from '../../utils/notifications';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -29,7 +30,9 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
-        if (!email || !password) {
+        const trimmedEmail = email.trim();
+
+        if (!trimmedEmail || !password) {
             Alert.alert("Error", "Please fill in all fields.");
             return;
         }
@@ -37,9 +40,8 @@ export default function LoginScreen() {
         setLoading(true);
 
         try {
-            const res = await loginUserApi(email, password);
+            const res = await loginUserApi(trimmedEmail, password);
 
-            // Handle different API response formats safely
             const data = res?.data || res;
 
             if (data?.success) {
@@ -53,10 +55,19 @@ export default function LoginScreen() {
                     profilePic: user?.profilePic
                 };
 
+                const authToken = data?.jwt_token || data?.token;
+
                 dispatch(setCredentials({
                     user: userObj,
-                    token: data?.jwt_token || data?.token
+                    token: authToken
                 }));
+
+                console.log('Requesting push notification permission...');
+                registerForPushNotifications(authToken).then((token) => {
+                    console.log('Push registration result:', token || 'failed/denied');
+                }).catch((err) => {
+                    console.log('Push registration error:', err);
+                });
 
                 Alert.alert("Success", `Welcome back, ${user?.name || 'User'}!`);
                 if (user?.role === 'admin') {
@@ -67,11 +78,20 @@ export default function LoginScreen() {
                     router.replace('/(tabs)');
                 }
             } else {
-                Alert.alert("Login Failed", data?.message || "Invalid credentials");
+                const msg = data?.message || "Invalid credentials";
+                if (msg.includes("pending admin approval")) {
+                    router.push({ pathname: '/driver/PendingApproval', params: { email: trimmedEmail } });
+                } else {
+                    Alert.alert("Login Failed", msg);
+                }
             }
         } catch (error) {
-            const msg = error?.message || "Login failed. Please try again.";
-            Alert.alert("Error", msg);
+            const msg = typeof error === 'string' ? error : ((error as any)?.message || "Login failed. Please try again.");
+            if (msg.toLowerCase().includes("pending") || msg.toLowerCase().includes("approval")) {
+                router.push({ pathname: '/driver/PendingApproval', params: { email: trimmedEmail } });
+            } else {
+                Alert.alert("Error", msg);
+            }
         } finally {
             setLoading(false);
         }

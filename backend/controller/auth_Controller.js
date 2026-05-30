@@ -1,14 +1,16 @@
 import user_models from "../models/user_models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { notifyAdmins } from "../utils/sendNotification.js";
 // ==========================================
 // SINGUP
 // ==========================================
 export const signupController = async (req, res) => {
   try {
     const { name, email, password, role, phone, cnic, driverLicense } = req.body;
+    const trimmedEmail = email?.trim();
 
-    const userExists = await user_models.findOne({ email });
+    const userExists = await user_models.findOne({ email: trimmedEmail });
     if (userExists) {
       return res.status(400).json({ message: "User Already Exists", success: false });
     }
@@ -23,7 +25,7 @@ export const signupController = async (req, res) => {
 //     const otpExpires = new Date(Date.now() + 10 * 60000);
     const newUser = new user_models({
       name,
-      email,
+      email: trimmedEmail,
       password: hashedPassword,
       profilePic: avatar,
       role,
@@ -36,7 +38,15 @@ export const signupController = async (req, res) => {
     });
 
     await newUser.save();
-    //sendVerificationEmail(newUser.email, otp);
+
+    if (role === 'driver') {
+      notifyAdmins(
+        'New Driver Registration',
+        `${name} has submitted a driver application and is pending approval.`,
+        { type: 'driver_registration', driverId: newUser._id.toString() }
+      );
+    }
+
     res.status(201).json({
       message: role === 'driver' ? "Application submitted! Waiting for Admin approval." : "User created successfully",
       user: {
@@ -68,7 +78,11 @@ export const signupController = async (req, res) => {
 export const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const userExists = await user_models.findOne({ email });
+    const trimmedEmail = email?.trim();
+    let userExists = await user_models.findOne({ email: trimmedEmail });
+    if (!userExists) {
+      userExists = await user_models.findOne({ email: new RegExp(`^\\s*${trimmedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'i') });
+    }
     if (!userExists) {
       return res.status(403).json({
         message: "Auth failed! Email or password is wrong",
@@ -263,6 +277,37 @@ export const getFavoriteRoutes = async (req, res) => {
 // ==========================================
 //REMOVE FROM FAVORITES 
 // ==========================================
+// ==========================================
+// CHECK DRIVER APPROVAL STATUS (public, no auth)
+// ==========================================
+export const checkApprovalStatus = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const user = await user_models.findOne({ email: email.trim().toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.role !== 'driver') {
+      return res.status(400).json({ success: false, message: "This endpoint is for drivers only" });
+    }
+
+    res.status(200).json({
+      success: true,
+      approved: user.isVerified === true,
+    });
+  } catch (error) {
+    console.log("Error in checkApprovalStatus:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 export const removeFavoriteRoute = async (req, res) => {
   try {
     const userId = req.user._id;

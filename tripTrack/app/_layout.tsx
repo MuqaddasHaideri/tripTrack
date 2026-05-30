@@ -23,9 +23,10 @@ function AppWrapper() {
      const inAuthGroup = segments.includes('(auth)') || segments.includes('onBoarding');
     const inAdminGroup = segments.includes('(admin)');
     const inPassengerGroup = segments.includes('(tabs)') || segments.includes('passenger');
+    const inPendingApproval = segments.includes('driver');
 
     if (!user && !isGuest) {
-      if (!inAuthGroup) {
+      if (!inAuthGroup && !inPendingApproval) {
         router.replace('/onBoarding');
       }
     }
@@ -87,10 +88,12 @@ if (isGuest && inProtectedPassengerScreen) {
         <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="driver/Map" />
+        <Stack.Screen name="driver/PendingApproval" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="passenger/schedule" options={{ presentation: 'modal' }} />
  <Stack.Screen name="passenger/profileScreen" options={{ presentation: 'modal' }} />
          <Stack.Screen name="passenger/report-issue" options={{ presentation: 'modal' }} />
          <Stack.Screen name="passenger/favouriteRoutes" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="passenger/announcements" options={{ presentation: 'modal' }} />
 <Stack.Screen name="(admin)" options={{ animation: 'slide_from_right' }} />
       </Stack>
 

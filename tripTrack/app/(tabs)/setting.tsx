@@ -141,18 +141,18 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>APP & SUPPORT</Text>
         <View style={styles.cardGroup}>
           <ListOption
+            title="Announcements"
+            subtitle="Latest updates and notices"
+            icon="megaphone-outline"
+            onPress={() => router.push('/passenger/announcements')}
+          />
+          <ListOption
             title="Report an Issue"
             subtitle="Traffic, bugs or suggestions"
             icon="alert-circle-outline"
-            onPress={() => router.push('/passenger/report-issue')}
-
-          />
-          {/* <ListOption
-            title="Help Center"
-            subtitle="FAQs and Guide"
-            icon="help-circle-outline"
             isLast={true}
-          /> */}
+            onPress={() => router.push('/passenger/report-issue')}
+          />
         </View>
       </View>
 

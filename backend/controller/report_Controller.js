@@ -1,4 +1,5 @@
 import report_models from "../models/report_model.js";
+import { notifyAdmins } from "../utils/sendNotification.js";
 
 export const createReport = async (req, res) => {
   try {
@@ -49,6 +50,13 @@ export const createReport = async (req, res) => {
 
     // 6. Save to database
     await newReport.save();
+
+    const reportTypeLabel = reportType.replace('_', ' ');
+    notifyAdmins(
+      'New User Report',
+      `A new ${reportTypeLabel} report has been submitted${priority ? ` (Priority: ${priority})` : ''}.`,
+      { type: 'user_report', reportId: newReport._id.toString(), reportType }
+    );
 
     res.status(201).json({
       success: true,

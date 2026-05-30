@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, View, Text, TouchableOpacity,
-  StatusBar, Alert, Platform, Pressable
+  StatusBar, Alert, Platform, Pressable, FlatList, Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
 import { logout } from '../../redux/authSlice';
+import { fetchNotificationsApi, markAllNotificationsReadApi } from '../../service/server';
 
 // ─── TAB COMPONENT IMPORTS ────────────────────────────────────────────────────
 // Each tab lives in its own file under components/admin/
@@ -113,10 +114,31 @@ const NavItem = ({ title, icon, active, badge, onPress }: NavItemProps) => (
 export default function AdminDashboardScreen() {
   const router   = useRouter();
   const dispatch = useDispatch();
-  const { user } = useSelector((state: any) => state.auth);
+  const { user, token } = useSelector((state: any) => state.auth);
 
   const [activeTab, setActiveTab]     = useState<TabId>('verify');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadNotifications = async () => {
+    if (!token) return;
+    const res = await fetchNotificationsApi(token);
+    if (res?.success) {
+      setNotifications(res.notifications || []);
+      setUnreadCount(res.unreadCount || 0);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+
+    // Poll every 15 seconds for new notifications
+    const pollInterval = setInterval(loadNotifications, 15000);
+
+    return () => clearInterval(pollInterval);
+  }, [token]);
 
   const currentTab      = TABS_CONFIG.find(t => t.id === activeTab) ?? TABS_CONFIG[0];
   const ActiveComponent = currentTab.component;
@@ -166,9 +188,24 @@ export default function AdminDashboardScreen() {
           </View>
 
           <View style={styles.topbarRight}>
-            <TouchableOpacity style={styles.topbarIconBtn}>
+            <TouchableOpacity
+              style={styles.topbarIconBtn}
+              onPress={() => {
+                setNotifPanelOpen(true);
+                if (unreadCount > 0 && token) {
+                  markAllNotificationsReadApi(token).then(() => {
+                    setUnreadCount(0);
+                    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                  });
+                }
+              }}
+            >
               <Ionicons name="notifications-outline" size={20} color="#196F31" />
-              <View style={styles.notifDot} />
+              {unreadCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.topbarIconBtn}>
               <Ionicons name="search-outline" size={20} color="#196F31" />
@@ -279,6 +316,66 @@ export default function AdminDashboardScreen() {
           </View>
         </>
       )}
+      {/* ── NOTIFICATION PANEL MODAL ─────────────────────────────────── */}
+      <Modal
+        visible={notifPanelOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setNotifPanelOpen(false)}
+      >
+        <View style={styles.notifModalOverlay}>
+          <View style={styles.notifModalSheet}>
+            <View style={styles.notifModalHeader}>
+              <Text style={styles.notifModalTitle}>Notifications</Text>
+              <TouchableOpacity onPress={() => setNotifPanelOpen(false)} hitSlop={10}>
+                <Ionicons name="close" size={22} color="#6A8E75" />
+              </TouchableOpacity>
+            </View>
+
+            {notifications.length === 0 ? (
+              <View style={styles.notifEmpty}>
+                <Ionicons name="notifications-off-outline" size={40} color="#A0B4A5" />
+                <Text style={styles.notifEmptyText}>No notifications yet</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={notifications}
+                keyExtractor={(item) => item._id || Math.random().toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.notifItem, !item.isRead && { borderColor: '#196F31' }]}
+                    onPress={() => {
+                      setNotifPanelOpen(false);
+                      if (item.type === 'driver_registration') setActiveTab('verify');
+                      else if (item.type === 'user_report') setActiveTab('reports');
+                    }}
+                  >
+                    <View style={[
+                      styles.notifIconWrap,
+                      item.type === 'driver_registration' ? { backgroundColor: '#E8F5E9' } : { backgroundColor: '#FEF9E7' }
+                    ]}>
+                      <Ionicons
+                        name={item.type === 'driver_registration' ? 'car-outline' : 'warning-outline'}
+                        size={18}
+                        color={item.type === 'driver_registration' ? '#196F31' : '#D35400'}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.notifItemTitle}>{item.title}</Text>
+                      <Text style={styles.notifItemBody} numberOfLines={2}>{item.body}</Text>
+                      <Text style={styles.notifItemTime}>
+                        {new Date(item.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                      </Text>
+                    </View>
+                    {!item.isRead && <View style={styles.unreadDot} />}
+                  </TouchableOpacity>
+                )}
+                contentContainerStyle={{ paddingBottom: 20 }}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -363,16 +460,25 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
 
-  notifDot: {
+  notifBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
+  },
+
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
   },
 
   // ── Stats Row ─────────────────────────────────────────────────────────────
@@ -657,5 +763,99 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 13,
     fontWeight: '700',
+  },
+
+  // ── Notification Panel Modal ─────────────────────────────────────────────
+
+  notifModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+
+  notifModalSheet: {
+    backgroundColor: '#F0F9F4',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+
+  notifModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#D1E8D9',
+  },
+
+  notifModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#123D1F',
+  },
+
+  notifEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+
+  notifEmptyText: {
+    fontSize: 15,
+    color: '#A0B4A5',
+    fontWeight: '600',
+  },
+
+  notifItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E8F3EB',
+  },
+
+  notifIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  notifItemTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#123D1F',
+    marginBottom: 2,
+  },
+
+  notifItemBody: {
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 18,
+  },
+
+  notifItemTime: {
+    fontSize: 11,
+    color: '#A0B4A5',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#196F31',
+    alignSelf: 'center',
   },
 });

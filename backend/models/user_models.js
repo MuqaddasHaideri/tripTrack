@@ -34,7 +34,11 @@ const UserSchema = new mongoose.Schema({
   favoriteRoutes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'routes'
-  }]
+  }],
+  fcmToken: {
+    type: String,
+    default: ''
+  }
 }, { timestamps: true }); 
 
 export default mongoose.model('users', UserSchema);

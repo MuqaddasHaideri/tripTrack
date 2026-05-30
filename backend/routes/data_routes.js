@@ -16,6 +16,8 @@ import {
   getAllDrivers 
 } from "../controller/admin_Controller.js";
 import { createReport, getAllReports, getMyReports, updateReportStatus } from "../controller/report_Controller.js"; 
+import { getNotifications, markAsRead, markAllAsRead } from "../controller/notification_Controller.js";
+import { createAnnouncement, getAllAnnouncements, getAnnouncementsForUser, deleteAnnouncement } from "../controller/announcement_Controller.js";
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
 import { isAdmin } from "../middleware/isAdmin.js"; 
 import { 
@@ -46,9 +48,21 @@ router.put("/admin/drivers/approve/:id", isAuthenticated, isAdmin, approveDriver
 router.get("/admin/drivers/all", isAuthenticated, isAdmin, getAllDrivers);
 router.get('/admin/reports', isAuthenticated, isAdmin, getAllReports);
 router.put('/admin/reports/:id', isAuthenticated, isAdmin, updateReportStatus);
+router.get('/admin/notifications', isAuthenticated, isAdmin, getNotifications);
+router.put('/admin/notifications/:id/read', isAuthenticated, isAdmin, markAsRead);
+router.put('/admin/notifications/read-all', isAuthenticated, isAdmin, markAllAsRead);
+
+// ==========================================
+// ANNOUNCEMENT ROUTES (Admin CRUD)
+// ==========================================
+router.post('/admin/announcements', isAuthenticated, isAdmin, createAnnouncement);
+router.get('/admin/announcements', isAuthenticated, isAdmin, getAllAnnouncements);
+router.delete('/admin/announcements/:id', isAuthenticated, isAdmin, deleteAnnouncement);
+
 // ==========================================
 // USER LOCATION ROUTES (Requires Auth)
 // ==========================================
+router.get('/announcements', isAuthenticated, getAnnouncementsForUser);
 router.post('/reports', isAuthenticated, createReport);
 router.get('/reports/my-reports', isAuthenticated, getMyReports);
 router.post('/locations', isAuthenticated, addLocation);

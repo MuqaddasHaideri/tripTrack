@@ -41,6 +41,13 @@ export const loginUserApi = async (email, password) => {
   });
 };
 
+export const checkApprovalStatusApi = async (email) => {
+  return fetchApi(endpoints.checkApprovalStatus, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+};
+
 export const signupUserApi = async (name, email, password, role = '', phone = '') => {
   return fetchApi(endpoints.signup, {
     method: 'POST',
@@ -403,5 +410,159 @@ export const updateReportStatusApi = async (reportId, status, token) => {
   } catch (error) {
     console.error("Error updating report status service call:", error);
     return { success: false, message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// PUT: Register FCM Token for Push Notifications
+// ==========================================
+export const registerFcmTokenApi = async (fcmToken, authToken) => {
+  try {
+    const data = await fetchApi(`${endpoints.fcmToken}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ fcmToken })
+    });
+    return data;
+  } catch (error) {
+    console.error("Error registering FCM token:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// GET: Fetch admin notifications
+// ==========================================
+export const fetchNotificationsApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.getNotifications}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return { success: false, notifications: [], unreadCount: 0 };
+  }
+};
+
+// ==========================================
+// PUT: Mark single notification as read
+// ==========================================
+export const markNotificationReadApi = async (notificationId, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.markNotificationRead}/${notificationId}/read`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error marking notification read:", error);
+    return { success: false };
+  }
+};
+
+// ==========================================
+// PUT: Mark all notifications as read
+// ==========================================
+export const markAllNotificationsReadApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.markAllNotificationsRead}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error marking all notifications read:", error);
+    return { success: false };
+  }
+};
+
+// ==========================================
+// POST: Create Announcement (Admin)
+// ==========================================
+export const createAnnouncementApi = async (announcementData, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.createAnnouncement}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(announcementData),
+    });
+    return data;
+  } catch (error) {
+    console.error("Error creating announcement:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// GET: Fetch All Announcements (Admin)
+// ==========================================
+export const fetchAdminAnnouncementsApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.getAdminAnnouncements}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching admin announcements:", error);
+    return { success: false, announcements: [] };
+  }
+};
+
+// ==========================================
+// DELETE: Delete Announcement (Admin)
+// ==========================================
+export const deleteAnnouncementApi = async (id, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.deleteAnnouncement}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error deleting announcement:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// GET: Fetch Announcements for User (by role)
+// ==========================================
+export const fetchUserAnnouncementsApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.getUserAnnouncements}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching user announcements:", error);
+    return { success: false, announcements: [] };
   }
 };
