@@ -47,11 +47,13 @@ export default function PassengerMap() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [favoriteRouteIds, setFavoriteRouteIds] = useState<string[]>([]);
   const [isFavoriting, setIsFavoriting] = useState(false);
-  const { token } = useSelector((state) => state.auth);
+  const { token, isGuest } = useSelector((state) => state.auth);
   // --- 1. LOCATION & PERMISSION LOGIC ---
   useEffect(() => {
     checkLocationStatus();
+     if (!isGuest && token) {
     loadUserFavorites();
+  }
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         checkLocationStatus();
@@ -81,6 +83,9 @@ export default function PassengerMap() {
 
   // --- 3. NATIVE TOGGLE FAVORITE LOGIC ---
   const handleToggleFavorite = async () => {
+   if (isGuest || !token) {
+    return;
+  }
     if (!selectedRouteId || isFavoriting) return;
     setIsFavoriting(true);
 
@@ -343,7 +348,7 @@ export default function PassengerMap() {
             <TouchableOpacity
               style={styles.floatingHeartBtn}
               onPress={handleToggleFavorite}
-              disabled={isFavoriting}
+              disabled={isFavoriting || isGuest}
             >
               {isFavoriting ? (
                 <ActivityIndicator size="small" color="#196F31" />
@@ -351,7 +356,13 @@ export default function PassengerMap() {
                 <Ionicons
                   name={isCurrentRouteFavorited ? "heart" : "heart-outline"}
                   size={26}
-                  color={isCurrentRouteFavorited ? "#FF3B30" : "#196F31"}
+                  color={
+                    isGuest
+                      ? "#BDBDBD"
+                      : isCurrentRouteFavorited
+                        ? "#FF3B30"
+                        : "#196F31"
+                  }
                 />
               )}
             </TouchableOpacity>
@@ -531,12 +542,12 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '800', 
+    fontWeight: '800',
     color: '#000000'
   },
   cardSubtitle: {
     fontSize: 13,
-    color: '#8E8E93', 
+    color: '#8E8E93',
     fontWeight: '600',
     marginTop: 2
   },

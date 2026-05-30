@@ -45,7 +45,7 @@ const ListOption = ({ title, subtitle, icon, onPress, isLast, isDestructive, sho
 export default function SettingsScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user,isGuest } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
     Alert.alert("Log Out", "Are you sure you want to log out of TripTrack?", [

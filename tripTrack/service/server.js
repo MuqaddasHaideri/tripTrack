@@ -303,3 +303,105 @@ export const removeFavoriteApi = async (routeId, token) => {
     return { success: false, message: "Network error occurred." };
   }
 };
+
+
+
+// ==========================================
+ // GET: Fetch all pending drivers awaiting approval
+// ==========================================
+
+ 
+export const fetchPendingDriversApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.getPendingDrivers}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching pending drivers service call:", error);
+    return { success: false, drivers: [], message: "Network error occurred." };
+  }
+};
+
+
+// ==========================================
+ // PUT: Approve a specific driver by ID
+// ==========================================
+export const approveDriverApi = async (driverId, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.approveDriver}/${driverId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error approving driver service call:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+// ==========================================
+ // GET: Fetch all drivers (approved, pending, etc.)
+// ==========================================
+
+export const fetchAllDriversApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.getAllDrivers}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching all drivers service call:", error);
+    return { success: false, drivers: [], message: "Network error occurred." };
+  }
+};
+// ==========================================
+// GET: Fetch all driver reports
+
+// ==========================================
+
+export const fetchAllReportsApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.getAllReports}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching reports service call:", error);
+    return { success: false, reports: [], message: "Network error occurred." };
+  }
+};
+// ==========================================
+ //PUT: Update the status of a specific report (e.g., resolving it) Passing status in the body to allow flexible updates (e.g., 'resolved', 'investigating')
+// ==========================================
+
+export const updateReportStatusApi = async (reportId, status, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.updateReportStatus}/${reportId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status })
+    });
+    return data;
+  } catch (error) {
+    console.error("Error updating report status service call:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};

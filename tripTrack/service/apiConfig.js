@@ -12,5 +12,11 @@ export const endpoints = {
   profile:"/auth/profile",
   report : "/data/reports",
   myreport : "/data/reports/my-reports",
-  favourites : "/data/favorites"
+  favourites : "/data/favorites",
+  
+  getPendingDrivers : "/data/admin/drivers/pending",
+  approveDriver : "/data/admin/drivers/approve",
+  getAllDrivers : "/data/admin/drivers/all",
+  getAllReports : "/data/admin/reports",
+  updateReportStatus : "/data/admin/reports"
 };
