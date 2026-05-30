@@ -56,9 +56,14 @@ export default function SignupScreen() {
                     uploadedLicenseUrl
                 );
 
-                if (data.success) {
-                    Alert.alert("Success", "Driver account created successfully, wait for admin approval.", [
-                        { text: "Login", onPress: () => router.replace('/(auth)/login') }
+            if (data.success) {
+                    // ✅ FIX 1: Use the backend's message
+                    // ✅ FIX 2: Route to the Verify screen and pass the email!
+                    Alert.alert("Success", data.message, [
+                        { 
+                            text: "Verify Email", 
+                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } }) 
+                        }
                     ]);
                 } else {
                     Alert.alert("Signup Failed", data.message || "Could not register driver.");
@@ -76,12 +81,15 @@ export default function SignupScreen() {
             try {
                 const data = await signupUserApi(name, email, password, "passenger", phone);
 
-                if (data.success) {
-                    Alert.alert(
-                        "Account Created",
-                        "Passenger account created successfully!",
-                        [{ text: "Login", onPress: () => router.replace('/(auth)/login') }]
-                    );
+               if (data.success) {
+                    // ✅ FIX 1: Use the backend's message
+                    // ✅ FIX 2: Route to the Verify screen and pass the email!
+                    Alert.alert("Success", data.message, [
+                        { 
+                            text: "Verify Email", 
+                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } }) 
+                        }
+                    ]);
                 } else {
                     Alert.alert("Error", data.message || "Signup failed");
                 }

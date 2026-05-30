@@ -37,7 +37,7 @@ const otp = Math.floor(100000 + Math.random() * 900000).toString();
     });
 
     await newUser.save();
-    await sendVerificationEmail(newUser.email, otp);
+    sendVerificationEmail(newUser.email, otp);
     res.status(201).json({
       message: role === 'driver' ? "Application submitted! Waiting for Admin approval." : "User created successfully",
       user: {
