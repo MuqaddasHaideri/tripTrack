@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet, View, Text, FlatList, TouchableOpacity, 
   StatusBar, ActivityIndicator, Alert
@@ -8,20 +8,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSelector } from 'react-redux';
 
-
-import { fetchMyFavoritesApi, removeFavoriteApi } from '../../service/server';
+// Service Imports (Make sure socket is exported from here)
+import { fetchMyFavoritesApi, removeFavoriteApi, socket } from '../../service/server';
 
 export default function FavoriteRoutesScreen() {
   const router = useRouter();
-  
-
   const { token } = useSelector((state: any) => state.auth);
 
-
+  // --- STATE ---
   const [favoriteRoutes, setFavoriteRoutes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  
+  const [activeDriverRoutes, setActiveDriverRoutes] = useState<Record<string, boolean>>({});
 
+  // Fetch static favorite data array from database
   useFocusEffect(
     useCallback(() => {
       if (token) {
@@ -44,6 +45,39 @@ export default function FavoriteRoutesScreen() {
       setIsLoading(false);
     }
   };
+
+  // --- REAL-TIME SOCKET LISTENER FOR DRIVER ACTIVITY ---
+  useEffect(() => {
+    if (!socket.connected) socket.connect();
+
+    // When any bus moves across Karachi, it shouts its routeId
+    const handleGlobalBusTracking = (busData: any) => {
+      if (busData.routeId) {
+        setActiveDriverRoutes((prev) => ({
+          ...prev,
+          [busData.routeId]: true, 
+        }));
+      }
+    };
+
+    // driver turns off location or disconnects
+    const handleGlobalBusOffline = (data: any) => {
+      if (data.routeId) {
+        setActiveDriverRoutes((prev) => ({
+          ...prev,
+          [data.routeId]: false, 
+        }));
+      }
+    };
+
+    socket.on('bus_moved', handleGlobalBusTracking);
+    socket.on('bus_offline', handleGlobalBusOffline);
+
+    return () => {
+      socket.off('bus_moved', handleGlobalBusTracking);
+      socket.off('bus_offline', handleGlobalBusOffline);
+    };
+  }, []);
 
   const handleDelete = (routeId: string, name: string) => {
     Alert.alert(
@@ -79,18 +113,28 @@ export default function FavoriteRoutesScreen() {
   const renderRouteCard = ({ item }: { item: any }) => {
     const isDelayed = item.status === 'Delayed';
     const routeTitle = item.route_name || 'Active Route';
+    
+    // Check if socket coordinates are currently broadcasting for this route item ID
+    const isDriverActive = !!activeDriverRoutes[item._id];
 
     return (
       <TouchableOpacity 
         style={styles.card} 
         activeOpacity={0.7}
-
         onPress={() => router.push({ pathname: '/(tabs)/index', params: { activeRouteId: item._id } })}
       >
         <View style={styles.cardHeader}>
           <View style={styles.badgeContainer}>
-            <Ionicons name="bus" size={16} color="#196F31" />
+            <Ionicons name="bus" size={16} color="white" />
             <Text style={styles.routeName}>{routeTitle}</Text>
+          </View>
+
+          {/* DYNAMIC LIVE DRIVER ACTIVITY INDICATOR */}
+          <View style={[styles.liveStatusBadge, isDriverActive ? styles.activeLiveBg : styles.offlineLiveBg]}>
+            <View style={[styles.liveDot, { backgroundColor: isDriverActive ? '#00C853' : '#8E8E93' }]} />
+            <Text style={[styles.liveStatusText, { color: isDriverActive ? '#123D1F' : '#666' }]}>
+              {isDriverActive ? 'LIVE' : 'OFFLINE'}
+            </Text>
           </View>
           
           <TouchableOpacity 
@@ -101,7 +145,7 @@ export default function FavoriteRoutesScreen() {
             {isDeletingId === item._id ? (
               <ActivityIndicator size="small" color="#FF3B30" />
             ) : (
-              <Ionicons name="heart" size={22} color="#196F31" />
+              <Ionicons name="heart" size={26} color="#FF3B30" />
             )}
           </TouchableOpacity>
         </View>
@@ -111,13 +155,17 @@ export default function FavoriteRoutesScreen() {
         </Text>
 
         <View style={styles.cardFooter}>
-          <View style={[styles.statusIndicator, isDelayed && styles.statusDelayedBg]}>
+          {/* <View style={[styles.statusIndicator, isDelayed && styles.statusDelayedBg]}>
             <Text style={[styles.statusText, isDelayed && styles.statusDelayedText]}>
               {item.status || 'On Time'}
             </Text>
-          </View>
+          </View> */}
           <Text style={styles.etaText}>
-            Next Bus: <Text style={styles.etaHighlight}>{item.eta || 'Live Tracking'}</Text>
+            {isDriverActive ? (
+              <>Tracking Status: <Text style={styles.etaHighlight}>Active on Map</Text></>
+            ) : (
+              <>Next Bus: <Text style={styles.etaMuted}>No driver tracking</Text></>
+            )}
           </Text>
         </View>
       </TouchableOpacity>
@@ -136,9 +184,17 @@ export default function FavoriteRoutesScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favorite Routes</Text>
-        <Text style={styles.headerSub}>Quick access to your regular Karachi transits</Text>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.headerTitle}>Favorite Routes</Text>
+          <Text style={styles.headerSubtitle}>Quick access to your regular transits</Text>
+        </View>
       </View>
 
       {favoriteRoutes.length > 0 ? (
@@ -168,27 +224,78 @@ export default function FavoriteRoutesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F9F4' },
-  header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 15 },
-  headerTitle: { fontSize: 26, fontWeight: '900', color: '#123D1F' },
-  headerSub: { fontSize: 14, color: '#6A8E75', marginTop: 4 },
-  list: { padding: 20, paddingTop: 5, gap: 16 },
+  
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  backButton: {
+    width: 45,
+    height: 45,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#000',
+    letterSpacing: -0.5,
+    marginTop: 10,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+
+  list: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 5 },
   
   card: {
     backgroundColor: '#fff',
     borderRadius: 24,
     padding: 18,
-    borderWidth: 1.5,
-    borderColor: '#E8F3EB',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#196F31',
     elevation: 4,
     shadowColor: '#196F31',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  badgeContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E1F5EE', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, gap: 6 },
-  routeName: { fontSize: 13, fontWeight: '800', color: '#123D1F' },
-  heartBtn: { padding: 4, minWidth: 28, alignItems: 'center' },
+  badgeContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#196F31',
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 12, 
+    gap: 6 
+  },
+  routeName: { fontSize: 13, fontWeight: '800', color: 'white' },
+  heartBtn: { padding: 4, minWidth: 28, alignItems: 'center', marginLeft: 'auto' },
+  
+  // NEW ACTIVE LIVE BADGE STYLES
+  liveStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 5,
+    marginLeft: 10
+  },
+  activeLiveBg: { backgroundColor: '#E1F5EE' },
+  offlineLiveBg: { backgroundColor: '#EFEFEF' },
+  liveStatusText: { fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+  liveDot: { width: 7, height: 7, borderRadius: 3.5 },
+
   pathText: { fontSize: 17, fontWeight: '800', color: '#000000', marginVertical: 14 },
   
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1.5, borderTopColor: '#F0F9F4', paddingTop: 12 },
@@ -198,7 +305,8 @@ const styles = StyleSheet.create({
   statusDelayedText: { color: '#E65100' },
   
   etaText: { fontSize: 13, color: '#6A8E75', fontWeight: '600' },
-  etaHighlight: { color: '#196F31', fontWeight: '900', fontSize: 14 },
+  etaHighlight: { color: '#00C853', fontWeight: '900', fontSize: 14 },
+  etaMuted: { color: '#8E8E93', fontWeight: '700', fontSize: 13 },
 
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, gap: 12, marginBottom: 80 },
   emptyIconCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#E8F3EB', justifyContent: 'center', alignItems: 'center', marginBottom: 6 },

@@ -378,7 +378,7 @@ export default function PassengerMap() {
             )}
           </View>
 
-          {/* 3. CARD ACTION ROOT CLOSURE */}
+          {/* CARD ACTION ROOT CLOSURE */}
           <TouchableOpacity style={styles.clearRouteBtnInCard} onPress={clearSelectedRoute}>
             <Ionicons name="close-circle" size={16} color="#FF3B30" />
             <Text style={styles.clearRouteText}>Clear Route</Text>

@@ -6,7 +6,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { verifyOtpApi } from '@/service/server'; 
+import { verifyEmailApi } from '@/service/server'; 
 
 export default function OtpScreen() {
     const router = useRouter();
@@ -51,7 +51,7 @@ export default function OtpScreen() {
         try {
             setIsVerifying(true);
             // Replace with your actual backend call
-            const data = await verifyOtpApi(email, otpCode);
+            const data = await verifyEmailApi(email, otpCode);
 
             if (data.success) {
                 Alert.alert("Verified!", "Your account is now active.", [
