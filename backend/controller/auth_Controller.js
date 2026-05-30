@@ -1,7 +1,6 @@
 import user_models from "../models/user_models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { sendVerificationEmail } from "../utils/verifyEmail.js";
 // ==========================================
 // SINGUP
 // ==========================================
