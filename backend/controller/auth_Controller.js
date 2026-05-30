@@ -20,8 +20,8 @@ export const signupController = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const isUserVerified = role === 'passenger' ? true : false;
-const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60000);
+// const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     const otpExpires = new Date(Date.now() + 10 * 60000);
     const newUser = new user_models({
       name,
       email,
@@ -31,13 +31,13 @@ const otp = Math.floor(100000 + Math.random() * 900000).toString();
       phone: phone || "",
       ...(role === 'driver' && { cnic, driverLicense }),
       isVerified: isUserVerified,
-      isEmailVerified: false, 
-      otp: otp,
-      otpExpires: otpExpires
+      // isEmailVerified: false, 
+      // otp: otp,
+      // otpExpires: otpExpires
     });
 
     await newUser.save();
-    sendVerificationEmail(newUser.email, otp);
+    //sendVerificationEmail(newUser.email, otp);
     res.status(201).json({
       message: role === 'driver' ? "Application submitted! Waiting for Admin approval." : "User created successfully",
       user: {
@@ -53,7 +53,6 @@ const otp = Math.floor(100000 + Math.random() * 900000).toString();
   } catch (error) {
     console.log("Error in signup controller:", error);
     
-    // Catch Mongoose Validation errors (like missing CNIC) safely
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,

@@ -125,23 +125,23 @@ socket.on('connect_error', (err) => {
   console.log('❌ Socket Connection Error:', err.message);
 });
 
-export const verifyEmailApi = async (email, otp) => {
-  try {
-    const response = await fetchApi(endpoints.verify, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, otp }),
-    });
+// export const verifyEmailApi = async (email, otp) => {
+//   try {
+//     const response = await fetchApi(endpoints.verify, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({ email, otp }),
+//     });
 
-    return response;
-    return data;
-  } catch (error) {
-    console.error("Verification API Error:", error);
-    return { success: false, message: "Network error occurred." };
-  }
-};
+//     return response;
+//     return data;
+//   } catch (error) {
+//     console.error("Verification API Error:", error);
+//     return { success: false, message: "Network error occurred." };
+//   }
+// };
 
 // ==========================================
 // GET PROFILE

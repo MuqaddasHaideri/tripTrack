@@ -24,7 +24,7 @@ export default function SignupScreen() {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [cnic, setCnic] = useState('');
-    const [showPassword, setShowPassword] = useState(true);
+    const [showPassword, setShowPassword] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [imageUri, setImageUri] = useState(null);
     const handleSignup = async () => {
@@ -42,7 +42,6 @@ export default function SignupScreen() {
                 Alert.alert("License Required", "Please upload a photo of your Driver's License.");
                 return;
             }
-
             try {
                 setIsUploading(true);
                 const uploadedLicenseUrl = await uploadToCloudinary(imageUri);
@@ -55,52 +54,47 @@ export default function SignupScreen() {
                     cnic,
                     uploadedLicenseUrl
                 );
-
                 if (data.success) {
-                    // ✅ FIX 1: Use the backend's message
-                    // ✅ FIX 2: Route to the Verify screen and pass the email!
-                    Alert.alert("Success", data.message, [
-                        {
-                            text: "Verify Email",
-                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } })
-                        }
+                    Alert.alert("Success", "Driver account created successfully, wait for admin approval.", [
+
+                        { text: "Login", onPress: () => router.replace('/(auth)/login') }
                     ]);
                 } else {
                     Alert.alert("Signup Failed", data.message || "Could not register driver.");
                 }
-
             } catch (error) {
                 console.error(error);
                 Alert.alert("Error", "There was a problem during driver registration.");
             } finally {
                 setIsUploading(false);
             }
-
         } else {
             // PASSENGER Signup
             try {
-                const data = await signupUserApi(name, email, password, "passenger", phone);
+                    setIsUploading(true);
 
+                const data = await signupUserApi(name, email, password, "passenger", phone);
                 if (data.success) {
-                    // ✅ FIX 1: Use the backend's message
-                    // ✅ FIX 2: Route to the Verify screen and pass the email!
-                    Alert.alert("Success", data.message, [
-                        {
-                            text: "Verify Email",
-                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } })
-                        }
-                    ]);
+                    Alert.alert(
+                        "Account Created",
+                        "Passenger account created successfully!",
+
+                        [{ text: "Login", onPress: () => router.replace('/(auth)/login') }]
+                    );
                 } else {
                     Alert.alert("Error", data.message || "Signup failed");
                 }
             } catch (error) {
                 console.error(error);
                 Alert.alert("Error", "Something went wrong during passenger signup.");
-            }
-        }
-    };
 
+            }
+           finally {
+                setIsUploading(false);
+            }}};
     const isBusy = isUploading;
+
+
 
     return (
         <SafeAreaView style={styles.container}>
