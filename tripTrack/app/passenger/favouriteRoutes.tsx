@@ -13,6 +13,7 @@ import { fetchMyFavoritesApi, removeFavoriteApi, socket } from '../../service/se
 
 export default function FavoriteRoutesScreen() {
   const router = useRouter();
+  
   const { token } = useSelector((state: any) => state.auth);
 
   // --- STATE ---
