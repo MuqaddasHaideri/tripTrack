@@ -5,8 +5,8 @@ export const sendVerificationEmail = async (userEmail, otp) => {
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports like 587
+      port: 465,
+      secure: true, // true for 465, false for other ports like 587
       requireTLS: true,
       auth: {
         user: process.env.EMAIL_USER, 

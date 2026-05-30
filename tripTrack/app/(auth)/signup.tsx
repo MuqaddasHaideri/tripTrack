@@ -56,13 +56,13 @@ export default function SignupScreen() {
                     uploadedLicenseUrl
                 );
 
-            if (data.success) {
+                if (data.success) {
                     // ✅ FIX 1: Use the backend's message
                     // ✅ FIX 2: Route to the Verify screen and pass the email!
                     Alert.alert("Success", data.message, [
-                        { 
-                            text: "Verify Email", 
-                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } }) 
+                        {
+                            text: "Verify Email",
+                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } })
                         }
                     ]);
                 } else {
@@ -81,13 +81,13 @@ export default function SignupScreen() {
             try {
                 const data = await signupUserApi(name, email, password, "passenger", phone);
 
-               if (data.success) {
+                if (data.success) {
                     // ✅ FIX 1: Use the backend's message
                     // ✅ FIX 2: Route to the Verify screen and pass the email!
                     Alert.alert("Success", data.message, [
-                        { 
-                            text: "Verify Email", 
-                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } }) 
+                        {
+                            text: "Verify Email",
+                            onPress: () => router.push({ pathname: '/(auth)/verifyOTP', params: { email: email } })
                         }
                     ]);
                 } else {
@@ -240,7 +240,10 @@ export default function SignupScreen() {
                         </View>
                     </View>
                     <TouchableOpacity
-                        style={[styles.primaryBtn, isBusy && { opacity: 0.7 }]}
+                        style={[
+                            styles.primaryBtn,
+                            isBusy ? styles.btnLoadingBg : styles.btnActiveBg
+                        ]}
                         onPress={handleSignup}
                         disabled={isBusy}
                     >
@@ -334,4 +337,11 @@ const styles = StyleSheet.create({
     uploadPlaceholder: { alignItems: 'center' },
     uploadText: { marginTop: 8, fontSize: 14, color: '#666' },
     previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+    btnActiveBg: {
+        backgroundColor: '#196F31',
+    },
+    btnLoadingBg: {
+        backgroundColor: '#A0B4A5',
+    },
+
 });
