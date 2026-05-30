@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSelector } from 'react-redux';
 
-// Service Imports (Make sure socket is exported from here)
 import { fetchMyFavoritesApi, removeFavoriteApi, socket } from '../../service/server';
 
 export default function FavoriteRoutesScreen() {
