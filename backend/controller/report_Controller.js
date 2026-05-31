@@ -86,7 +86,7 @@ export const getAllReports = async (req, res) => {
   try {
     const reports = await report_models.find()
       .populate('reportedBy', 'name email') // Gets the user who reported it
-      // ✅ Add this line to pull the full bus route data!
+      //  this line to pull the full bus route data!
       .populate('busRoute', 'routeName startLocation endLocation') 
       .sort({ createdAt: -1 });
 

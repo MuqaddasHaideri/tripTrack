@@ -6,19 +6,30 @@ import {
   FlatList, 
   TouchableOpacity, 
   ActivityIndicator, 
-  Alert
+  Alert,
+  SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; 
 import { fetchAllReportsApi, updateReportStatusApi } from '../../service/server'; 
 import { useSelector } from 'react-redux';
 
+// Reusable StatCard Component
+const StatCard = ({ label, value, icon }) => (
+  <View style={styles.statCard}>
+    <View style={styles.statIconBg}>
+      <Ionicons name={icon} size={18} color="#196F31" />
+    </View>
+    <Text style={styles.statValue}>{value}</Text>
+    <Text style={styles.statLabel}>{label}</Text>
+  </View>
+);
+
 export const UserReportsView = () => {
-  const [activeSegment, setActiveSegment] = useState('active');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState(null); 
-  const { token } = useSelector((state: any) => state.auth);
+  const { token } = useSelector((state) => state.auth);
 
   const loadReportData = async (isRefreshing = false) => {
     try {
@@ -42,11 +53,7 @@ export const UserReportsView = () => {
         extractedReports = response;
       }
 
-      if (activeSegment === 'active') {
-        setReports(extractedReports.filter(report => report.status !== 'resolved'));
-      } else {
-        setReports(extractedReports);
-      }
+      setReports(extractedReports);
     } catch (error) {
       console.error("Error loading report data:", error);
       Alert.alert("Error", "Something went wrong fetching reports.");
@@ -60,7 +67,7 @@ export const UserReportsView = () => {
     if (token) {
       loadReportData();
     }
-  }, [token, activeSegment]);
+  }, [token]);
 
   const handleUpdateStatus = async (reportId, newStatus) => {
     setProcessingId(reportId);
@@ -68,16 +75,11 @@ export const UserReportsView = () => {
       const response = await updateReportStatusApi(reportId, newStatus, token);
 
       if (response && response.success !== false) {
-        Alert.alert("Success", `Report status updated to ${newStatus}!`);
+        Alert.alert("Success", `Report marked as ${newStatus}!`);
         
-        if (activeSegment === 'active' && newStatus === 'resolved') {
-
-          setReports(prevReports => prevReports.filter(report => report._id !== reportId));
-        } else {
-          setReports(prevReports => 
-            prevReports.map(r => r._id === reportId ? { ...r, status: newStatus } : r)
-          );
-        }
+        setReports(prevReports => 
+          prevReports.map(r => r._id === reportId ? { ...r, status: newStatus } : r)
+        );
       } else {
         Alert.alert("Error", response.message || "Failed to update report status.");
       }
@@ -94,8 +96,9 @@ export const UserReportsView = () => {
       "Update Report Status",
       "Choose a new progress state for this user ticket:",
       [
-        { text: "Investigating", onPress: () => handleUpdateStatus(reportId, 'investigating') },
-        { text: "Mark Resolved", onPress: () => handleUpdateStatus(reportId, 'resolved'), style: 'destructive' },
+        { text: "Mark Reviewed", onPress: () => handleUpdateStatus(reportId, 'reviewed') },
+        { text: "Mark Resolved", onPress: () => handleUpdateStatus(reportId, 'resolved') },
+        { text: "Dismiss", onPress: () => handleUpdateStatus(reportId, 'dismissed'), style: 'destructive' },
         { text: "Cancel", style: 'cancel' }
       ]
     );
@@ -105,8 +108,11 @@ export const UserReportsView = () => {
     switch (status?.toLowerCase()) {
       case 'resolved':
         return { badge: styles.badgeResolved, text: styles.textResolved };
-      case 'investigating':
-        return { badge: styles.badgeInvestigating, text: styles.textInvestigating };
+      case 'reviewed':
+        return { badge: styles.badgeReviewed, text: styles.textReviewed };
+      case 'dismissed':
+        return { badge: styles.badgeDismissed, text: styles.textDismissed };
+      case 'pending':
       default:
         return { badge: styles.badgePending, text: styles.textPending };
     }
@@ -114,97 +120,92 @@ export const UserReportsView = () => {
 
   const renderReportItem = ({ item }) => {
     const statusTheme = getStatusStyle(item.status);
-    const isResolved = item.status === 'resolved';
+    const isClosed = item.status === 'resolved' || item.status === 'dismissed';
+
+    // Safely map your API's actual keys to the UI text
+    const displayTitle = item.issueType || item.reportType || "User Report";
+    const displayName = item.reportedBy?.name || (item.isAnonymous ? 'Anonymous' : 'Unknown User');
 
     return (
-      <View style={styles.reportCard}>
+      <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <View style={styles.iconWrapper}>
-            <Ionicons name="warning-outline" size={24} color="#D35400" />
+          <View style={styles.iconCircle}>
+            <Ionicons 
+              // Change icon color dynamically if priority is critical
+              name={item.priority === 'critical' ? "alert-circle" : "warning-outline"} 
+              size={26} 
+              color={item.priority === 'critical' ? "#D35400" : "#196F31"} 
+            />
           </View>
           
-          <View style={styles.textContainer}>
-            <Text style={styles.reportTitle}>{item.title || "User Report"}</Text>
-            <Text style={styles.reportedBy}>Reported by: {item.reporter?.name || item.userId || 'Anonymous'}</Text>
-            <Text style={styles.reportDetails}>{item.description || 'No description provided.'}</Text>
-            {item.createdAt && (
-              <Text style={styles.timestamp}>
-                🕒 {new Date(item.createdAt).toLocaleDateString()}
-              </Text>
-            )}
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{displayTitle}</Text>
+            <Text style={styles.cardSub}>By: {displayName}</Text>
           </View>
 
-          {/* Status Badge */}
-          <View style={[styles.statusBadge, statusTheme.badge]}>
-            <Text style={[styles.statusText, statusTheme.text]}>
+          <View style={[styles.priorityChip, statusTheme.badge]}>
+            <Text style={[styles.priorityChipText, statusTheme.text]}>
               {item.status || "Pending"}
             </Text>
           </View>
         </View>
 
-        {/* Dynamic Action Buttons */}
-        {!isResolved && (
-          <TouchableOpacity 
-            style={[styles.actionButton, processingId === item._id && styles.disabledButton]} 
-            onPress={() => triggerStatusAlert(item._id)}
-            disabled={processingId === item._id}
-          >
-            {processingId === item._id ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <>
-                <Ionicons name="create-outline" size={16} color="#FFF" />
-                <Text style={styles.actionButtonText}>Update Status</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+        <Text style={styles.reportDetails}>{item.description || 'No description provided.'}</Text>
+
+        <View style={styles.cardFooter}>
+          <Text style={styles.timestamp}>
+            🕒 {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Date Unknown'}
+          </Text>
+
+          {!isClosed && (
+            <TouchableOpacity 
+              style={[styles.actionButton, processingId === item._id && styles.submitBtnDisabled]} 
+              onPress={() => triggerStatusAlert(item._id)}
+              disabled={processingId === item._id}
+            >
+              {processingId === item._id ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <>
+             <Ionicons name="sync-outline" size={16} color="#FFF" />
+                  <Text style={styles.actionButtonText}>Update</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   };
-
   const renderEmptyState = () => (
     <View style={styles.placeholderWrapper}>
       <View style={styles.placeholderIconBg}>
-        <Ionicons name={activeSegment === 'active' ? "checkmark-done-circle-outline" : "folder-open-outline"} size={28} color="#196F31" />
+        <Ionicons name="folder-open-outline" size={32} color="#196F31" />
       </View>
-      <Text style={styles.placeholderTitle}>
-        {activeSegment === 'active' ? "Clean Slate!" : "No Reports Found"}
-      </Text>
+      <Text style={styles.mainPrompt}>No Reports</Text>
       <Text style={styles.placeholderSub}>
-        {activeSegment === 'active' 
-          ? "There are no pending or open user reports to review."
-          : "There are currently no user complaints or system tickets logged."}
+        There are currently no user complaints or system tickets logged.
       </Text>
     </View>
   );
 
-  return (
-    <View style={styles.container}>
-      {/* ── SEGMENTED CONTROL ── */}
-      <View style={styles.segmentContainer}>
-        <TouchableOpacity 
-          style={[styles.segmentButton, activeSegment === 'active' && styles.activeSegmentButton]}
-          onPress={() => setActiveSegment('active')}
-          activeOpacity={0.9}
-        >
-          <Text style={[styles.segmentText, activeSegment === 'active' && styles.activeSegmentText]}>
-            Active Reports
-          </Text>
-        </TouchableOpacity>
+  // Dynamic Statistics Calculations
+  const totalReports = reports.length;
+  const pendingReports = reports.filter(r => r.status === 'pending' || !r.status).length;
+  const reviewedReports = reports.filter(r => r.status === 'reviewed').length;
+  const resolvedReports = reports.filter(r => r.status === 'resolved').length;
 
-        <TouchableOpacity 
-          style={[styles.segmentButton, activeSegment === 'all' && styles.activeSegmentButton]}
-          onPress={() => setActiveSegment('all')}
-          activeOpacity={0.9}
-        >
-          <Text style={[styles.segmentText, activeSegment === 'all' && styles.activeSegmentText]}>
-            All History
-          </Text>
-        </TouchableOpacity>
+  return (
+    <SafeAreaView style={styles.container}>
+      
+      {/* Dynamic Stats Row Replacing Header */}
+      <View style={styles.statsRow}>
+        <StatCard label="Total"    value={totalReports}    icon="folder-open-outline" />
+        <StatCard label="Pending"  value={pendingReports}  icon="time-outline" />
+        <StatCard label="Reviewed" value={reviewedReports} icon="eye-outline" />
+        <StatCard label="Resolved" value={resolvedReports} icon="checkmark-circle-outline" />
       </View>
 
-      {/* Main Content Area */}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#196F31" />
@@ -216,61 +217,152 @@ export const UserReportsView = () => {
           keyExtractor={(item) => item._id || Math.random().toString()}
           renderItem={renderReportItem}
           ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={styles.scroll}
           refreshing={refreshing}
           onRefresh={() => loadReportData(true)}
+          showsVerticalScrollIndicator={false}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 export default UserReportsView;
 
 // ==========================================
-// STYLES (Matched exactly with VerifyDriversView)
+// INTEGRATED STYLES
 // ==========================================
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  container: { flex: 1, backgroundColor: '#F0F9F4' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  loadingText: { marginTop: 10, color: '#666', fontSize: 13 },
-  listContent: { paddingVertical: 12, paddingHorizontal: 14 },
-  
-  // Segment Switch Controls
-  segmentContainer: { flexDirection: 'row', backgroundColor: '#EFEFEF', marginHorizontal: 14, marginTop: 14, marginBottom: 4, borderRadius: 10, padding: 4 },
-  segmentButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8 },
-  activeSegmentButton: { backgroundColor: '#FFF', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
-  segmentText: { fontSize: 13, fontWeight: '600', color: '#666' },
-  activeSegmentText: { color: '#123D1F', fontWeight: '700' },
+  loadingText: { marginTop: 12, color: '#4A6B54', fontSize: 14, fontWeight: '600' },
+  scroll: { padding: 20, paddingBottom: 40 },
 
-  // Report Card Layout
-  reportCard: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  iconWrapper: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FBEEE6', alignItems: 'center', justifyContent: 'center' },
-  textContainer: { marginLeft: 12, flex: 1 },
-  reportTitle: { fontSize: 15, fontWeight: '700', color: '#123D1F', marginBottom: 2 },
-  reportedBy: { fontSize: 11, fontWeight: '600', color: '#777', marginBottom: 6 },
-  reportDetails: { fontSize: 13, color: '#444', lineHeight: 18 },
-  timestamp: { fontSize: 11, color: '#888', marginTop: 6 },
+  // Stats Card Row
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#D1E8D9',
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#F0F9F4',
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1.5,
+    borderColor: '#196F31',
+    alignItems: 'center',
+    gap: 4,
+    elevation: 2,
+    shadowColor: '#196F31',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  statIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D1E8D9',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#123D1F',
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 10,
+    color: '#6A8E75',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // Card Layout
+  card: {
+    backgroundColor: '#fff', 
+    padding: 18, 
+    borderRadius: 24,
+    borderWidth: 2, 
+    borderColor: '#E8F3EB',
+    elevation: 4, 
+    shadowColor: '#196F31', 
+    shadowOpacity: 0.08, 
+    shadowRadius: 10,
+    marginBottom: 16
+  },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  iconCircle: {
+    width: 52, 
+    height: 52, 
+    borderRadius: 18,
+    backgroundColor: '#F0F9F4', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 14,
+  },
+  cardContent: { flex: 1, justifyContent: 'center' },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F' },
+  cardSub: { fontSize: 13, color: '#8E8E93', marginTop: 2, fontWeight: '600' },
+  reportDetails: { fontSize: 14, color: '#4A6B54', lineHeight: 20, marginBottom: 16 },
   
-  // Custom Status Badges
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  badgeResolved: { backgroundColor: '#E8F5E9' },
-  badgeInvestigating: { backgroundColor: '#EBF5FB' },
-  badgePending: { backgroundColor: '#FEF9E7' },
-  statusText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
-  textResolved: { color: '#196F31' },
-  textInvestigating: { color: '#2980B9' },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1.5,
+    borderTopColor: '#F0F9F4',
+    paddingTop: 12,
+  },
+  timestamp: { fontSize: 12, color: '#A0B4A5', fontWeight: '700' },
+
+  // Priority Chips
+  priorityChip: {
+    paddingHorizontal: 12, 
+    paddingVertical: 6,
+    borderRadius: 14, 
+    borderWidth: 1.5,
+  },
+  priorityChipText: { fontWeight: '800', fontSize: 11, textTransform: 'uppercase' },
+  badgePending: { backgroundColor: '#FFF9E6', borderColor: '#FDEBD0' },
   textPending: { color: '#D35400' },
+  badgeReviewed: { backgroundColor: '#EBF5FB', borderColor: '#D6EAF8' },
+  textReviewed: { color: '#2980B9' },
+  badgeResolved: { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' },
+  textResolved: { color: '#196F31' },
+  badgeDismissed: { backgroundColor: '#F2F4F4', borderColor: '#E5E8E8' },
+  textDismissed: { color: '#7B7D7D' },
 
-  // Action Buttons
-  actionButton: { backgroundColor: '#196F31', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, gap: 6, marginTop: 4 },
-  disabledButton: { opacity: 0.7 },
-  actionButtonText: { color: '#FFF', fontWeight: '600', fontSize: 14 },
+  // Buttons
+  actionButton: { 
+    backgroundColor: '#196F31', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    paddingVertical: 8, 
+    paddingHorizontal: 16,
+    borderRadius: 14, 
+    gap: 6 
+  },
+  submitBtnDisabled: { backgroundColor: '#A0B4A5', elevation: 0 },
+  actionButtonText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   
-  // Placeholders
+  // Empty States
   placeholderWrapper: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
-  placeholderIconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  placeholderTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 6 },
-  placeholderSub: { fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 32 },
+  placeholderIconBg: { 
+    width: 80, height: 80, borderRadius: 40, 
+    backgroundColor: '#fff', 
+    borderWidth: 2, borderColor: '#E8F3EB',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16 
+  },
+  mainPrompt: { fontSize: 24, fontWeight: '900', color: '#123D1F', marginBottom: 8 },
+  placeholderSub: { fontSize: 14, color: '#8E8E93', textAlign: 'center', paddingHorizontal: 32, fontWeight: '500' },
 });

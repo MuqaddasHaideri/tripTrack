@@ -101,7 +101,7 @@ export default function SettingsScreen() {
               </View>
             </View>
           </View>
-        </TouchableOpacity >
+        </TouchableOpacity>
       ) : (
         <TouchableOpacity style={styles.guestCard} onPress={() => router.push('/(auth)/login')}>
           <View style={styles.guestIconCircle}>
@@ -116,46 +116,54 @@ export default function SettingsScreen() {
       )}
 
       {/* --- MENU SECTIONS --- */}
-      {user?.role !== 'driver' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>ACCOUNT PREFERENCES</Text>
-          <View style={styles.cardGroup}>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>ACCOUNT PREFERENCES</Text>
+        <View style={styles.cardGroup}>
+          
+          {/* Show Favorite Routes ONLY if logged in AND NOT a driver */}
+          {user && user.role !== 'driver' && (
             <ListOption
               title="Favorite Routes"
               subtitle="Manage your saved bus lines"
               icon="heart-outline"
               onPress={() => router.push('/passenger/favouriteRoutes')}
-            //colors={activeColors}
             />
-            <ListOption
-              title="Schedules"
-              subtitle="View static bus time-tables"
-              icon="time-outline"
-              isLast={true}
-              onPress={() => router.push('/passenger/schedule')}
-            />
-          </View>
-        </View>
-      )}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>APP & SUPPORT</Text>
-        <View style={styles.cardGroup}>
+          )}
+
+          {/* Schedule is visible to EVERYONE (Guests, Passengers, Drivers) */}
           <ListOption
-            title="Announcements"
-            subtitle="Latest updates and notices"
-            icon="megaphone-outline"
-            onPress={() => router.push('/passenger/announcements')}
-          />
-          <ListOption
-            title="Report an Issue"
-            subtitle="Traffic, bugs or suggestions"
-            icon="alert-circle-outline"
+            title="Schedules"
+            subtitle="View static bus time-tables"
+            icon="time-outline"
             isLast={true}
-            onPress={() => router.push('/passenger/report-issue')}
+            onPress={() => router.push('/passenger/schedule')}
           />
         </View>
       </View>
 
+      {/* Show App & Support ONLY if logged in */}
+      {user && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>APP & SUPPORT</Text>
+          <View style={styles.cardGroup}>
+            <ListOption
+              title="Announcements"
+              subtitle="Latest updates and notices"
+              icon="megaphone-outline"
+              onPress={() => router.push('/passenger/announcements')}
+            />
+            <ListOption
+              title="Report an Issue"
+              subtitle="Traffic, bugs or suggestions"
+              icon="alert-circle-outline"
+              isLast={true}
+              onPress={() => router.push('/passenger/report-issue')}
+            />
+          </View>
+        </View>
+      )}
+
+      {/* Show Sign Out ONLY if logged in */}
       {user && (
         <View style={[styles.cardGroup, { marginTop: 10, borderColor: '#FF3B30' }]}>
           <ListOption

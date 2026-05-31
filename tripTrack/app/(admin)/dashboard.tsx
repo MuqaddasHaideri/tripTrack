@@ -28,7 +28,7 @@ const TABS_CONFIG = [
     label:     'Verify Drivers',
     icon:      'card-outline',
     component: VerifyDriversView,
-    badge:     4,
+    badge:     0,
   },
   {
     id:        'transit',
@@ -44,7 +44,7 @@ const TABS_CONFIG = [
     label:     'User Reports',
     icon:      'chatbubbles-outline',
     component: UserReportsView,
-    badge:     12,
+    badge:     0,
   },
   {
     id:        'admin',
@@ -299,7 +299,7 @@ export default function AdminDashboardScreen() {
                   <Text style={styles.userName} numberOfLines={1}>
                     {user?.name ?? 'SuperAdmin'}
                   </Text>
-                  <Text style={styles.userRole}>System Administrator</Text>
+                  <Text style={styles.userRole}>{user?.role ?? 'Administrator'}</Text>
                 </View>
                 <View style={styles.onlineDot} />
               </View>

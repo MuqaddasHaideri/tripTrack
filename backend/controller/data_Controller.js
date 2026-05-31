@@ -21,13 +21,38 @@ export const getAllBuses = async (req, res) => {
   }
 };
 
+// ==========================================
+// 1. CREATE A NEW ROUTE
+// ==========================================
 export const createRoute = async (req, res) => {
   try {
-    const newRoute = new route_model(req.body);
+    const { route_name, color_hex, origin, destination, stops, polyline } = req.body;
+
+    // Check if a route with this name already exists
+    const existingRoute = await route_model.findOne({ route_name });
+    if (existingRoute) {
+      return res.status(400).json({ success: false, message: "A route with this name already exists." });
+    }
+
+    const newRoute = new route_model({
+      route_name,
+      color_hex,
+      origin,
+      destination,
+      stops,
+      polyline
+    });
+
     await newRoute.save();
-    res.status(201).json({ success: true, message: "Route Created!", data: newRoute });
+
+    res.status(201).json({ 
+      success: true, 
+      message: "Route created successfully!", 
+      route: newRoute 
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error creating route:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -171,5 +196,58 @@ export const getLiveETA = async (busLat, busLng, stopLat, stopLng) => {
   } catch (error) {
     console.error("Google API Error:", error);
     return null;
+  }
+};
+
+// ==========================================
+// UPDATE A ROUTE (Admin Only)
+// ==========================================
+export const updateRoute = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // findByIdAndUpdate automatically applies the changes and returns the new document
+    const updatedRoute = await route_model.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true } 
+    );
+
+    if (!updatedRoute) {
+      return res.status(404).json({ success: false, message: "Route not found" });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Route updated successfully", 
+      route: updatedRoute 
+    });
+  } catch (error) {
+    console.error("Error updating route:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// ==========================================
+// DELETE A ROUTE (Admin Only)
+// ==========================================
+export const deleteRoute = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedRoute = await route_model.findByIdAndDelete(id);
+
+    if (!deletedRoute) {
+      return res.status(404).json({ success: false, message: "Route not found" });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Route deleted successfully" 
+    });
+  } catch (error) {
+    console.error("Error deleting route:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

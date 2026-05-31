@@ -252,4 +252,4 @@ const styles = StyleSheet.create({
   routeItemIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   routeItemTitle: { color: '#000', fontWeight: '800', fontSize: 16 },
   routeItemSub: { color: '#8E8E93', fontSize: 13, fontWeight: '600' }
-});
+});                                                              

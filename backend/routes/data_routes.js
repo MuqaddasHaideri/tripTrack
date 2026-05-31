@@ -8,12 +8,17 @@ import {
   getUserLocations, 
   updateLocationType, 
   deleteLocation,
+  updateRoute,
+  deleteRoute
   // getNearbyRoutes 
 } from "../controller/data_Controller.js";
 import { 
   getPendingDrivers, 
   approveDriver, 
-  getAllDrivers 
+  getAllDrivers,
+  addAdmin,
+  getAllAdmins,
+  removeAdmin 
 } from "../controller/admin_Controller.js";
 import { createReport, getAllReports, getMyReports, updateReportStatus } from "../controller/report_Controller.js"; 
 import { getNotifications, markAsRead, markAllAsRead } from "../controller/notification_Controller.js";
@@ -33,13 +38,16 @@ const router = express.Router();
 router.get("/routes", getAllRoutes);
 router.get("/buses", getAllBuses);
 // router.get("/routes/nearby", getNearbyRoutes); 
-
+router.post("/admin/addAdmin", isAuthenticated, isAdmin, addAdmin); // Admin Only Route to add new admins
+router.get("/admin/all-admins", isAuthenticated, isAdmin, getAllAdmins);
+router.delete("/admin/remove-admin/:id", isAuthenticated, isAdmin, removeAdmin);
 // ==========================================
 // ADMIN DATA ROUTES (Requires Auth AND Admin)
 // ==========================================
-router.post("/routes", isAuthenticated, isAdmin, createRoute);
-router.post("/buses", isAuthenticated, isAdmin, createBus);
-
+router.post("/admin/routes", isAuthenticated, isAdmin, createRoute);
+router.put("/admin/routes/:id", isAuthenticated, isAdmin, updateRoute);
+router.delete("/admin/routes/:id", isAuthenticated, isAdmin, deleteRoute);
+router.post("/admin/buses", isAuthenticated, isAdmin, createBus); //unused
 // ==========================================
 // DRIVER MANAGEMENT ROUTES (Requires Auth AND Admin)
 // ==========================================

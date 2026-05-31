@@ -1,8 +1,7 @@
 
 
-// Switch to local for testing, change back to deployed URL before pushing
-// export const API_BASE = "http://192.168.0.104:3001/api";
-export const API_BASE = "https://fyp-atio.onrender.com/api"; 
+ export const API_BASE = "http://192.168.0.104:3001/api";
+// export const API_BASE = "https://fyp-atio.onrender.com/api"; 
 // export const API_BASE = "https://fyp-atio.onrender.com/api"; 
 export const endpoints = {
   login: "/auth/login",
@@ -30,5 +29,10 @@ export const endpoints = {
   createAnnouncement : "/data/admin/announcements",
   getAdminAnnouncements : "/data/admin/announcements",
   deleteAnnouncement : "/data/admin/announcements",
-  getUserAnnouncements : "/data/announcements"
+  getUserAnnouncements : "/data/announcements",
+  adminRoute:'/data/admin/routes',
+  addAdmin:'/data/admin/addAdmin',
+  getAllAdmins:'/data/admin/all-admins',
+  removeAdmin:'/data/admin/remove-admin'
+
 };

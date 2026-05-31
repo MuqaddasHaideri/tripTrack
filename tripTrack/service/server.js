@@ -73,10 +73,10 @@ export const fetchRoutesApi = async () => {
   return response.data || []; 
 };
 
-export const fetchBusesApi = async () => {
-  const response = await fetchApi(endpoints.getBuses);
-  return response.data || [];
-};
+// export const fetchBusesApi = async () => {
+//   const response = await fetchApi(endpoints.getBuses);
+//   return response.data || [];
+// };
 
 export const fetchUserLocationsApi = async (token) => {
   const response = await fetchApi(endpoints.locations, {
@@ -564,5 +564,119 @@ export const fetchUserAnnouncementsApi = async (token) => {
   } catch (error) {
     console.error("Error fetching user announcements:", error);
     return { success: false, announcements: [] };
+  }
+};
+// ==========================================
+// POST: Create Routes (Admin)
+// ==========================================
+export const createRouteApi = async (routeData, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.adminRoute}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(routeData),
+    });
+    return data;
+  } catch (error) {
+    console.error("Error creating route:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+// ==========================================
+// DELETE: Delete Routes(Admin)
+// ==========================================
+export const deleteRouteApi = async (id, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.adminRoute}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error deleting route:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+// ==========================================
+// PUT: update routes (Admin)
+// ==========================================
+export const updateRouteApi = async (id, routeData, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.adminRoute}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+     body: JSON.stringify(routeData),
+    });
+    return data;
+  } catch (error) {
+    console.error("Error updating route:", error);
+    return { success: false };
+  }
+};
+
+// ==========================================
+// POST: Create New Admin
+// ==========================================
+export const createAdminApi = async (adminData, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.addAdmin}`, { // Make sure this endpoint matches your backend route!
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(adminData),
+    });
+    return data;
+  } catch (error) {
+    console.error("Error creating admin:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// GET: Fetch All Admins (or Users)
+// ==========================================
+export const fetchAdminsApi = async (token) => {
+  try {
+    const data = await fetchApi(`${endpoints.getAllAdmins}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    return { success: false, message: "Network error occurred." };
+  }
+};
+
+// ==========================================
+// DELETE: Remove Admin Access
+// ==========================================
+export const deleteAdminApi = async (id, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.removeAdmin}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return data;
+  } catch (error) {
+    console.error("Error deleting admin:", error);
+    return { success: false, message: "Network error occurred." };
   }
 };
