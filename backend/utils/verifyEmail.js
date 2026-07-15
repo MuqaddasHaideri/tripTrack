@@ -8,6 +8,7 @@ export const sendVerificationEmail = async (userEmail, otp) => {
       port: 465,
       secure: true, // true for 465, false for other ports like 587
       requireTLS: true,
+        family: 4,
       auth: {
         user: process.env.EMAIL_USER, 
         pass: process.env.EMAIL_PASS, 
