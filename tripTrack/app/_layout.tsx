@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 function AppWrapper() {
   const colorScheme = useColorScheme();
 
+
   const { user, isGuest, isInitialized } = useSelector((state: any) => state.auth);
 
   const segments = useSegments();
