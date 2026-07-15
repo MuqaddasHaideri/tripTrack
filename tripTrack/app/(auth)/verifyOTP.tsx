@@ -10,12 +10,15 @@ import { verifyEmailApi } from '@/service/server';
 
 export default function OtpScreen() {
     const router = useRouter();
-    const { email, role } = useLocalSearchParams(); // Get data from previous screen
+    const { email, role } = useLocalSearchParams<{ email: string; role?: string }>(); 
 
     const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 digit OTP
     const [isVerifying, setIsVerifying] = useState(false);
     const [timer, setTimer] = useState(60);
-    const inputRefs = useRef([]);
+    const [activeInputIndex, setActiveInputIndex] = useState(0); // Track focused input
+
+    // FIXED: Correctly initialize refs array structure
+    const inputRefs = useRef<Array<TextInput | null>>([]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -24,20 +27,30 @@ export default function OtpScreen() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleChange = (text, index) => {
+    const handleChange = (text: string, index: number) => {
+        // Only allow numbers
+        const numericValue = text.replace(/[^0-9]/g, '');
+
         const newOtp = [...otp];
-        newOtp[index] = text;
+        newOtp[index] = numericValue;
         setOtp(newOtp);
 
-        // Move to next input automatically
-        if (text && index < 5) {
-            inputRefs.current[index + 1].focus();
+        // FIXED: Safe ref check before calling focus to prevent crash on slow devices
+        if (numericValue && index < 5) {
+            const nextInput = inputRefs.current[index + 1];
+            if (nextInput) {
+                nextInput.focus();
+            }
         }
     };
 
-    const handleKeyPress = (e, index) => {
+    const handleKeyPress = (e: any, index: number) => {
+        // FIXED: Safe ref selection on backspace
         if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-            inputRefs.current[index - 1].focus();
+            const previousInput = inputRefs.current[index - 1];
+            if (previousInput) {
+                previousInput.focus();
+            }
         }
     };
 
@@ -50,7 +63,6 @@ export default function OtpScreen() {
 
         try {
             setIsVerifying(true);
-            // Replace with your actual backend call
             const data = await verifyEmailApi(email, otpCode);
 
             if (data.success) {
@@ -85,13 +97,21 @@ export default function OtpScreen() {
                         {otp.map((digit, index) => (
                             <TextInput
                                 key={index}
-                                ref={(ref) => (inputRefs.current[index] = ref)}
-                                style={styles.otpInput}
+                                ref={(ref) => {
+                                    inputRefs.current[index] = ref;
+                                }}
+                                style={[
+                                    styles.otpInput,
+                                    // Highlight active focused box or boxes containing entered code
+                                    (activeInputIndex === index || digit !== '') && styles.otpInputActive
+                                ]}
                                 keyboardType="number-pad"
                                 maxLength={1}
+                                onFocus={() => setActiveInputIndex(index)}
                                 onChangeText={(text) => handleChange(text, index)}
                                 onKeyPress={(e) => handleKeyPress(e, index)}
                                 value={digit}
+                                selectTextOnFocus
                             />
                         ))}
                     </View>
@@ -106,12 +126,20 @@ export default function OtpScreen() {
                         </TouchableOpacity>
                     )}
 
+                    {/* FIXED: Dynamic state colors applied */}
                     <TouchableOpacity 
-                        style={styles.primaryBtn} 
+                        style={[
+                            styles.primaryBtn, 
+                            isVerifying ? styles.btnLoadingBg : styles.btnActiveBg
+                        ]} 
                         onPress={handleVerify}
                         disabled={isVerifying}
                     >
-                        {isVerifying ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Verify Now</Text>}
+                        {isVerifying ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.primaryBtnText}>Verify Now</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -139,14 +167,24 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#196F31'
     },
+    // Lit active input styles
+    otpInputActive: {
+        borderColor: '#196F31',
+        backgroundColor: '#fbfefc'
+    },
     timerText: { textAlign: 'center', color: '#666', marginBottom: 10 },
     resendText: { textAlign: 'center', color: '#196F31', fontWeight: 'bold', marginBottom: 30 },
     primaryBtn: {
-        backgroundColor: '#196F31',
         height: 55,
         borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    btnActiveBg: {
+        backgroundColor: '#196F31',
+    },
+    btnLoadingBg: {
+        backgroundColor: '#A0B4A5',
     },
     primaryBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });
