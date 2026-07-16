@@ -10,7 +10,7 @@ router.post("/signup", signupValidation, signupController);
 
 router.post("/login", loginValidation, loginController); 
 router.post("/check-approval-status", checkApprovalStatus);
-router.post("/verify", verifyOtpController);  
+// router.post("/verify", verifyOtpController);  
 router.get("/profile", isAuthenticated, getUserProfile);
 router.put("/profile", isAuthenticated, updateUserProfile);
 router.delete("/profile", isAuthenticated, deleteUserProfile);

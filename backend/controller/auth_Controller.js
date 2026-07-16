@@ -2,37 +2,6 @@ import user_models from "../models/user_models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { notifyAdmins } from "../utils/sendNotification.js";
-import { sendVerificationEmail } from "../utils/verifyEmail.js";
-export const verifyOtpController = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    const trimmedEmail = email?.trim();
-
-    const user = await user_models.findOne({ email: trimmedEmail });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-    if (user.isEmailVerified) {
-      return res.status(400).json({ success: false, message: "Email already verified" });
-    }
-    if (!user.otp || user.otp !== otp) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
-    }
-    if (user.otpExpires < new Date()) {
-      return res.status(400).json({ success: false, message: "OTP expired" });
-    }
-
-    user.isEmailVerified = true;
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
-
-    return res.status(200).json({ success: true, message: "Email verified successfully" });
-  } catch (error) {
-    console.log("Error in verifyOtpController:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
-  }
-};
 // ==========================================
 // SINGUP
 // ==========================================
@@ -52,8 +21,8 @@ export const signupController = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const isUserVerified = role === 'passenger' ? true : false;
-const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60000);
+// const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     const otpExpires = new Date(Date.now() + 10 * 60000);
     const newUser = new user_models({
       name,
       email: trimmedEmail,
@@ -63,13 +32,13 @@ const otp = Math.floor(100000 + Math.random() * 900000).toString();
       phone: phone || "",
       ...(role === 'driver' && { cnic, driverLicense }),
       isVerified: isUserVerified,
-      isEmailVerified: false, 
-      otp: otp,
-      otpExpires: otpExpires
+      // isEmailVerified: false, 
+      // otp: otp,
+      // otpExpires: otpExpires
     });
 
     await newUser.save();
-sendVerificationEmail(newUser.email, otp);
+
     if (role === 'driver') {
       notifyAdmins(
         'New Driver Registration',
@@ -103,7 +72,6 @@ sendVerificationEmail(newUser.email, otp);
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
-
 // ==========================================
 // LOGIN
 // ==========================================

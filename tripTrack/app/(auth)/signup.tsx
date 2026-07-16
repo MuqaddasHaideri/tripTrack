@@ -72,22 +72,15 @@ export default function SignupScreen() {
 
                 const data = await signupUserApi(name, email, password, "passenger", phone);
                 if (data.success) {
-          Alert.alert(
-            "Account Created",
-            "We have sent a 6-digit validation code to your email. Please verify your account to continue.",
-            [
-              { 
-                text: "Verify Now", 
-                onPress: () => router.replace({
-                  pathname: '/(auth)/verifyOTP',
-                  params: { email, role: 'passenger' }
-                }) 
-              }
-            ]
-          );
-        } else {
-          Alert.alert("Error", data.message || "Signup failed");
-        }
+                    Alert.alert(
+                        "Account Created",
+                        "Passenger account created successfully!",
+
+                        [{ text: "Login", onPress: () => router.replace('/(auth)/login') }]
+                    );
+                } else {
+                    Alert.alert("Error", data.message || "Signup failed");
+                }
             } catch (error) {
                 console.error(error);
                 Alert.alert("Error", "Something went wrong during passenger signup.");

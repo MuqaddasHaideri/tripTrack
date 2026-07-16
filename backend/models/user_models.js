@@ -10,12 +10,7 @@ const UserSchema = new mongoose.Schema({
   profilePic: { type: String, default: "" },
   role: { type: String, enum: ['passenger', 'driver', 'admin'], required: true },
   phone: { type: String, default: '' },
-   // ==========================
-  // EMAIL VERIFICATION FIELDS  
-  // ==========================
-  isEmailVerified: { type: Boolean, default: false },
-  otp: { type: String, default: null },
-  otpExpires: { type: Date, default: null },
+  
   // ==========================
   // DRIVER-ONLY FIELDS
   // ==========================
