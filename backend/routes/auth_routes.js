@@ -1,9 +1,9 @@
 import express from "express";
-import { signupController, loginController,deleteUserProfile, updateUserProfile,getUserProfile, checkApprovalStatus, verifyOtpController } from "../controller/auth_Controller.js";
+import { signupController, loginController,deleteUserProfile, updateUserProfile,getUserProfile, checkApprovalStatus} from "../controller/auth_Controller.js";
 import { signupValidation, loginValidation } from "../middleware/validation.js"; 
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
 import { registerFcmToken } from "../controller/notification_Controller.js";
-import { sendVerificationEmail } from "../utils/verifyEmail.js";
+// import { sendVerificationEmail } from "../utils/verifyEmail.js";
 const router = express.Router();
 
 router.post("/signup", signupValidation, signupController); 
