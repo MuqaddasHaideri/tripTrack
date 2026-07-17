@@ -21,15 +21,15 @@ import {
 } from '../../service/server';
 import { useTranslation } from 'react-i18next';
 
-
-
 export const BroadcastStationView = () => {
-  const { t } = useTranslation(); 
+  const { t } = useTranslation();
+
   const AUDIENCE_OPTIONS = [
-  { key: 'all', label: t('announcement.all'), icon: 'people-outline', color: '#196F31' },
-  { key: 'passenger', label: t('announcement.passenger'), icon: 'person-outline', color: '#2980B9' },
-  { key: 'driver', label: t('announcement.driver'), icon: 'car-outline', color: '#D35400' },
-];
+    { key: 'all', label: t('announcement.all'), icon: 'people-outline', color: '#196F31' },
+    { key: 'passenger', label: t('announcement.passenger'), icon: 'person-outline', color: '#2980B9' },
+    { key: 'driver', label: t('announcement.driver'), icon: 'car-outline', color: '#D35400' },
+  ];
+
   const { token } = useSelector((state: any) => state.auth);
 
   const [activeView, setActiveView] = useState<'list' | 'create'>('list');
@@ -134,56 +134,56 @@ export const BroadcastStationView = () => {
     const opt = AUDIENCE_OPTIONS.find(o => o.key === audience);
     return opt || AUDIENCE_OPTIONS[0];
   };
+const renderAnnouncementCard = ({ item }: { item: any }) => {
+  const badge = getAudienceBadge(item.targetAudience);
 
-  const renderAnnouncementCard = ({ item }: { item: any }) => {
-    const badge = getAudienceBadge(item.targetAudience);
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={[styles.audienceIconWrap, { backgroundColor: badge.color + '15' }]}>
-            <Ionicons name={badge.icon as any} size={20} color={badge.color} />
-          </View>
-          <View style={styles.cardTextWrap}>
-            <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-            <Text style={styles.cardBody} numberOfLines={3}>{item.body}</Text>
-          </View>
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.iconCircle}>
+          <Ionicons name="megaphone" size={24} color="#196F31" />
+        </View>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
         </View>
 
-        <View style={styles.cardFooter}>
-          <View style={[styles.audienceBadge, { backgroundColor: badge.color + '15' }]}>
-            <Text style={[styles.audienceBadgeText, { color: badge.color }]}>
-              {badge.label}
-            </Text>
-          </View>
-          <Text style={styles.cardTimestamp}>
-            {new Date(item.createdAt).toLocaleDateString([], {
-              month: 'short', day: 'numeric', year: 'numeric'
-            })}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.deleteBtn}
+        <TouchableOpacity 
+          style={styles.trashBtn} 
+          activeOpacity={0.6} 
           onPress={() => handleDelete(item._id)}
           disabled={deletingId === item._id}
         >
           {deletingId === item._id ? (
-            <ActivityIndicator size="small" color="#EF4444" />
+            <ActivityIndicator size="small" color="#E24B4A" />
           ) : (
-            <>
-              <Ionicons name="trash-outline" size={15} color="#EF4444" />
-              <Text style={styles.deleteBtnText}>{t('announcement.delete')}</Text>
-            </>
+            <Ionicons name="trash-outline" size={18} color="#E24B4A" />
           )}
         </TouchableOpacity>
       </View>
-    );
-  };
+      <Text style={styles.reportDetails}>{item.body}</Text>
+      <View style={styles.cardFooter}>
+        <View style={styles.dateRow}>
+          <Ionicons name="time-outline" size={16} color="#A0B4A5" />
+          <Text style={styles.timestamp}>
+            {item.createdAt ? new Date(item.createdAt).toLocaleDateString([], {
+              month: 'short', day: 'numeric', year: 'numeric'
+            }) : 'Date Unknown'}
+          </Text>
+        </View>
+        <View style={[styles.priorityChip, { backgroundColor: badge.color + '15', borderColor: badge.color + '30' }]}>
+          <Text style={[styles.priorityChipText, { color: badge.color }]}>
+            {badge.label}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+};
 
   const renderEmptyState = () => (
-    <View style={styles.emptyWrap}>
-      <View style={styles.emptyIconBg}>
-        <Ionicons name="megaphone-outline" size={28} color="#196F31" />
+    <View style={styles.emptyState}>
+      <View style={styles.emptyIconCircle}>
+        <Ionicons name="megaphone-outline" size={44} color="#6A8E75" />
       </View>
       <Text style={styles.emptyTitle}>{t('announcement.noAnnouncements')}</Text>
       <Text style={styles.emptySub}>
@@ -200,6 +200,7 @@ export const BroadcastStationView = () => {
       <ScrollView
         contentContainerStyle={styles.formContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.formCard}>
           <Text style={styles.formSectionLabel}>{t('announcement.announcementDetails')}</Text>
@@ -215,64 +216,69 @@ export const BroadcastStationView = () => {
           />
 
           <Text style={styles.inputLabel}>{t('announcement.body')}</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder={t('announcement.placeholderBody')}
-            placeholderTextColor="#A0B4A5"
-            value={body}
-            onChangeText={setBody}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-            maxLength={1000}
-          />
-          <Text style={styles.charCount}>{body.length}/1000</Text>
+          <View style={styles.textAreaWrap}>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder={t('announcement.placeholderBody')}
+              placeholderTextColor="#A0B4A5"
+              value={body}
+              onChangeText={setBody}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+              maxLength={1000}
+            />
+            <Text style={styles.charCount}>{body.length}/1000</Text>
+          </View>
 
           <Text style={styles.formSectionLabel}>{t('announcement.targetAudience')}</Text>
           <View style={styles.audienceRow}>
-            {AUDIENCE_OPTIONS.map(opt => (
-              <TouchableOpacity
-                key={opt.key}
-                style={[
-                  styles.audienceChip,
-                  targetAudience === opt.key && {
-                    borderColor: opt.color,
-                    backgroundColor: opt.color + '12',
-                  },
-                ]}
-                onPress={() => setTargetAudience(opt.key)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={opt.icon as any}
-                  size={16}
-                  color={targetAudience === opt.key ? opt.color : '#6A8E75'}
-                />
-                <Text
+            {AUDIENCE_OPTIONS.map(opt => {
+              const active = targetAudience === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
                   style={[
-                    styles.audienceChipText,
-                    targetAudience === opt.key && { color: opt.color, fontWeight: '700' },
+                    styles.audienceChip,
+                    active && {
+                      borderColor: opt.color,
+                      backgroundColor: opt.color + '15',
+                    },
                   ]}
+                  onPress={() => setTargetAudience(opt.key)}
+                  activeOpacity={0.7}
                 >
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Ionicons
+                    name={opt.icon as any}
+                    size={16}
+                    color={active ? opt.color : '#6A8E75'}
+                  />
+                  <Text
+                    style={[
+                      styles.audienceChipText,
+                      active && { color: opt.color, fontWeight: '800' },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
         <TouchableOpacity
-          style={[styles.publishBtn, submitting && { opacity: 0.7 }]}
+          style={[styles.actionBtn, (!title.trim() || !body.trim() || submitting) && styles.actionBtnDisabled]}
           onPress={handleCreate}
-          disabled={submitting}
+          disabled={submitting || !title.trim() || !body.trim()}
           activeOpacity={0.8}
         >
           {submitting ? (
             <ActivityIndicator size="small" color="#FFF" />
           ) : (
             <>
-              <Ionicons name="send-outline" size={18} color="#FFF" />
-              <Text style={styles.publishBtnText}>{t('announcement.publishAnnouncement')}</Text>
+              <Text style={styles.actionBtnText}>{t('announcement.publishAnnouncement')}</Text>
+              <Ionicons name="send" size={16} color="#FFF" style={{ marginLeft: 6 }} />
             </>
           )}
         </TouchableOpacity>
@@ -282,12 +288,11 @@ export const BroadcastStationView = () => {
 
   return (
     <View style={styles.container}>
-      {/* Segment Toggle */}
       <View style={styles.segmentContainer}>
         <TouchableOpacity
           style={[styles.segmentButton, activeView === 'list' && styles.activeSegmentButton]}
           onPress={() => setActiveView('list')}
-          activeOpacity={0.9}
+          activeOpacity={1}
         >
           <Text style={[styles.segmentText, activeView === 'list' && styles.activeSegmentText]}>
             {t('announcement.allAnnouncements')}
@@ -296,7 +301,7 @@ export const BroadcastStationView = () => {
         <TouchableOpacity
           style={[styles.segmentButton, activeView === 'create' && styles.activeSegmentButton]}
           onPress={() => setActiveView('create')}
-          activeOpacity={0.9}
+          activeOpacity={1}
         >
           <Text style={[styles.segmentText, activeView === 'create' && styles.activeSegmentText]}>
             {t('announcement.createNew')}
@@ -317,124 +322,156 @@ export const BroadcastStationView = () => {
           keyExtractor={item => item._id || Math.random().toString()}
           renderItem={renderAnnouncementCard}
           ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={styles.list}
           refreshing={refreshing}
           onRefresh={() => loadAnnouncements(true)}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
   );
 };
 
-export default BroadcastStationView;
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  loadingText: { marginTop: 10, color: '#666', fontSize: 13 },
-  listContent: { paddingVertical: 12, paddingHorizontal: 14 },
+  container: { flex: 1, backgroundColor: '#F0F9F4' },
 
-  // Segment
-  segmentContainer: {
-    flexDirection: 'row', backgroundColor: '#EFEFEF',
-    marginHorizontal: 14, marginTop: 14, marginBottom: 4,
-    borderRadius: 10, padding: 4,
-  },
-  segmentButton: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 10, borderRadius: 8,
-  },
-  activeSegmentButton: {
-    backgroundColor: '#FFF', elevation: 2,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1, shadowRadius: 2,
-  },
-  segmentText: { fontSize: 13, fontWeight: '600', color: '#666' },
-  activeSegmentText: { color: '#123D1F', fontWeight: '700' },
-
-  // Cards
   card: {
-    backgroundColor: '#FFF', borderRadius: 12, padding: 16,
-    marginBottom: 12, elevation: 2,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 4,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#196F31',
+    elevation: 4,
+    shadowColor: '#196F31',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  audienceIconWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  iconCircle: {
+    width: 52, 
+    height: 52, 
+    borderRadius: 18,
+    backgroundColor: '#F0F9F4', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 14,
   },
-  cardTextWrap: { marginLeft: 12, flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: '#123D1F', marginBottom: 4 },
-  cardBody: { fontSize: 13, color: '#444', lineHeight: 18 },
-
+  cardContent: { flex: 1, justifyContent: 'center' },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F' },
+  cardSub: { fontSize: 13, color: '#8E8E93', marginTop: 2, fontWeight: '600' },
+  reportDetails: { fontSize: 14, color: '#4A6B54', lineHeight: 20, marginBottom: 14 },
+  priorityChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1.5 },
+  priorityChipText: { fontWeight: '800', fontSize: 11, textTransform: 'uppercase' },
+  trashBtn: { padding: 4, marginLeft: 8 },
   cardFooter: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1.5,
+    borderTopColor: '#F0F9F4',
+    paddingTop: 16,
   },
-  audienceBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  audienceBadgeText: { fontSize: 11, fontWeight: '700' },
-  cardTimestamp: { fontSize: 11, color: '#888' },
-
-  deleteBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 5, paddingVertical: 9, borderRadius: 8,
-    backgroundColor: 'rgba(239,68,68,0.06)',
-    borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  timestamp: { fontSize: 13, color: '#A0B4A5', fontWeight: '700' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F9F4' },
+  loadingText: { marginTop: 12, color: '#6A8E75', fontSize: 14, fontWeight: '600' },
+  list: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 5 },
+  segmentContainer: {
+    flexDirection: 'row', backgroundColor: '#E8F3EB',
+    marginHorizontal: 20, marginTop: 16, marginBottom: 6,
+    borderRadius: 16, padding: 3, height: 44, alignItems: 'center'
   },
-  deleteBtnText: { color: '#EF4444', fontWeight: '600', fontSize: 13 },
-
-  // Empty state
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
-  emptyIconBg: {
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: '#E8F5E9', alignItems: 'center',
-    justifyContent: 'center', marginBottom: 16,
+  segmentButton: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', borderRadius: 14 },
+  activeSegmentButton: {
+    backgroundColor: '#FFF', height: 38, elevation: 3,
+    shadowColor: '#196F31', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 4
   },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 6 },
-  emptySub: { fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 32 },
-
-  // Create form
-  formContainer: { padding: 14, paddingBottom: 40 },
+  segmentText: { fontSize: 13, fontWeight: '700', color: '#6A8E75' },
+  activeSegmentText: { color: '#196F31', fontWeight: '800' },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10
+  },
+  cardTitleText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#123D1F',
+    flex: 1
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#196F31',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+    flexShrink: 1,
+  },
+  routeName: { fontSize: 13, fontWeight: '800', color: 'white' },
+  heartBtn: { padding: 4, minWidth: 28, alignItems: 'center', marginLeft: 'auto' },
+  liveStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 5,
+    marginLeft: 10,
+  },
+  liveStatusText: { fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+  
+  pathText: { fontSize: 15, fontWeight: '600', color: '#4A6B54', lineHeight: 22, marginVertical: 14 },
+  etaText: { fontSize: 13, color: '#6A8E75', fontWeight: '600' },
+  etaMuted: { color: '#8E8E93', fontWeight: '700', fontSize: 13 },
+  formContainer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 5 },
   formCard: {
-    backgroundColor: '#FFF', borderRadius: 14, padding: 18,
-    elevation: 2, shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 4,
+    backgroundColor: '#fff', borderRadius: 24, padding: 20,
+    borderWidth: 2, borderColor: '#E8F3EB',
+    elevation: 4, shadowColor: '#196F31', shadowOpacity: 0.05, shadowRadius: 10,
   },
   formSectionLabel: {
-    fontSize: 11, fontWeight: '700', letterSpacing: 1,
-    color: '#6A8E75', marginBottom: 12, marginTop: 4,
+    fontSize: 11, fontWeight: '800', color: '#A0B4A5',
+    textTransform: 'uppercase', letterSpacing: 1.2,
+    marginBottom: 14, marginTop: 6,
   },
-  inputLabel: {
-    fontSize: 13, fontWeight: '700', color: '#123D1F', marginBottom: 6,
-  },
+  inputLabel: { fontSize: 14, fontWeight: '800', color: '#123D1F', marginBottom: 8 },
   input: {
-    backgroundColor: '#F0F9F4', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: '#123D1F',
-    borderWidth: 1, borderColor: '#D1E8D9',
-    marginBottom: 14,
+    backgroundColor: '#fff', borderRadius: 16,
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 15, color: '#123D1F', fontWeight: '700',
+    borderWidth: 2, borderColor: '#E8F3EB',
+    marginBottom: 16,
   },
-  textArea: { minHeight: 120, paddingTop: 12 },
-  charCount: { fontSize: 11, color: '#A0B4A5', textAlign: 'right', marginTop: -10, marginBottom: 14 },
-
-  audienceRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  textAreaWrap: { position: 'relative' },
+  textArea: { minHeight: 140, paddingTop: 14, paddingBottom: 30, textAlignVertical: 'top' },
+  charCount: { position: 'absolute', bottom: 26, right: 14, fontSize: 11, color: '#A0B4A5', fontWeight: '600' },
+  audienceRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   audienceChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: 10, borderWidth: 1.5,
-    borderColor: '#D1E8D9', backgroundColor: '#F0F9F4',
+    paddingHorizontal: 16, paddingVertical: 10,
+    borderRadius: 14, borderWidth: 1.5,
+    borderColor: '#E8F3EB', backgroundColor: '#fff',
   },
-  audienceChipText: { fontSize: 13, fontWeight: '600', color: '#6A8E75' },
-
-  publishBtn: {
-    backgroundColor: '#196F31', flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 14, borderRadius: 12, gap: 8,
-    marginTop: 20, elevation: 3,
-    shadowColor: '#196F31', shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2, shadowRadius: 6,
-  },
-  publishBtnText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+  audienceChipText: { fontSize: 13, fontWeight: '700', color: '#4A6B54' },
+  actionBtn: { backgroundColor: '#196F31', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, marginTop: 20, elevation: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  actionBtnDisabled: { backgroundColor: '#A0B4A5', elevation: 0 },
+  actionBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, gap: 12, marginTop: 80 },
+  emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#fff', borderWidth: 2, borderColor: '#E8F3EB', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#123D1F', marginBottom: 8 },
+  emptySub: { fontSize: 14, color: '#8E8E93', textAlign: 'center', paddingHorizontal: 32, fontWeight: '500' },
 });
+
+export default BroadcastStationView;

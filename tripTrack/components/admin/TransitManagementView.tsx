@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
+
   Modal,
   TextInput,
   ScrollView,
@@ -24,8 +24,6 @@ import {
   updateRouteApi
 } from '../../service/server';
 import { useTranslation } from 'react-i18next';
-
-// Pre-defined colors for the admin to easily select from
 const PRESET_COLORS = [
   '#27AE60', // Green
   '#2980B9', // Blue
@@ -262,7 +260,7 @@ const [t] = useTranslation();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
 
       {/* STATS ROW */}
       <View style={styles.statsRow}>
@@ -459,13 +457,9 @@ const [t] = useTranslation();
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
-
-// ==========================================
-// INTEGRATED STYLES
-// ==========================================
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
@@ -495,9 +489,17 @@ const styles = StyleSheet.create({
   addBtnText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
 
   card: {
-    backgroundColor: '#fff', padding: 18, borderRadius: 24, borderWidth: 2,
-    borderColor: '#E8F3EB', elevation: 4, shadowColor: '#196F31', shadowOpacity: 0.08,
-    shadowRadius: 10, marginBottom: 16
+  backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#196F31',
+    elevation: 4,
+    shadowColor: '#196F31',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   iconCircle: { width: 52, height: 52, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
@@ -528,7 +530,6 @@ const styles = StyleSheet.create({
   modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40, maxHeight: '85%' },
   modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#C5D9C9', alignSelf: 'center', marginBottom: 16 },
 
-  // Header with X Button
   modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 22, fontWeight: '900', color: '#123D1F' },
   closeModalBtn: { padding: 4 },
@@ -536,8 +537,6 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 16 },
   inputLabel: { fontSize: 12, fontWeight: '800', color: '#A0B4A5', textTransform: 'uppercase', marginBottom: 8 },
   input: { backgroundColor: '#F0F9F4', borderRadius: 14, padding: 14, fontSize: 15, color: '#123D1F', borderWidth: 1.5, borderColor: '#E8F3EB' },
-
-  // Preset Colors
   presetColorContainer: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   presetColorCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   presetColorSelected: { borderWidth: 3, borderColor: '#E8F3EB' },

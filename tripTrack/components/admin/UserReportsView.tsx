@@ -150,7 +150,7 @@ const triggerStatusAlert = (reportId) => {
     }
   };
 
-  const renderReportItem = ({ item }) => {
+ const renderReportItem = ({ item }) => {
     const statusTheme = getStatusStyle(item.status);
     const isClosed = item.status === 'resolved' || item.status === 'dismissed';
 
@@ -174,14 +174,25 @@ const triggerStatusAlert = (reportId) => {
             <Text style={styles.cardSub}>By: {displayName}</Text>
           </View>
 
-          <TouchableOpacity style={styles.trashBtn} activeOpacity={0.6} onPress={deleteReportHandler(item._id)}>
-            <Ionicons name="trash-outline" size={18} color="red" />
+          {/* Correct Placement: Status Badge grouped cleanly in header */}
+          <View style={[styles.priorityChip, statusTheme.badge, { marginRight: 8 }]}>
+            <Text style={[styles.priorityChipText, statusTheme.text]}>
+              {item.status || "Pending"}
+            </Text>
+          </View>
+
+          {/* Muted delete button layout configuration inside arrow block */}
+          <TouchableOpacity 
+            style={styles.trashBtn} 
+            activeOpacity={0.6} 
+            onPress={() => deleteReportHandler(item._id)}
+          >
+            <Ionicons name="trash-outline" size={18} color="#E24B4A" />
           </TouchableOpacity>
         </View>
 
         <Text style={styles.reportDetails}>{item.description || 'No description provided.'}</Text>
 
-        {/* Optional attachment image card selector route link */}
         {!!visualAttachment && (
           <TouchableOpacity 
             style={styles.screenshotLinkButton} 
@@ -203,31 +214,23 @@ const triggerStatusAlert = (reportId) => {
             </Text>
           </View>
 
-          {/* Action container segment pushing badges to the exact right alignment profile */}
-          <View style={styles.actionsRightContainer}>
-            <View style={[styles.priorityChip, statusTheme.badge]}>
-              <Text style={[styles.priorityChipText, statusTheme.text]}>
-                {item.status || "Pending"}
-              </Text>
-            </View>
-
-            {!isClosed && (
-              <TouchableOpacity 
-                style={[styles.actionButton, processingId === item._id && styles.submitBtnDisabled]} 
-                onPress={() => triggerStatusAlert(item._id)}
-                disabled={processingId === item._id}
-              >
-                {processingId === item._id ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <>
-                    <Ionicons name="sync-outline" size={14} color="#FFF" />
-                    <Text style={styles.actionButtonText}>Update</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
+          {/* Cleaner Card Footer: Reserved completely for the active actionable update container */}
+          {!isClosed && (
+            <TouchableOpacity 
+              style={[styles.actionButton, processingId === item._id && styles.submitBtnDisabled]} 
+              onPress={() => triggerStatusAlert(item._id)}
+              disabled={processingId === item._id}
+            >
+              {processingId === item._id ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <>
+                  <Ionicons name="sync-outline" size={14} color="#FFF" />
+                  <Text style={styles.actionButtonText}>Update</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -251,7 +254,7 @@ const triggerStatusAlert = (reportId) => {
   const resolvedReports = reports.filter(r => r.status === 'resolved').length;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Stats Row */}
       <View style={styles.statsRow}>
         <StatCard label={t("userReports.total")}     value={totalReports}    icon="folder-open-outline" />
@@ -277,7 +280,7 @@ const triggerStatusAlert = (reportId) => {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -417,7 +420,7 @@ const styles = StyleSheet.create({
     gap: 4 
   },
   submitBtnDisabled: { backgroundColor: '#A0B4A5', elevation: 0 },
-  actionButtonText: { color: '#fff', fontWeight: '800', fontSize: 12 },
+  actionButtonText: { color: '#fff', fontWeight: '800', fontSize: 14 },
   
   // Empty States
   placeholderWrapper: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },

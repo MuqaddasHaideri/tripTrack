@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { 
   View, 
   Text, 
@@ -7,7 +7,6 @@ import {
   TouchableOpacity, 
   ActivityIndicator, 
   Alert,
-  SafeAreaView,
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -16,11 +15,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; 
 import { useSelector } from 'react-redux';
-
-// NOTE: Import your actual API functions here
 import { createAdminApi, fetchAdminsApi, deleteAdminApi } from '../../service/server';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Reusable StatCard Component
 const StatCard = ({ label, value, icon, color = "#196F31" }) => (
   <View style={styles.statCard}>
     <View style={[styles.statIconBg, { borderColor: color }]}>
@@ -40,14 +39,14 @@ export const ProvisionAdminView = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Form Fields mapped exactly to backend req.body
+  // Form Fields
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPhone, setAdminPhone] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-const {t} = useTranslation();
-  const { token } = useSelector((state) => state.auth);
+  const { t } = useTranslation();
+  const { token } = useSelector((state: any) => state.auth);
 
   const loadAdmins = async (isRefreshing = false) => {
     try {
@@ -65,9 +64,7 @@ const {t} = useTranslation();
         extractedData = response;
       }
       
-      // Filter only users with role 'admin'
       setAdmins(extractedData.filter(user => user.role === 'admin'));
-      
     } catch (error) {
       console.error(t("admin.error:"), error);
       Alert.alert("Error", t("admin.fetchAdminsError"));
@@ -152,26 +149,20 @@ const {t} = useTranslation();
   };
 
   const renderAdminItem = ({ item }) => {
-    const initials = item.name ? item.name.substring(0, 2).toUpperCase() : 'AD';
-
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          {item.profilePic ? (
-            <Image source={{ uri: item.profilePic }} style={styles.avatarCircle} />
-          ) : (
-            <View style={[styles.avatarCircle, { backgroundColor: '#FDEBD0' }]}>
-              <Text style={[styles.avatarText, { color: '#D35400' }]}>{initials}</Text>
+            <View style={styles.avatarCircle}>
+              <Ionicons name="person" size={20} color="#196F31" />
             </View>
-          )}
           
           <View style={styles.cardContent}>
             <Text style={styles.cardTitle}>{item.name}</Text>
             <Text style={styles.cardSub}>{item.email}</Text>
           </View>
 
-          <TouchableOpacity onPress={() => handleDelete(item._id)} style={styles.iconBtn}>
-            <Ionicons name="trash" size={20} color="#E74C3C" />
+          <TouchableOpacity onPress={() => handleDelete(item._id)} style={styles.trashBtn} activeOpacity={0.6}>
+            <Ionicons name="trash-outline" size={18} color="#E24B4A" />
           </TouchableOpacity>
         </View>
 
@@ -181,7 +172,7 @@ const {t} = useTranslation();
           </View>
           
           {item.phone ? (
-             <Text style={styles.detailText}><Ionicons name="call-outline" size={12}/> {item.phone}</Text>
+             <Text style={styles.detailText}><Ionicons name="call-outline" size={14}/> {item.phone}</Text>
           ) : (
              <Text style={styles.detailText}>{t("admin.noPhoneListed")}</Text>
           )}
@@ -191,18 +182,17 @@ const {t} = useTranslation();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      
-      {/* ── UPDATED STATS ROW ── */}
+    <View style={styles.container}>
+      {/* Stats Row */}
       <View style={styles.statsRow}>
         <StatCard label={t("admin.totalAdmins")} value={admins.length} icon="shield-checkmark-outline" />
-        <TouchableOpacity style={styles.addBtnCard} onPress={openForm}>
-          <Ionicons name="person-add" size={24} color="#FFF" />
+        <TouchableOpacity style={styles.addBtnCard} onPress={openForm} activeOpacity={0.8}>
+          <Ionicons name="person-add" size={20} color="#FFF" />
           <Text style={styles.addBtnText}>{t("admin.newAdmin")}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* LIST OF ADMINS */}
+      {/* List Content */}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#196F31" />
@@ -229,8 +219,8 @@ const {t} = useTranslation();
         />
       )}
 
-      {/* CREATE ADMIN MODAL */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      {/* Create Admin Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView 
           style={styles.modalOverlay} 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -246,12 +236,12 @@ const {t} = useTranslation();
             </View>
             
             <View style={styles.formContainer}>
-              
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>{t("admin.fullName")} *</Text>
                 <TextInput 
                   style={styles.input} 
                   placeholder={t("admin.placeholderFullName")}
+                  placeholderTextColor="#A0B4A5"
                   value={adminName}
                   onChangeText={setAdminName}
                 />
@@ -262,6 +252,7 @@ const {t} = useTranslation();
                 <TextInput 
                   style={styles.input} 
                   placeholder={t("admin.placeholderEmail")}
+                  placeholderTextColor="#A0B4A5"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={adminEmail}
@@ -274,6 +265,7 @@ const {t} = useTranslation();
                 <TextInput 
                   style={styles.input} 
                   placeholder={t("admin.placeholderPhone")}
+                  placeholderTextColor="#A0B4A5"
                   keyboardType="phone-pad"
                   value={adminPhone}
                   onChangeText={setAdminPhone}
@@ -286,12 +278,13 @@ const {t} = useTranslation();
                   <TextInput 
                     style={[styles.input, { flex: 1, borderWidth: 0, marginBottom: 0 }]} 
                     placeholder={t("admin.placeholderPassword")}
+                    placeholderTextColor="#A0B4A5"
                     secureTextEntry={!showPassword}
                     value={adminPassword}
                     onChangeText={setAdminPassword}
                   />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ paddingHorizontal: 10 }}>
-                    <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#A0B4A5" />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ paddingHorizontal: 12 }}>
+                    <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="#A0B4A5" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -320,78 +313,82 @@ const {t} = useTranslation();
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
-
-// ==========================================
-// INTEGRATED STYLES
-// ==========================================
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   loadingText: { marginTop: 12, color: '#4A6B54', fontSize: 14, fontWeight: '600' },
-  scroll: { padding: 20, paddingBottom: 100 },
+  scroll: { padding: 20, paddingBottom: 40 },
 
   statsRow: {
     flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingVertical: 15,
-    backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#D1E8D9',
+    backgroundColor: '#FFFFFF', borderBottomWidth: 1.5, borderBottomColor: '#E8F3EB',
   },
   statCard: {
-    flex: 1, backgroundColor: '#F0F9F4', borderRadius: 12, padding: 10,
-    borderWidth: 1.5, borderColor: '#D1E8D9', alignItems: 'center', gap: 4,
+    flex: 1, backgroundColor: '#F0F9F4', borderRadius: 14, padding: 10,
+    borderWidth: 1.5, borderColor: '#196F31', alignItems: 'center', gap: 4,
+    elevation: 2, shadowColor: '#196F31', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4,
   },
   statIconBg: {
-    width: 32, height: 32, borderRadius: 8, backgroundColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+    width: 32, height: 32, borderRadius: 10, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#E8F3EB',
   },
-  statValue: { fontSize: 18, fontWeight: '800', color: '#123D1F' },
-  statLabel: { fontSize: 10, color: '#6A8E75', fontWeight: '600' },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#123D1F', letterSpacing: -0.5 },
+  statLabel: { fontSize: 10, color: '#A0B4A5', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' },
   
   addBtnCard: {
-    flex: 1, backgroundColor: '#196F31', borderRadius: 12, padding: 10,
-    alignItems: 'center', justifyContent: 'center', gap: 4,
-    elevation: 3, shadowColor: '#196F31', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { height: 3, width: 0}
+    flex: 1, backgroundColor: '#196F31', borderRadius: 14, padding: 10,
+    alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6,
+    elevation: 4, shadowColor: '#196F31', shadowOpacity: 0.1, shadowRadius: 10,
   },
-  addBtnText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-
+  addBtnText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
   card: {
-    backgroundColor: '#fff', padding: 18, borderRadius: 24, borderWidth: 2, 
-    borderColor: '#E8F3EB', elevation: 4, shadowColor: '#196F31', shadowOpacity: 0.08, 
-    shadowRadius: 10, marginBottom: 16
+       backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#196F31',
+    elevation: 4,
+    shadowColor: '#196F31',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  avatarCircle: { width: 52, height: 52, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 14, overflow: 'hidden' },
-  avatarText: { fontSize: 18, fontWeight: '900', letterSpacing: 1 },
-  cardContent: { flex: 1 },
-  cardTitle: { fontSize: 18, fontWeight: '800', color: '#123D1F' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  avatarCircle: { width: 52, height: 52, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 14, overflow: 'hidden', backgroundColor: '#F0F9F4' },
+  avatarText: { fontSize: 16, fontWeight: '800', color: '#123D1F' },
+  cardContent: { flex: 1, justifyContent: 'center' },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F' },
   cardSub: { fontSize: 13, color: '#8E8E93', fontWeight: '600', marginTop: 2 },
-  iconBtn: { padding: 8, backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#EFEFEF' },
+  trashBtn: { padding: 4, marginLeft: 8 },
   
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1.5, borderTopColor: '#F0F9F4', paddingTop: 12 },
-  roleBadge: { backgroundColor: '#E8F5E9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: '#C8E6C9' },
-  roleBadgeText: { color: '#196F31', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
-  detailText: { fontSize: 12, color: '#A0B4A5', fontWeight: '700' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1.5, borderTopColor: '#F0F9F4', paddingTop: 16 },
+  roleBadge: { backgroundColor: '#E1F5EE', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1.5, borderColor: '#3a714a' },
+  roleBadgeText: { color:  '#196F31', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  detailText: { fontSize: 13, color: '#4A6B54', fontWeight: '600' },
 
   placeholderWrapper: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
   placeholderIconBg: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#fff', borderWidth: 2, borderColor: '#E8F3EB', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   mainPrompt: { fontSize: 24, fontWeight: '900', color: '#123D1F', marginBottom: 8 },
-  placeholderSub: { fontSize: 14, color: '#8E8E93', textAlign: 'center', paddingHorizontal: 32 },
+  placeholderSub: { fontSize: 14, color: '#8E8E93', textAlign: 'center', paddingHorizontal: 32, fontWeight: '500' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
+  modalSheet: { backgroundColor: '#F0F9F4', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 30 },
   modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#C5D9C9', alignSelf: 'center', marginBottom: 16 },
   
-  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 22, fontWeight: '900', color: '#123D1F' },
+  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#123D1F' },
   closeModalBtn: { padding: 4 },
 
   formContainer: { paddingBottom: 20 },
   inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 12, fontWeight: '800', color: '#A0B4A5', textTransform: 'uppercase', marginBottom: 8 },
-  input: { backgroundColor: '#F0F9F4', borderRadius: 14, padding: 14, fontSize: 15, color: '#123D1F', borderWidth: 1.5, borderColor: '#E8F3EB' },
+  inputLabel: { fontSize: 11, fontWeight: '800', color: '#A0B4A5', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 },
+  input: { backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#123D1F', fontWeight: '700', borderWidth: 2, borderColor: '#E8F3EB' },
   
-  passwordWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F9F4', borderRadius: 14, borderWidth: 1.5, borderColor: '#E8F3EB' },
+  passwordWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 16, borderWidth: 2, borderColor: '#E8F3EB' },
 
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 24 },
   btn: { flex: 1, height: 54, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },

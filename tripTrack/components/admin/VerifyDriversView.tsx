@@ -209,7 +209,7 @@ export const VerifyDriversView = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* ── STATS ROW ── */}
       <View style={styles.statsRow}>
         <StatCard label={t("verifyDrivers.total")} value={totalDrivers} icon="people-outline" />
@@ -258,7 +258,7 @@ export const VerifyDriversView = () => {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
