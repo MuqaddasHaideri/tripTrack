@@ -14,9 +14,10 @@ import {
     pickImage,
     uploadToCloudinary,
 } from '@/utils/pickImage';
+import { useTranslation } from 'react-i18next';
 export default function SignupScreen() {
     const router = useRouter();
-
+      const { t } = useTranslation();
     const [role, setRole] = useState('passenger');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [name, setName] = useState('');
@@ -29,17 +30,17 @@ export default function SignupScreen() {
     const [imageUri, setImageUri] = useState(null);
     const handleSignup = async () => {
         if (!name || !email || !password || !phone) {
-            Alert.alert("Missing Input", "Please fill in all basic text fields.");
+            Alert.alert(t("signup.missingInput"), t("signup.fillAllFields"));
             return;
         }
         if (role === 'driver') {
             // Driver Validation
             if (!cnic) {
-                Alert.alert("Missing Input", "CNIC is required for drivers.");
+                Alert.alert(t("signup.missingInput"), t("signup.cnicRequired"));
                 return;
             }
             if (!imageUri) {
-                Alert.alert("License Required", "Please upload a photo of your Driver's License.");
+                Alert.alert(t("signup.licenseRequiredTitle"), t("signup.licenseRequiredMessage"));
                 return;
             }
             try {
@@ -57,11 +58,11 @@ export default function SignupScreen() {
                 if (data.success) {
                     router.replace('/driver/PendingApproval');
                 } else {
-                    Alert.alert("Signup Failed", data.message || "Could not register driver.");
+                    Alert.alert(t("signup.signupFailed"), data.message || t("signup.driverRegistrationFailed"));
                 }
             } catch (error) {
                 console.error(error);
-                Alert.alert("Error", "There was a problem during driver registration.");
+                Alert.alert(t("signup.error"), t("signup.driverRegistrationError"));
             } finally {
                 setIsUploading(false);
             }
@@ -100,15 +101,15 @@ export default function SignupScreen() {
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
                     <View style={styles.header}>
-                        <Text style={styles.welcomeText}>Welcome</Text>
-                        <Text style={styles.subText}>Hi, you need to register to enter</Text>
+                        <Text style={styles.welcomeText}>{t("signup.welcome")}</Text>
+                        <Text style={styles.subText}>{t("signup.subtitle")}</Text>
                     </View>
 
                     <AuthTabSwitcher />
 
                     <View style={styles.form}>
                         {/* CUSTOM DROPDOWN */}
-                        <Text style={styles.label}>Register as</Text>
+                        <Text style={styles.label}>{t("signup.registerAs")}</Text>
                         <TouchableOpacity
                             style={styles.dropdownHeader}
                             onPress={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -128,45 +129,45 @@ export default function SignupScreen() {
                         {isDropdownOpen && (
                             <View style={styles.dropdownList}>
                                 <TouchableOpacity style={styles.dropdownItem} onPress={() => { setRole('passenger'); setIsDropdownOpen(false); }}>
-                                    <Text style={[styles.itemText, role === 'passenger' && styles.activeItemText]}>Passenger</Text>
+                                    <Text style={[styles.itemText, role === 'passenger' && styles.activeItemText]}>{t("signup.passenger")}</Text>
                                     {role === 'passenger' && <Ionicons name="checkmark" size={18} color="#2d5a4c" />}
                                 </TouchableOpacity>
                                 <TouchableOpacity style={[styles.dropdownItem, { borderBottomWidth: 0 }]} onPress={() => { setRole('driver'); setIsDropdownOpen(false); }}>
-                                    <Text style={[styles.itemText, role === 'driver' && styles.activeItemText]}>Driver</Text>
+                                    <Text style={[styles.itemText, role === 'driver' && styles.activeItemText]}>{t("signup.driver")}</Text>
                                     {role === 'driver' && <Ionicons name="checkmark" size={18} color="#2d5a4c" />}
                                 </TouchableOpacity>
                             </View>
                         )}
 
-                        <Text style={styles.label}>Full Name</Text>
+                        <Text style={styles.label}>{t("signup.fullName")}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Enter your full name"
+                                placeholder={t("signup.fullNamePlaceholder")}
                                 value={name}
                                 onChangeText={setName}
                             />
                         </View>
 
-                        <Text style={styles.label}>Your Number</Text>
+                        <Text style={styles.label}>{t("signup.phoneNumber")}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="call-outline" size={20} color="#666" style={styles.icon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="+92 XXX-XXXXXXX"
+                                placeholder={t("signup.phonePlaceholder")}
                                 keyboardType="phone-pad"
                                 value={phone}
                                 onChangeText={setPhone}
                             />
                         </View>
 
-                        <Text style={styles.label}>Email Address</Text>
+                        <Text style={styles.label}>{t("signup.emailAddress")}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="example@gmail.com"
+                                placeholder={t("signup.emailPlaceholder")}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 value={email}
@@ -177,18 +178,18 @@ export default function SignupScreen() {
                         {/* DRIVER EXTRA FIELDS */}
                         {role === 'driver' && (
                             <>
-                                <Text style={styles.label}>CNIC Number</Text>
+                                <Text style={styles.label}>{t("signup.cnicNumber")}</Text>
                                 <View style={styles.inputWrapper}>
                                     <Ionicons name="card-outline" size={20} color="#666" style={styles.icon} />
                                     <TextInput
                                         style={styles.input}
-                                        placeholder="42101-XXXXXXX-X"
+                                        placeholder={t("signup.cnicPlaceholder")}
                                         value={cnic}
                                         onChangeText={setCnic}
                                     />
                                 </View>
 
-                                <Text style={styles.label}>Driver's License Photo</Text>
+                                <Text style={styles.label}>{t("signup.licensePhoto")}</Text>
                                 <TouchableOpacity
                                     style={styles.uploadBox}
                                     onPress={async () => {
@@ -204,19 +205,19 @@ export default function SignupScreen() {
                                     ) : (
                                         <View style={styles.uploadPlaceholder}>
                                             <Ionicons name="camera-outline" size={32} color="#666" />
-                                            <Text style={styles.uploadText}>Tap to select image</Text>
+                                            <Text style={styles.uploadText}>{t("signup.tapToSelectImage")}</Text>
                                         </View>
                                     )}
                                 </TouchableOpacity>
                             </>
                         )}
 
-                        <Text style={styles.label}>Password</Text>
+                        <Text style={styles.label}>{t("signup.password")}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="key-outline" size={20} color="#666" style={styles.icon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Enter your password"
+                                placeholder={t("signup.passwordPlaceholder")}
                                 secureTextEntry={!showPassword}
                                 value={password}
                                 onChangeText={setPassword}
@@ -241,7 +242,7 @@ export default function SignupScreen() {
                         {isBusy ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.primaryBtnText}>Sign Up</Text>
+                            <Text style={styles.primaryBtnText}>{t("signup.signUp")}</Text>
                         )}
                     </TouchableOpacity>
 

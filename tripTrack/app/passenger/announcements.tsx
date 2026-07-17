@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { fetchUserAnnouncementsApi } from '../../service/server';
+import { useTranslation } from 'react-i18next';
 
 const AUDIENCE_META: Record<string, { label: string; icon: string; color: string }> = {
   all: { label: 'Everyone', icon: 'people-outline', color: '#196F31' },
@@ -24,6 +25,7 @@ const AUDIENCE_META: Record<string, { label: string; icon: string; color: string
 };
 
 export default function AnnouncementsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { token } = useSelector((state: any) => state.auth);
 
@@ -106,9 +108,9 @@ export default function AnnouncementsScreen() {
       <View style={styles.emptyIconBg}>
         <Ionicons name="megaphone-outline" size={32} color="#196F31" />
       </View>
-      <Text style={styles.emptyTitle}>No Announcements</Text>
+      <Text style={styles.emptyTitle}>{t("announcements.emptyTitle")}</Text>
       <Text style={styles.emptySub}>
-        There are no announcements for you at this time. Check back later!
+        {t("announcements.emptySubtitle")}
       </Text>
     </View>
   );
@@ -122,7 +124,7 @@ export default function AnnouncementsScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="arrow-back" size={22} color="#123D1F" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Announcements</Text>
+        <Text style={styles.headerTitle}>{t("announcements.headerTitle")}</Text>
         <View style={{ width: 38 }} />
       </View>
 
@@ -130,7 +132,7 @@ export default function AnnouncementsScreen() {
       {isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#196F31" />
-          <Text style={styles.loadingText}>Loading announcements...</Text>
+          <Text style={styles.loadingText}>{t("announcements.loading")}</Text>
         </View>
       ) : (
         <FlatList
@@ -155,7 +157,7 @@ export default function AnnouncementsScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
 
-            {selectedAnnouncement && (() => {
+            {selectedAnnouncement && (()   => {
               const badge = getBadge(selectedAnnouncement.targetAudience);
               return (
                 <ScrollView showsVerticalScrollIndicator={false}>
@@ -184,7 +186,7 @@ export default function AnnouncementsScreen() {
                     <View style={styles.authorRow}>
                       <Ionicons name="person-circle-outline" size={16} color="#6A8E75" />
                       <Text style={styles.authorText}>
-                        Posted by {selectedAnnouncement.createdBy.name}
+                        {t("announcements.postedBy")} {selectedAnnouncement.createdBy.name}
                       </Text>
                     </View>
                   )}

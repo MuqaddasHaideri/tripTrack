@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  StyleSheet, View, Text, FlatList, TouchableOpacity, 
+  StyleSheet, View, Text, FlatList, TouchableOpacity,
   StatusBar, ActivityIndicator, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,17 +9,19 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useSelector } from 'react-redux';
 
 import { fetchMyFavoritesApi, removeFavoriteApi, socket } from '../../service/server';
+import { useTranslation } from 'react-i18next';
 
 export default function FavoriteRoutesScreen() {
   const router = useRouter();
-  
+  const { t } = useTranslation();
+
   const { token } = useSelector((state: any) => state.auth);
 
   // --- STATE ---
   const [favoriteRoutes, setFavoriteRoutes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
-  
+
   const [activeDriverRoutes, setActiveDriverRoutes] = useState<Record<string, boolean>>({});
 
   // Fetch static favorite data array from database
@@ -55,7 +57,7 @@ export default function FavoriteRoutesScreen() {
       if (busData.routeId) {
         setActiveDriverRoutes((prev) => ({
           ...prev,
-          [busData.routeId]: true, 
+          [busData.routeId]: true,
         }));
       }
     };
@@ -65,7 +67,7 @@ export default function FavoriteRoutesScreen() {
       if (data.routeId) {
         setActiveDriverRoutes((prev) => ({
           ...prev,
-          [data.routeId]: false, 
+          [data.routeId]: false,
         }));
       }
     };
@@ -81,14 +83,14 @@ export default function FavoriteRoutesScreen() {
 
   const handleDelete = (routeId: string, name: string) => {
     Alert.alert(
-      "Remove Favorite", 
-      `Are you sure you want to remove ${name} from your shortcuts?`, 
+      t("favoriteRoutes.removeFavoriteTitle"),
+      t("favoriteRoutes.removeFavoriteMessage", { name }),
       [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Remove", 
-          style: "destructive", 
-          onPress: () => executeRemoval(routeId) 
+        { text: t("favoriteRoutes.cancel"), style: "cancel" },
+        {
+          text: t("favoriteRoutes.remove"),
+          style: "destructive",
+          onPress: () => executeRemoval(routeId)
         }
       ]
     );
@@ -101,10 +103,10 @@ export default function FavoriteRoutesScreen() {
       if (data.success) {
         setFavoriteRoutes(prev => prev.filter(route => route._id !== routeId));
       } else {
-        Alert.alert("Error", data.message || "Failed to remove route.");
+        Alert.alert(t("favoriteRoutes.error"), data.message || t("favoriteRoutes.removeFailed"));
       }
     } catch (err) {
-      Alert.alert("Network Error", "Could not connect to transit server cluster.");
+      Alert.alert(t("favoriteRoutes.networkError"), t("favoriteRoutes.networkErrorMessage"));
     } finally {
       setIsDeletingId(null);
     }
@@ -113,13 +115,13 @@ export default function FavoriteRoutesScreen() {
   const renderRouteCard = ({ item }: { item: any }) => {
     const isDelayed = item.status === 'Delayed';
     const routeTitle = item.route_name || 'Active Route';
-    
+
     // Check if socket coordinates are currently broadcasting for this route item ID
     const isDriverActive = !!activeDriverRoutes[item._id];
 
     return (
-      <TouchableOpacity 
-        style={styles.card} 
+      <TouchableOpacity
+        style={styles.card}
         activeOpacity={0.7}
         onPress={() => router.push({ pathname: '/(tabs)/index', params: { activeRouteId: item._id } })}
       >
@@ -136,9 +138,9 @@ export default function FavoriteRoutesScreen() {
               {isDriverActive ? 'LIVE' : 'OFFLINE'}
             </Text>
           </View>
-          
-          <TouchableOpacity 
-            onPress={() => handleDelete(item._id, routeTitle)} 
+
+          <TouchableOpacity
+            onPress={() => handleDelete(item._id, routeTitle)}
             style={styles.heartBtn}
             disabled={isDeletingId === item._id}
           >
@@ -183,17 +185,17 @@ export default function FavoriteRoutesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          style={styles.backButton} 
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <View>
-          <Text style={styles.headerTitle}>Favorite Routes</Text>
-          <Text style={styles.headerSubtitle}>Quick access to your regular transits</Text>
+          <Text style={styles.headerTitle}>{t("favoriteRoutes.title")}</Text>
+          <Text style={styles.headerSubtitle}>{t("favoriteRoutes.subtitle")}</Text>
         </View>
       </View>
 
@@ -210,10 +212,10 @@ export default function FavoriteRoutesScreen() {
           <View style={styles.emptyIconCircle}>
             <Ionicons name="heart-outline" size={44} color="#6A8E75" />
           </View>
-          <Text style={styles.emptyTitle}>Your shortcuts list is empty</Text>
-          <Text style={styles.emptySub}>Save your daily commute lines from the map tracking panel to see them here.</Text>
+          <Text style={styles.emptyTitle}>{t("favoriteRoutes.emptyTitle")}</Text>
+          <Text style={styles.emptySub}>{t("favoriteRoutes.emptySubtitle")}</Text>
           <TouchableOpacity style={styles.actionBtn} onPress={() => router.replace('/(tabs)/.')}>
-            <Text style={styles.actionBtnText}>Explore Live Routes</Text>
+            <Text style={styles.actionBtnText}>{t("favoriteRoutes.exploreRoutes")}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -224,7 +226,7 @@ export default function FavoriteRoutesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F9F4' },
-  
+
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -254,7 +256,7 @@ const styles = StyleSheet.create({
   },
 
   list: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 5 },
-  
+
   card: {
     backgroundColor: '#fff',
     borderRadius: 24,
@@ -269,18 +271,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  badgeContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#196F31',
-    paddingHorizontal: 12, 
-    paddingVertical: 6, 
-    borderRadius: 12, 
-    gap: 6 
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6
   },
   routeName: { fontSize: 13, fontWeight: '800', color: 'white' },
   heartBtn: { padding: 4, minWidth: 28, alignItems: 'center', marginLeft: 'auto' },
-  
+
   // NEW ACTIVE LIVE BADGE STYLES
   liveStatusBadge: {
     flexDirection: 'row',
@@ -297,13 +299,13 @@ const styles = StyleSheet.create({
   liveDot: { width: 7, height: 7, borderRadius: 3.5 },
 
   pathText: { fontSize: 17, fontWeight: '800', color: '#000000', marginVertical: 14 },
-  
+
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1.5, borderTopColor: '#F0F9F4', paddingTop: 12 },
   statusIndicator: { backgroundColor: '#E1F5EE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusText: { fontSize: 12, fontWeight: '700', color: '#0F6E56' },
   statusDelayedBg: { backgroundColor: '#FFF3E0' },
   statusDelayedText: { color: '#E65100' },
-  
+
   etaText: { fontSize: 13, color: '#6A8E75', fontWeight: '600' },
   etaHighlight: { color: '#00C853', fontWeight: '900', fontSize: 14 },
   etaMuted: { color: '#8E8E93', fontWeight: '700', fontSize: 13 },

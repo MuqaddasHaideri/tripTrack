@@ -19,14 +19,17 @@ import {
   fetchAdminAnnouncementsApi,
   deleteAnnouncementApi,
 } from '../../service/server';
+import { useTranslation } from 'react-i18next';
 
-const AUDIENCE_OPTIONS = [
-  { key: 'all', label: 'All Users', icon: 'people-outline', color: '#196F31' },
-  { key: 'passenger', label: 'Passengers', icon: 'person-outline', color: '#2980B9' },
-  { key: 'driver', label: 'Drivers', icon: 'car-outline', color: '#D35400' },
-];
+
 
 export const BroadcastStationView = () => {
+  const { t } = useTranslation(); 
+  const AUDIENCE_OPTIONS = [
+  { key: 'all', label: t('announcement.all'), icon: 'people-outline', color: '#196F31' },
+  { key: 'passenger', label: t('announcement.passenger'), icon: 'person-outline', color: '#2980B9' },
+  { key: 'driver', label: t('announcement.driver'), icon: 'car-outline', color: '#D35400' },
+];
   const { token } = useSelector((state: any) => state.auth);
 
   const [activeView, setActiveView] = useState<'list' | 'create'>('list');
@@ -53,7 +56,7 @@ export const BroadcastStationView = () => {
       }
     } catch (error) {
       console.error('Error loading announcements:', error);
-      Alert.alert('Error', 'Could not load announcements.');
+      Alert.alert(t('announcement.error'), t('announcement.loadError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -66,11 +69,11 @@ export const BroadcastStationView = () => {
 
   const handleCreate = async () => {
     if (!title.trim()) {
-      Alert.alert('Missing Field', 'Please enter a title.');
+      Alert.alert(t('announcement.missingField'), t('announcement.enterTitle'));
       return;
     }
     if (!body.trim()) {
-      Alert.alert('Missing Field', 'Please enter the announcement body.');
+      Alert.alert(t('announcement.missingField'), t('announcement.enterBody'));
       return;
     }
 
@@ -81,18 +84,18 @@ export const BroadcastStationView = () => {
         token
       );
       if (res?.success) {
-        Alert.alert('Success', 'Announcement published successfully!');
+        Alert.alert(t('announcement.success'), t('announcement.announcementPublished'));
         setTitle('');
         setBody('');
         setTargetAudience('all');
         setActiveView('list');
         loadAnnouncements();
       } else {
-        Alert.alert('Error', res?.message || 'Failed to create announcement.');
+        Alert.alert(t('announcement.error'), res?.message || t('announcement.createError'));
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Something went wrong.');
+      Alert.alert(t('announcement.error'), t('announcement.genericError'));
     } finally {
       setSubmitting(false);
     }
@@ -100,12 +103,12 @@ export const BroadcastStationView = () => {
 
   const handleDelete = (id: string) => {
     Alert.alert(
-      'Delete Announcement',
-      'Are you sure you want to permanently delete this announcement?',
+      t('announcement.deleteAnnouncement'),
+      t('announcement.deleteConfirmation'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('announcement.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('announcement.delete'),
           style: 'destructive',
           onPress: async () => {
             setDeletingId(id);
@@ -114,10 +117,10 @@ export const BroadcastStationView = () => {
               if (res?.success) {
                 setAnnouncements(prev => prev.filter(a => a._id !== id));
               } else {
-                Alert.alert('Error', res?.message || 'Failed to delete.');
+                Alert.alert(t('announcement.error'), res?.message || t('announcement.deleteAnnouncementError'));
               }
             } catch (error) {
-              Alert.alert('Error', 'Could not delete announcement.');
+              Alert.alert(t('announcement.error'), t('announcement.deleteAnnouncementError'));
             } finally {
               setDeletingId(null);
             }
@@ -169,7 +172,7 @@ export const BroadcastStationView = () => {
           ) : (
             <>
               <Ionicons name="trash-outline" size={15} color="#EF4444" />
-              <Text style={styles.deleteBtnText}>Delete</Text>
+              <Text style={styles.deleteBtnText}>{t('announcement.delete')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -182,9 +185,9 @@ export const BroadcastStationView = () => {
       <View style={styles.emptyIconBg}>
         <Ionicons name="megaphone-outline" size={28} color="#196F31" />
       </View>
-      <Text style={styles.emptyTitle}>No Announcements Yet</Text>
+      <Text style={styles.emptyTitle}>{t('announcement.noAnnouncements')}</Text>
       <Text style={styles.emptySub}>
-        Create your first announcement to broadcast to users.
+        {t('announcement.noAnnouncementsDescription')}
       </Text>
     </View>
   );
@@ -199,22 +202,22 @@ export const BroadcastStationView = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.formCard}>
-          <Text style={styles.formSectionLabel}>ANNOUNCEMENT DETAILS</Text>
+          <Text style={styles.formSectionLabel}>{t('announcement.announcementDetails')}</Text>
 
-          <Text style={styles.inputLabel}>Title</Text>
+          <Text style={styles.inputLabel}>{t('announcement.title')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. Route 12 Maintenance Update"
+            placeholder={t('announcement.placeholderTitle')}
             placeholderTextColor="#A0B4A5"
             value={title}
             onChangeText={setTitle}
             maxLength={120}
           />
 
-          <Text style={styles.inputLabel}>Body</Text>
+          <Text style={styles.inputLabel}>{t('announcement.body')}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Write the full announcement details here..."
+            placeholder={t('announcement.placeholderBody')}
             placeholderTextColor="#A0B4A5"
             value={body}
             onChangeText={setBody}
@@ -225,7 +228,7 @@ export const BroadcastStationView = () => {
           />
           <Text style={styles.charCount}>{body.length}/1000</Text>
 
-          <Text style={styles.formSectionLabel}>TARGET AUDIENCE</Text>
+          <Text style={styles.formSectionLabel}>{t('announcement.targetAudience')}</Text>
           <View style={styles.audienceRow}>
             {AUDIENCE_OPTIONS.map(opt => (
               <TouchableOpacity
@@ -269,7 +272,7 @@ export const BroadcastStationView = () => {
           ) : (
             <>
               <Ionicons name="send-outline" size={18} color="#FFF" />
-              <Text style={styles.publishBtnText}>Publish Announcement</Text>
+              <Text style={styles.publishBtnText}>{t('announcement.publishAnnouncement')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -287,7 +290,7 @@ export const BroadcastStationView = () => {
           activeOpacity={0.9}
         >
           <Text style={[styles.segmentText, activeView === 'list' && styles.activeSegmentText]}>
-            All Announcements
+            {t('announcement.allAnnouncements')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -296,7 +299,7 @@ export const BroadcastStationView = () => {
           activeOpacity={0.9}
         >
           <Text style={[styles.segmentText, activeView === 'create' && styles.activeSegmentText]}>
-            Create New
+            {t('announcement.createNew')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -306,7 +309,7 @@ export const BroadcastStationView = () => {
       ) : loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#196F31" />
-          <Text style={styles.loadingText}>Loading announcements...</Text>
+          <Text style={styles.loadingText}>{t('announcement.loading')}</Text>
         </View>
       ) : (
         <FlatList

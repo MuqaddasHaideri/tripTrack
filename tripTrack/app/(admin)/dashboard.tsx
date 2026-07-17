@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, View, Text, TouchableOpacity,
-  StatusBar, Alert, Platform, Pressable, FlatList, Modal
+  StatusBar, Alert, Platform, Pressable, FlatList, Modal,Switch
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,67 +18,14 @@ import { TransitManagementView } from '../../components/admin/TransitManagementV
 import { UserReportsView }       from '../../components/admin/UserReportsView';
 import { ProvisionAdminView }    from '../../components/admin/ProvisionAdminView';
 import { BroadcastStationView }  from '../../components/admin/BroadcastStationView';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/translation';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setLanguage } from '@/redux/languageSlice';
 
 // ─── TAB CONFIG ───────────────────────────────────────────────────────────────
 
-const TABS_CONFIG = [
-  {
-    id:        'verify',
-    title:     'Driver Verification',
-    label:     'Verify Drivers',
-    icon:      'card-outline',
-    component: VerifyDriversView,
-    badge:     0,
-  },
-  {
-    id:        'transit',
-    title:     'Routes & Asset Management',
-    label:     'Routes & Buses',
-    icon:      'git-branch-outline',
-    component: TransitManagementView,
-    badge:     0,
-  },
-  {
-    id:        'reports',
-    title:     'User Reports Hub',
-    label:     'User Reports',
-    icon:      'chatbubbles-outline',
-    component: UserReportsView,
-    badge:     0,
-  },
-  {
-    id:        'admin',
-    title:     'Manage Administrative Staff',
-    label:     'Add an Admin',
-    icon:      'person-add-outline',
-    component: ProvisionAdminView,
-    badge:     0,
-  },
-  {
-    id:        'broadcast',
-    title:     'Global Announcements',
-    label:     'Announcements',
-    icon:      'megaphone-outline',
-    component: BroadcastStationView,
-    badge:     0,
-  },
-] as const;
 
-type TabId = typeof TABS_CONFIG[number]['id'];
-
-// ─── STAT CARD ────────────────────────────────────────────────────────────────
-
-interface StatCardProps { label: string; value: string; icon: string; }
-
-const StatCard = ({ label, value, icon }: StatCardProps) => (
-  <View style={styles.statCard}>
-    <View style={styles.statIconBg}>
-      <Ionicons name={icon as any} size={18} color="#196F31" />
-    </View>
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </View>
-);
 
 // ─── SIDEBAR NAV ITEM ─────────────────────────────────────────────────────────
 
@@ -96,6 +43,7 @@ const NavItem = ({ title, icon, active, badge, onPress }: NavItemProps) => (
     onPress={onPress}
     activeOpacity={0.7}
   >
+    
     <View style={[styles.navIconWrap, active && styles.navIconWrapActive]}>
       <Ionicons name={icon as any} size={18} color={active ? '#196F31' : '#6A8E75'} />
     </View>
@@ -112,6 +60,52 @@ const NavItem = ({ title, icon, active, badge, onPress }: NavItemProps) => (
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 export default function AdminDashboardScreen() {
+  const {t} = useTranslation();
+  const TABS_CONFIG = [
+  {
+    id:        'verify',
+    title:     t('adminDashboard.driverVerification'),
+    label:     t('adminDashboard.verifyDrivers'),
+    icon:      'card-outline',
+    component: VerifyDriversView,
+    badge:     0,
+  },
+  {
+    id:        'transit',
+    title:     t('adminDashboard.routesAssetManagement'),
+    label:     t('adminDashboard.routesBuses'),
+    icon:      'git-branch-outline',
+    component: TransitManagementView,
+    badge:     0,
+  },
+  {
+    id:        'reports',
+    title:     t('adminDashboard.userReportsHub'),
+    label:     t('adminDashboard.userReports'),
+    icon:      'chatbubbles-outline',
+    component: UserReportsView,
+    badge:     0,
+  },
+  {
+    id:        'admin',
+    title:     t('adminDashboard.manageAdministrativeStaff'),
+    label:     t('adminDashboard.addAdmin'),
+    icon:      'person-add-outline',
+    component: ProvisionAdminView,
+    badge:     0,
+  },
+  {
+    id:        'broadcast',
+    title:     t('adminDashboard.globalAnnouncements'),
+    label:     t('adminDashboard.announcements'),
+    icon:      'megaphone-outline',
+    component: BroadcastStationView,
+    badge:     0,
+  },
+] as const;
+
+type TabId = typeof TABS_CONFIG[number]['id'];
+
   const router   = useRouter();
   const dispatch = useDispatch();
   const { user, token } = useSelector((state: any) => state.auth);
@@ -121,7 +115,10 @@ export default function AdminDashboardScreen() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-
+  const language = useSelector(
+    (state) => state.language.language
+  );
+  const isUrdu = language === "ur";
   const loadNotifications = async () => {
     if (!token) return;
     const res = await fetchNotificationsApi(token);
@@ -130,6 +127,35 @@ export default function AdminDashboardScreen() {
       setUnreadCount(res.unreadCount || 0);
     }
   };
+  
+    const toggleLanguage = async () => {
+      try {
+        const newLanguage = language === "en" ? "ur" : "en";
+  
+        // Update Redux
+        dispatch(setLanguage(newLanguage));
+  
+        // Update i18next
+        await i18n.changeLanguage(newLanguage);
+  
+        // Save language
+        await AsyncStorage.setItem("language", newLanguage);
+      } catch (error) {
+        console.log("Language change error:", error);
+      }
+    };
+    useEffect(() => {
+    const loadLanguage = async () => {
+      const savedLanguage = await AsyncStorage.getItem("language");
+
+      if (savedLanguage) {
+        dispatch(setLanguage(savedLanguage));
+        await i18n.changeLanguage(savedLanguage);
+      }
+    };
+
+    loadLanguage();
+  }, []);
 
   useEffect(() => {
     loadNotifications();
@@ -144,10 +170,10 @@ export default function AdminDashboardScreen() {
   const ActiveComponent = currentTab.component;
 
   const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out of TripTrack?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('adminDashboard.logoutTitle'), t('adminDashboard.logoutMessage'), [
+      { text: t('adminDashboard.cancel'), style: 'cancel' },
       {
-        text: 'Log Out',
+        text: t('adminDashboard.logout'),
         style: 'destructive',
         onPress: () => {
           dispatch(logout());
@@ -183,7 +209,7 @@ export default function AdminDashboardScreen() {
             </TouchableOpacity>
             <View>
               <Text style={styles.workspaceTitle}>{currentTab.title}</Text>
-              <Text style={styles.workspaceSub}>Management Workspace</Text>
+              <Text style={styles.workspaceSub}>{t('adminDashboard.managementWorkspace')}</Text>
             </View>
           </View>
 
@@ -212,22 +238,6 @@ export default function AdminDashboardScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Stats Row */}
-        {/* <View style={styles.statsRow}>
-          <StatCard label="Verified"   value="2,841" icon="checkmark-circle-outline" />
-          <StatCard label="Pending"    value="47"    icon="time-outline"             />
-          <StatCard label="Routes"     value="128"   icon="bus-outline"              />
-          <StatCard label="Passengers" value="94k"   icon="people-outline"           />
-        </View> */}
-
-        {/*
-          ── ACTIVE TAB COMPONENT ─────────────────────────────────────────
-          Rendered with flex: 1 so it fills remaining space.
-          Components that use FlatList / ScrollView internally (like
-          VerifyDriversView) handle their own scrolling — do NOT wrap
-          them in another ScrollView here.
-        */}
         <View style={styles.tabContent}>
           <ActiveComponent />
         </View>
@@ -249,7 +259,7 @@ export default function AdminDashboardScreen() {
                   <Ionicons name="shield-checkmark" size={18} color="#196F31" />
                 </View>
                 <Text style={styles.logoText}>
-                  TripTrack <Text style={styles.logoAccent}>Console</Text>
+                  TripTrack <Text style={styles.logoAccent}>{t('adminDashboard.console')}</Text>
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setSidebarOpen(false)} hitSlop={10}>
@@ -258,7 +268,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             {/* Operations section */}
-            <Text style={styles.navSectionLabel}>OPERATIONS</Text>
+            <Text style={styles.navSectionLabel}>{t('adminDashboard.operations')}</Text>
             {TABS_CONFIG.slice(0, 3).map(tab => (
               <NavItem
                 key={tab.id}
@@ -272,9 +282,28 @@ export default function AdminDashboardScreen() {
                 }}
               />
             ))}
+<View style={styles.languageCard}>
+  <View style={styles.languageInfo}>
+    <Ionicons name="language-outline" size={20} color="#196F31" />
+    <View style={{ marginLeft: 10 }}>
+      <Text style={styles.languageTitle}>
+        {t('settings.language')}
+      </Text>
+      <Text style={styles.languageSubtitle}>
+        {isUrdu ? 'اردو' : 'English'}
+      </Text>
+    </View>
+  </View>
 
+  <Switch
+    value={isUrdu}
+    onValueChange={toggleLanguage}
+    trackColor={{ false: '#D1E8D9', true: '#196F31' }}
+    thumbColor="#FFFFFF"
+  />
+</View>
             {/* Admin section */}
-            <Text style={[styles.navSectionLabel, { marginTop: 10 }]}>ADMIN</Text>
+            <Text style={[styles.navSectionLabel, { marginTop: 10 }]}>{t('adminDashboard.admin')}</Text>
             {TABS_CONFIG.slice(3).map(tab => (
               <NavItem
                 key={tab.id}
@@ -299,7 +328,7 @@ export default function AdminDashboardScreen() {
                   <Text style={styles.userName} numberOfLines={1}>
                     {user?.name ?? 'SuperAdmin'}
                   </Text>
-                  <Text style={styles.userRole}>{user?.role ?? 'Administrator'}</Text>
+                  <Text style={styles.userRole}>{user?.role ?? t('adminDashboard.administrator')}</Text>
                 </View>
                 <View style={styles.onlineDot} />
               </View>
@@ -310,7 +339,7 @@ export default function AdminDashboardScreen() {
                 activeOpacity={0.7}
               >
                 <Ionicons name="log-out-outline" size={16} color="#EF4444" />
-                <Text style={styles.signOutText}>Sign Out</Text>
+                <Text style={styles.signOutText}>{t('adminDashboard.signOut')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -326,7 +355,7 @@ export default function AdminDashboardScreen() {
         <View style={styles.notifModalOverlay}>
           <View style={styles.notifModalSheet}>
             <View style={styles.notifModalHeader}>
-              <Text style={styles.notifModalTitle}>Notifications</Text>
+              <Text style={styles.notifModalTitle}>{t('adminDashboard.notifications')}</Text>
               <TouchableOpacity onPress={() => setNotifPanelOpen(false)} hitSlop={10}>
                 <Ionicons name="close" size={22} color="#6A8E75" />
               </TouchableOpacity>
@@ -335,7 +364,7 @@ export default function AdminDashboardScreen() {
             {notifications.length === 0 ? (
               <View style={styles.notifEmpty}>
                 <Ionicons name="notifications-off-outline" size={40} color="#A0B4A5" />
-                <Text style={styles.notifEmptyText}>No notifications yet</Text>
+                <Text style={styles.notifEmptyText}>{t('adminDashboard.noNotifications')}</Text>
               </View>
             ) : (
               <FlatList
@@ -858,4 +887,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#196F31',
     alignSelf: 'center',
   },
+  languageCard: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  backgroundColor: '#F0F9F4',
+  borderRadius: 12,
+  padding: 12,
+  marginBottom: 10,
+  borderWidth: 1,
+  borderColor: '#D1E8D9',
+},
+
+languageInfo: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+languageTitle: {
+  fontSize: 13,
+  fontWeight: '700',
+  color: '#123D1F',
+},
+
+languageSubtitle: {
+  fontSize: 11,
+  color: '#6A8E75',
+  marginTop: 2,
+},
 });

@@ -19,6 +19,7 @@ import { useSelector } from 'react-redux';
 
 // NOTE: Import your actual API functions here
 import { createAdminApi, fetchAdminsApi, deleteAdminApi } from '../../service/server';
+import { useTranslation } from 'react-i18next';
 
 const StatCard = ({ label, value, icon, color = "#196F31" }) => (
   <View style={styles.statCard}>
@@ -45,7 +46,7 @@ export const ProvisionAdminView = () => {
   const [adminPhone, setAdminPhone] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
+const {t} = useTranslation();
   const { token } = useSelector((state) => state.auth);
 
   const loadAdmins = async (isRefreshing = false) => {
@@ -68,8 +69,8 @@ export const ProvisionAdminView = () => {
       setAdmins(extractedData.filter(user => user.role === 'admin'));
       
     } catch (error) {
-      console.error("Error loading admins:", error);
-      Alert.alert("Error", "Could not fetch admin directory.");
+      console.error(t("admin.error:"), error);
+      Alert.alert("Error", t("admin.fetchAdminsError"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -91,12 +92,12 @@ export const ProvisionAdminView = () => {
 
   const handleCreateAdmin = async () => {
     if (!adminName || !adminEmail || !adminPassword) {
-      Alert.alert("Validation Error", "Name, email, and password are required.");
+      Alert.alert(t("admin.validationError"), t("admin.requiredFields"));
       return;
     }
 
     if (!adminEmail.includes('@')) {
-      Alert.alert("Validation Error", "Please enter a valid email address.");
+      Alert.alert(t("admin.validationError"), t("admin.invalidEmail"));
       return;
     }
 
@@ -113,15 +114,15 @@ export const ProvisionAdminView = () => {
       const response = await createAdminApi(payload, token);
 
       if (response && response.success !== false) {
-        Alert.alert("Success", response.message || "New admin provisioned successfully!");
+        Alert.alert(t("admin.success"), response.message || t("admin.adminCreated"));
         setModalVisible(false);
         loadAdmins(); 
       } else {
-        Alert.alert("Error", response.message || "Failed to create admin.");
+        Alert.alert(t("admin.error"), response.message || t("admin.createAdminError"));
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Network request failed.");
+      Alert.alert(t("admin.error"), t("admin.networkError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -129,20 +130,20 @@ export const ProvisionAdminView = () => {
 
   const handleDelete = (id) => {
     Alert.alert(
-      "Revoke Access",
-      "Are you sure you want to permanently remove this admin's access?",
+      t("admin.revokeAccess"),
+      t("admin.revokeConfirmation"),
       [
         { text: "Cancel", style: "cancel" },
         { 
-          text: "Revoke", 
+          text: t("admin.revoke"),
           style: "destructive", 
           onPress: async () => {
             const response = await deleteAdminApi(id, token);
             if (response && response.success !== false) {
               setAdmins(prev => prev.filter(a => a._id !== id));
-              Alert.alert("Revoked", "Admin access removed successfully.");
+              Alert.alert(t("admin.success"), t("admin.adminRevoked"));
             } else {
-              Alert.alert("Error", "Could not remove admin.");
+              Alert.alert(t("admin.error"), t("admin.deleteAdminError"));
             }
           }
         }
@@ -176,13 +177,13 @@ export const ProvisionAdminView = () => {
 
         <View style={styles.cardFooter}>
           <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>System Admin</Text>
+            <Text style={styles.roleBadgeText}>{t("admin.systemAdmin")}</Text>
           </View>
           
           {item.phone ? (
              <Text style={styles.detailText}><Ionicons name="call-outline" size={12}/> {item.phone}</Text>
           ) : (
-             <Text style={styles.detailText}>No Phone Listed</Text>
+             <Text style={styles.detailText}>{t("admin.noPhoneListed")}</Text>
           )}
         </View>
       </View>
@@ -194,10 +195,10 @@ export const ProvisionAdminView = () => {
       
       {/* ── UPDATED STATS ROW ── */}
       <View style={styles.statsRow}>
-        <StatCard label="Total Admins" value={admins.length} icon="shield-checkmark-outline" />
+        <StatCard label={t("admin.totalAdmins")} value={admins.length} icon="shield-checkmark-outline" />
         <TouchableOpacity style={styles.addBtnCard} onPress={openForm}>
           <Ionicons name="person-add" size={24} color="#FFF" />
-          <Text style={styles.addBtnText}>New Admin</Text>
+          <Text style={styles.addBtnText}>{t("admin.newAdmin")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -205,7 +206,7 @@ export const ProvisionAdminView = () => {
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#196F31" />
-          <Text style={styles.loadingText}>Fetching admin directory...</Text>
+          <Text style={styles.loadingText}>{t("admin.fetchingAdmins")}</Text>
         </View>
       ) : (
         <FlatList
@@ -221,8 +222,8 @@ export const ProvisionAdminView = () => {
               <View style={styles.placeholderIconBg}>
                 <Ionicons name="shield-outline" size={32} color="#196F31" />
               </View>
-              <Text style={styles.mainPrompt}>No Admins Found</Text>
-              <Text style={styles.placeholderSub}>Provision a new admin to grant dashboard access.</Text>
+              <Text style={styles.mainPrompt}>{t("admin.noAdminsFound")}</Text>
+              <Text style={styles.placeholderSub}>{t("admin.provisionAdmin")}</Text>
             </View>
           }
         />
@@ -238,7 +239,7 @@ export const ProvisionAdminView = () => {
             <View style={styles.modalHandle} />
             
             <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Provision New Admin</Text>
+              <Text style={styles.modalTitle}>{t("admin.provisionNewAdmin")}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeModalBtn}>
                 <Ionicons name="close-circle" size={28} color="#A0B4A5" />
               </TouchableOpacity>
@@ -247,20 +248,20 @@ export const ProvisionAdminView = () => {
             <View style={styles.formContainer}>
               
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Full Name *</Text>
+                <Text style={styles.inputLabel}>{t("admin.fullName")} *</Text>
                 <TextInput 
                   style={styles.input} 
-                  placeholder="e.g., Ali Khan"
+                  placeholder={t("admin.placeholderFullName")}
                   value={adminName}
                   onChangeText={setAdminName}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Email Address *</Text>
+                <Text style={styles.inputLabel}>{t("admin.emailAddress")} *</Text>
                 <TextInput 
                   style={styles.input} 
-                  placeholder="admin@example.com"
+                  placeholder={t("admin.placeholderEmail")}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={adminEmail}
@@ -269,10 +270,10 @@ export const ProvisionAdminView = () => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Phone Number (Optional)</Text>
+                <Text style={styles.inputLabel}>{t("admin.phoneNumber")}</Text>
                 <TextInput 
                   style={styles.input} 
-                  placeholder="e.g., +92 300 1234567"
+                  placeholder={t("admin.placeholderPhone")}
                   keyboardType="phone-pad"
                   value={adminPhone}
                   onChangeText={setAdminPhone}
@@ -280,11 +281,11 @@ export const ProvisionAdminView = () => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Temporary Password *</Text>
+                <Text style={styles.inputLabel}>{t("admin.temporaryPassword")} *</Text>
                 <View style={styles.passwordWrap}>
                   <TextInput 
                     style={[styles.input, { flex: 1, borderWidth: 0, marginBottom: 0 }]} 
-                    placeholder="Create a secure password"
+                    placeholder={t("admin.placeholderPassword")}
                     secureTextEntry={!showPassword}
                     value={adminPassword}
                     onChangeText={setAdminPassword}
@@ -300,7 +301,7 @@ export const ProvisionAdminView = () => {
                   style={[styles.btn, styles.btnCancel]} 
                   onPress={() => setModalVisible(false)}
                 >
-                  <Text style={styles.btnCancelText}>Cancel</Text>
+                  <Text style={styles.btnCancelText}>{t("admin.cancel")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
@@ -311,7 +312,7 @@ export const ProvisionAdminView = () => {
                   {isSubmitting ? (
                     <ActivityIndicator color="#FFF" size="small" />
                   ) : (
-                    <Text style={styles.btnSubmitText}>Create Account</Text>
+                    <Text style={styles.btnSubmitText}>{t("admin.createAccount")}</Text>
                   )}
                 </TouchableOpacity>
               </View>

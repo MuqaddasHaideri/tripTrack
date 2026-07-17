@@ -16,12 +16,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { fetchRoutesApi } from '../../service/server';
+import { useTranslation } from 'react-i18next';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export default function SchedulesScreen() {
+       const { t } = useTranslation();
+    
   const router = useRouter();
   const [expandedRouteId, setExpandedRouteId] = useState<string | null>(null);
 
@@ -39,7 +42,7 @@ export default function SchedulesScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#196F31" />
-        <Text style={styles.loadingText}>Fetching Schedules...</Text>
+        <Text style={styles.loadingText}>{t("schedules.loading")}</Text>
       </View>
     );
   }
@@ -60,7 +63,7 @@ export default function SchedulesScreen() {
           </View>
 
           <View style={styles.routeInfo}>
-            <Text style={styles.routeName}>{item.route_name || 'Bus Route'}</Text>
+            <Text style={styles.routeName}>{item.route_name || t("schedules.busRoute")}</Text>
             <Text style={styles.routePath}>{item.origin} ➔ {item.destination}</Text>
           </View>
 
@@ -77,7 +80,7 @@ export default function SchedulesScreen() {
                 <View style={[styles.stopDot, { borderColor: routeColor }]} />
                 <View style={styles.stopTextContainer}>
                   <Text style={styles.stopName}>{stop.stop_name || stop.name}</Text>
-                  <Text style={styles.stopStatus}>Scheduled Stop</Text>
+                  <Text style={styles.stopStatus}>{t("schedules.scheduledStop")}</Text>
                 </View>
               </View>
             ))}
@@ -99,8 +102,8 @@ export default function SchedulesScreen() {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <View>
-          <Text style={styles.headerTitle}>Bus Schedules</Text>
-          <Text style={styles.headerSubtitle}>View all routes and stops</Text>
+          <Text style={styles.headerTitle}>{t("schedules.title")}</Text>
+          <Text style={styles.headerSubtitle}>{t("schedules.subtitle")}</Text>
         </View>
       </View>
 
@@ -113,7 +116,7 @@ export default function SchedulesScreen() {
         onRefresh={refetch}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No schedules available right now.</Text>
+          <Text style={styles.emptyText}>{t("schedules.empty")}</Text>
         }
       />
     </SafeAreaView>

@@ -13,8 +13,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchRoutesApi } from '../../service/server'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminMapScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { routeId } = useLocalSearchParams(); 
   const mapRef = useRef(null);
@@ -63,7 +65,7 @@ export default function AdminMapScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#196F31" />
-        <Text style={styles.loadingText}>Loading Route Data...</Text>
+        <Text style={styles.loadingText}>{t('adminMap.loadingRouteData')}</Text>
       </View>
     );
   }
@@ -72,9 +74,9 @@ export default function AdminMapScreen() {
     return (
       <SafeAreaView style={styles.errorContainer}>
         <Ionicons name="map-outline" size={60} color="#A0B4A5" />
-        <Text style={styles.errorText}>Route details not found.</Text>
+        <Text style={styles.errorText}>{t('adminMap.routeNotFound')}</Text>
         <TouchableOpacity style={styles.backBtnFallback} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Go Back</Text>
+          <Text style={styles.backBtnText}>{t('adminMap.goBack')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -159,7 +161,7 @@ export default function AdminMapScreen() {
             <Text style={styles.routeTitle}>{selectedRoute.route_name}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
               <View style={[styles.colorIndicator, { backgroundColor: routeColor }]} />
-              <Text style={styles.routeSubText}>Route Details</Text>
+              <Text style={styles.routeSubText}>{t('adminMap.routeDetails')}</Text>
             </View>
           </View>
         </View>
@@ -178,12 +180,12 @@ export default function AdminMapScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Total Stops</Text>
+            <Text style={styles.statLabel}>{t('adminMap.totalStops')}</Text>
             <Text style={[styles.statValue, { color: routeColor }]}>{selectedRoute.stops?.length || 0}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Status</Text>
-            <Text style={[styles.statValue, { color: routeColor }]}>Active</Text>
+            <Text style={styles.statLabel}>{t('adminMap.status')}</Text>
+            <Text style={[styles.statValue, { color: routeColor }]}>{t('adminMap.active')}</Text>
           </View>
         </View>
       </View>

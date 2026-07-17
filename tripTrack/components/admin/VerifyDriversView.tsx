@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'; 
 import { fetchAllDriversApi, approveDriverApi } from '../../service/server'; 
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 // Reusable StatCard Component
 const StatCard = ({ label, value, icon }) => (
@@ -27,6 +28,7 @@ const StatCard = ({ label, value, icon }) => (
 );
 
 export const VerifyDriversView = () => {
+  const {t} = useTranslation();
   const [activeSegment, setActiveSegment] = useState('pending');
   
   const [allDrivers, setAllDrivers] = useState([]);
@@ -59,7 +61,7 @@ export const VerifyDriversView = () => {
       setAllDrivers(extractedData);
     } catch (error) {
       console.error("Error loading driver data:", error);
-      Alert.alert("Error", "Something went wrong fetching data.");
+      Alert.alert("Error", t("verifyDrivers.fetchError"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -78,18 +80,18 @@ export const VerifyDriversView = () => {
       const response = await approveDriverApi(driverId, token);
 
       if (response && response.success !== false) {
-        Alert.alert("Success", "Driver application approved successfully!");
+        Alert.alert("Success", t("verifyDrivers.approveSuccessMessage"));
         
         // Update the driver locally to reflect the change immediately
         setAllDrivers(prevDrivers => 
           prevDrivers.map(d => d._id === driverId ? { ...d, isVerified: true } : d)
         );
       } else {
-        Alert.alert("Error", response.message || "Failed to approve driver.");
+        Alert.alert("Error", response.message || t("verifyDrivers.approveFailed"));
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Could not complete approval request.");
+      Alert.alert("Error", t("verifyDrivers.requestError"));
     } finally {
       setProcessingId(null);
     }
@@ -97,9 +99,9 @@ export const VerifyDriversView = () => {
 
   const handleViewLicense = (url) => {
     if (url) {
-      Linking.openURL(url).catch(() => Alert.alert("Error", "Cannot open license link."));
+      Linking.openURL(url).catch(() => Alert.alert("Error", t("verifyDrivers.cannotOpenLicense")));
     } else {
-      Alert.alert("Not Available", "No document image uploaded.");
+      Alert.alert("Not Available", t("verifyDrivers.noDocument"));
     }
   };
 
@@ -136,14 +138,14 @@ export const VerifyDriversView = () => {
           {/* Verification Status Badge */}
           <View style={[styles.priorityChip, isApproved ? styles.badgeApproved : styles.badgePending]}>
             <Text style={[styles.priorityChipText, isApproved ? styles.textApproved : styles.textPending]}>
-              {isApproved ? "Approved" : "Pending"}
+              {isApproved ? t("verifyDrivers.approved") : t("verifyDrivers.pending")}
             </Text>
           </View>
         </View>
 
         <View style={styles.detailsRow}>
-          <Text style={styles.detailText}><Ionicons name="call-outline" size={14}/> {item.phone || 'N/A'}</Text>
-          <Text style={styles.detailText}><Ionicons name="card-outline" size={14}/> {item.cnic || 'N/A'}</Text>
+          <Text style={styles.detailText}><Ionicons name="call-outline" size={14}/> {item.phone || t("verifyDrivers.na")}</Text>
+          <Text style={styles.detailText}><Ionicons name="card-outline" size={14}/> {item.cnic || t("verifyDrivers.na")}</Text>
         </View>
 
         {item.driverLicense && (
@@ -154,7 +156,7 @@ export const VerifyDriversView = () => {
             <View style={styles.licenseIconBg}>
               <Ionicons name="document-text" size={16} color="#196F31" />
             </View>
-            <Text style={styles.licenseLinkText}>View Driver License</Text>
+            <Text style={styles.licenseLinkText}>{t("verifyDrivers.viewLicense")}</Text>
             <Ionicons name="chevron-forward" size={16} color="#196F31" style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
         )}
@@ -177,7 +179,7 @@ export const VerifyDriversView = () => {
               ) : (
                 <>
                   <Ionicons name="checkmark-circle-outline" size={18} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Approve Driver</Text>
+                  <Text style={styles.actionButtonText}>{t("verifyDrivers.approveDriver")}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -193,12 +195,12 @@ export const VerifyDriversView = () => {
         <Ionicons name={activeSegment === 'pending' ? "checkmark-done-circle-outline" : "people-outline"} size={32} color="#196F31" />
       </View>
       <Text style={styles.mainPrompt}>
-        {activeSegment === 'pending' ? "All Caught Up!" : "No Drivers Found"}
+        {activeSegment === 'pending' ? t("verifyDrivers.allCaughtUp") : t("verifyDrivers.noDrivers")}
       </Text>
       <Text style={styles.placeholderSub}>
         {activeSegment === 'pending' 
-          ? "There are no pending driver applications to review right now."
-          : "There are currently no drivers in the database system."}
+          ? t("verifyDrivers.noPendingApplications")
+          : t("verifyDrivers.noDriversDatabase")}
       </Text>
     </View>
   );
@@ -223,9 +225,9 @@ export const VerifyDriversView = () => {
       
       {/* ── STATS ROW ── */}
       <View style={styles.statsRow}>
-        <StatCard label="Total" value={totalDrivers} icon="people-outline" />
-        <StatCard label="Verified" value={verifiedDrivers} icon="checkmark-circle-outline" />
-        <StatCard label="Pending" value={pendingDrivers} icon="time-outline" />
+        <StatCard label={t("verifyDrivers.total")} value={totalDrivers} icon="people-outline" />
+        <StatCard label={t("verifyDrivers.verified")} value={verifiedDrivers} icon="checkmark-circle-outline" />
+        <StatCard label={t("verifyDrivers.pending")} value={pendingDrivers} icon="time-outline" />
       </View>
 
       {/* ── SEGMENTED TOP CONTROL BUTTONS ── */}
@@ -236,7 +238,7 @@ export const VerifyDriversView = () => {
           activeOpacity={0.9}
         >
           <Text style={[styles.segmentText, activeSegment === 'pending' && styles.activeSegmentText]}>
-            Pending Applications
+            {t("verifyDrivers.pendingApplications")}
           </Text>
         </TouchableOpacity>
 
@@ -246,7 +248,7 @@ export const VerifyDriversView = () => {
           activeOpacity={0.9}
         >
           <Text style={[styles.segmentText, activeSegment === 'all' && styles.activeSegmentText]}>
-            All Drivers Directory
+            {t("verifyDrivers.allDriversDirectory")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -255,7 +257,7 @@ export const VerifyDriversView = () => {
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#196F31" />
-          <Text style={styles.loadingText}>Updating workspace records...</Text>
+          <Text style={styles.loadingText}>{t("verifyDrivers.updatingWorkspace")}</Text>
         </View>
       ) : (
         <FlatList

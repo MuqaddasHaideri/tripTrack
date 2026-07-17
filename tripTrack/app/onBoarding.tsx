@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   Dimensions,
   Image,
@@ -16,31 +15,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // Fonts
 import { useFonts, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
-
-const slides = [
+export default function OnboardingScreen() {
+      const { t } = useTranslation();
+  const slides = [
   {
-    id: '1',
-    title: 'LOCATE STOPS',
-    description: 'TripTrack finds all nearby buses and stops for you instantly.',
-    image: require('../assets/images/Bus Stop.gif'),
+    id: "1",
+    title: t("onboarding.slides.0.title"),
+    description: t("onboarding.slides.0.description"),
+    image: require("../assets/images/Bus Stop.gif"),
   },
   {
-    id: '2',
-    title: 'REAL-TIME TRACKING',
-    description: 'Never miss a bus again. Track its precise location on the map.',
-    image: require('../assets/images/city bus.gif'),
+    id: "2",
+    title: t("onboarding.slides.1.title"),
+    description: t("onboarding.slides.1.description"),
+    image: require("../assets/images/city bus.gif"),
   },
   {
-    id: '3',
-    title: 'SAVE FAVOURITES',
-    description: 'Bookmark your frequent stops and routes for one-tap access.',
-    image: require('../assets/images/Location review.gif'),
-  }
+    id: "3",
+    title: t("onboarding.slides.2.title"),
+    description: t("onboarding.slides.2.description"),
+    image: require("../assets/images/Location review.gif"),
+  },
 ];
 
-export default function OnboardingScreen() {
   const router = useRouter();
   const flatListRef = useRef(null);
 
@@ -118,7 +118,7 @@ export default function OnboardingScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.skipBtn} onPress={skipOnboarding}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -180,7 +180,7 @@ export default function OnboardingScreen() {
 
         <TouchableOpacity style={styles.nextButton} onPress={goNext}>
           <Text style={styles.nextText}>
-            {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
+            {currentIndex === slides.length - 1 ? t("onboarding.getStarted") : t("onboarding.next")}
           </Text>
         </TouchableOpacity>
 

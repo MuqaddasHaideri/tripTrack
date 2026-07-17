@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,49 +9,129 @@ import {
   Image,
   Text,
   Platform,
-  Dimensions
+  Dimensions,
+  Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../redux/authSlice';
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import i18n from "../../translation/index";
+import { setLanguage } from "../../redux/languageSlice";
+import { useTranslation } from "react-i18next";
 const { width } = Dimensions.get('window');
 
-const ListOption = ({ title, subtitle, icon, onPress, isLast, isDestructive, showChevron = true }) => (
+const ListOption = ({
+  title,
+  subtitle,
+  icon,
+  onPress,
+  isLast,
+  isDestructive,
+  showChevron = true,
+  rightComponent,
+}) => (
   <TouchableOpacity
     activeOpacity={0.7}
     style={[
       styles.listRow,
-      !isLast && { borderBottomWidth: 1, borderBottomColor: '#E8F3EB' }
+      !isLast && {
+        borderBottomWidth: 1,
+        borderBottomColor: "#E8F3EB",
+      },
     ]}
     onPress={onPress}
+    disabled={!!rightComponent} // Prevent row press when switch exists
   >
-    <View style={[styles.listIconBox, { backgroundColor: isDestructive ? '#FFF1F0' : '#F0F9F4' }]}>
-      <Ionicons name={icon} size={20} color={isDestructive ? '#FF3B30' : '#196F31'} />
+    <View
+      style={[
+        styles.listIconBox,
+        {
+          backgroundColor: isDestructive ? "#FFF1F0" : "#F0F9F4",
+        },
+      ]}
+    >
+      <Ionicons
+        name={icon}
+        size={20}
+        color={isDestructive ? "#FF3B30" : "#196F31"}
+      />
     </View>
+
     <View style={styles.listTextContent}>
-      <Text style={[styles.listTitle, isDestructive && { color: '#FF3B30' }]}>
+      <Text
+        style={[
+          styles.listTitle,
+          isDestructive && { color: "#FF3B30" },
+        ]}
+      >
         {title}
       </Text>
-      {subtitle && <Text style={styles.listSubtitle}>{subtitle}</Text>}
+
+      {subtitle && (
+        <Text style={styles.listSubtitle}>
+          {subtitle}
+        </Text>
+      )}
     </View>
-    {!isDestructive && showChevron && (
-      <Ionicons name="chevron-forward" size={18} color="#A0B4A5" />
+
+    {rightComponent ? (
+      rightComponent
+    ) : (
+      !isDestructive &&
+      showChevron && (
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color="#A0B4A5"
+        />
+      )
     )}
   </TouchableOpacity>
 );
 
 export default function SettingsScreen() {
+    const { t } = useTranslation();
   const router = useRouter();
   const dispatch = useDispatch();
-  const { user,isGuest } = useSelector((state) => state.auth);
+  const { user, isGuest } = useSelector((state) => state.auth);
+  const language = useSelector(
+    (state) => state.language.language
+  );
+  const toggleLanguage = async () => {
+    try {
+      const newLanguage = language === "en" ? "ur" : "en";
 
+      // Update Redux
+      dispatch(setLanguage(newLanguage));
+
+      // Update i18next
+      await i18n.changeLanguage(newLanguage);
+
+      // Save language
+      await AsyncStorage.setItem("language", newLanguage);
+    } catch (error) {
+      console.log("Language change error:", error);
+    }
+  };
+  useEffect(() => {
+    const loadLanguage = async () => {
+      const savedLanguage = await AsyncStorage.getItem("language");
+
+      if (savedLanguage) {
+        dispatch(setLanguage(savedLanguage));
+        await i18n.changeLanguage(savedLanguage);
+      }
+    };
+
+    loadLanguage();
+  }, []);
   const handleLogout = () => {
-    Alert.alert("Log Out", "Are you sure you want to log out of TripTrack?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("settings.logoutTitle"), t("settings.logoutMessage"), [
+      { text: t("settings.cancel"), style: "cancel" },
       {
-        text: "Log Out", style: "destructive", onPress: () => {
+        text: t("settings.logout"), style: "destructive", onPress: () => {
           dispatch(logout());
           router.replace('/');
         }
@@ -67,7 +147,7 @@ export default function SettingsScreen() {
     >
       <StatusBar barStyle="dark-content" />
 
-      <Text style={styles.header}>Settings</Text>
+      <Text style={styles.header}>{t("settings.title")}</Text>
 
       {/* --- PREMIUM PROFILE SECTION --- */}
       {user ? (
@@ -108,8 +188,8 @@ export default function SettingsScreen() {
             <Ionicons name="leaf" size={24} color="#196F31" />
           </View>
           <View style={styles.guestContent}>
-            <Text style={styles.guestTitle}>Sign in to TripTrack</Text>
-            <Text style={styles.guestSubtitle}>Track your routes & save favorite stops</Text>
+            <Text style={styles.guestTitle}>{t("settings.guestTitle")}</Text>
+            <Text style={styles.guestSubtitle}>{t("settings.guestSubtitle")}</Text>
           </View>
           <Ionicons name="arrow-forward" size={20} color="#196F31" />
         </TouchableOpacity>
@@ -117,14 +197,14 @@ export default function SettingsScreen() {
 
       {/* --- MENU SECTIONS --- */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>ACCOUNT PREFERENCES</Text>
+        <Text style={styles.sectionLabel}>{t("settings.accountPreferences")}</Text>
         <View style={styles.cardGroup}>
-          
+
           {/* Show Favorite Routes ONLY if logged in AND NOT a driver */}
           {user && user.role !== 'driver' && (
             <ListOption
-              title="Favorite Routes"
-              subtitle="Manage your saved bus lines"
+              title={t("settings.favoriteRoutes")}
+              subtitle={t("settings.favoriteRoutesSubtitle")}
               icon="heart-outline"
               onPress={() => router.push('/passenger/favouriteRoutes')}
             />
@@ -132,29 +212,47 @@ export default function SettingsScreen() {
 
           {/* Schedule is visible to EVERYONE (Guests, Passengers, Drivers) */}
           <ListOption
-            title="Schedules"
-            subtitle="View static bus time-tables"
+            title={t("settings.schedules")}
+            subtitle={t("settings.schedulesSubtitle")}
             icon="time-outline"
-            isLast={true}
+            isLast={false}
             onPress={() => router.push('/passenger/schedule')}
           />
+          <ListOption
+            title={t("settings.language")}
+            subtitle={t("settings.languageSubtitle")}
+            icon="language-outline"
+            isLast={true}
+            rightComponent={
+              <Switch
+                value={language === "ur"}
+                onValueChange={toggleLanguage}
+                trackColor={{
+                  false: "#D1D5DB",
+                  true: "#196F31",
+                }}
+                thumbColor="#FFFFFF"
+              />
+            }
+          />
         </View>
+
       </View>
 
       {/* Show App & Support ONLY if logged in */}
       {user && (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>APP & SUPPORT</Text>
+          <Text style={styles.sectionLabel}>{t("settings.appSupport")}</Text>
           <View style={styles.cardGroup}>
             <ListOption
-              title="Announcements"
-              subtitle="Latest updates and notices"
+              title={t("settings.announcements")}
+              subtitle={t("settings.announcementsSubtitle")}
               icon="megaphone-outline"
               onPress={() => router.push('/passenger/announcements')}
             />
             <ListOption
-              title="Report an Issue"
-              subtitle="Traffic, bugs or suggestions"
+              title={t("settings.reportIssue")}
+              subtitle={t("settings.reportIssueSubtitle")}
               icon="alert-circle-outline"
               isLast={true}
               onPress={() => router.push('/passenger/report-issue')}
@@ -167,7 +265,7 @@ export default function SettingsScreen() {
       {user && (
         <View style={[styles.cardGroup, { marginTop: 10, borderColor: '#FF3B30' }]}>
           <ListOption
-            title="Sign Out"
+            title={t("settings.signOut")}
             icon="power"
             isDestructive={true}
             isLast={true}
@@ -177,7 +275,6 @@ export default function SettingsScreen() {
         </View>
       )}
 
-      <Text style={styles.version}>tripTrack • v1.0.0 (Beta)</Text>
     </ScrollView>
   );
 }

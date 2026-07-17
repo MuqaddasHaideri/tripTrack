@@ -17,6 +17,7 @@ import {
     deleteUserProfileApi
 } from '../../service/server';
 import { deleteAccount, updateUser } from '../../redux/authSlice';
+import { useTranslation } from 'react-i18next';
 export default function ProfileScreen() {
     const router = useRouter();
     const dispatch = useDispatch();
@@ -28,6 +29,7 @@ export default function ProfileScreen() {
     const [profile, setProfile] = useState({ name: '', email: '', phone: '', profilePic: '' });
     const [originalProfile, setOriginalProfile] = useState({});
     const [newImageUri, setNewImageUri] = useState(null);
+    const {t} = useTranslation();
     useEffect(() => {
         if (token) {
             fetchProfile(token);
@@ -55,11 +57,11 @@ export default function ProfileScreen() {
                 setProfile(formatted);
                 setOriginalProfile(formatted);
             } else {
-                Alert.alert("Profile Error", result.message || "Session expired");
+                Alert.alert("t('profileScreen.Profile Error')", result.message || "Session expired");
             }
         } catch (error) {
             console.error("Catch Block Error:", error);
-            Alert.alert("Connection Error", "Cannot reach the server.");
+            Alert.alert("t('profileScreen.Connection Error')", "t('profileScreenCannot reach the server.')");
         } finally {
             setLoading(false);
         }
@@ -67,7 +69,7 @@ export default function ProfileScreen() {
 
     const handleUpdate = async () => {
         if (!profile.name || !profile.phone) {
-            Alert.alert("Error", "Name and Phone are required.");
+            Alert.alert("t('profileScreen.Error')", "t('profileScreenName and Phone are required.')");
             return;
         }
 
@@ -87,16 +89,16 @@ export default function ProfileScreen() {
 
             if (result.success) {
                 dispatch(updateUser(result.user || updateData));
-                Alert.alert("Success", "Profile updated!");
+                Alert.alert("t('profileScreen.Success')", "t('profileScreenProfile updated!')");
 
                 setIsEditing(false);
                 setNewImageUri(null);
                 setOriginalProfile(updateData);
             } else {
-                Alert.alert("Update Failed", result.message);
+                Alert.alert("t('profileScreen.Update Failed')", result.message);
             }
         } catch (error) {
-            Alert.alert("Error", "Failed to update profile.");
+            Alert.alert("t('profileScreen.Error')", "t('profileScreenFailed to update profile.')");
         } finally {
             setIsUploading(false);
         }
@@ -104,12 +106,12 @@ export default function ProfileScreen() {
 
     const handleDelete = () => {
         Alert.alert(
-            "Delete Account",
-            "This will permanently delete your TransitGo account. Continue?",
+            t('profileScreen.Delete Account'),
+            t('profileScreenThis will permanently delete your TransitGo account. Continue?'),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t('profileScreen.Cancel'), style: "cancel" },
                 {
-                    text: "Delete",
+                    text: t('profileScreen.Delete'),
                     style: "destructive",
                     onPress: async () => {
                         const result = await deleteUserProfileApi(token);
@@ -145,7 +147,7 @@ export default function ProfileScreen() {
                         <Ionicons name="arrow-back" size={22} color="#000" />
                     </TouchableOpacity>
 
-                    <Text style={styles.headerTitle}>Profile Settings</Text>
+                    <Text style={styles.headerTitle}>{t('profileScreen.Profile Settings')}</Text>
 
                     <TouchableOpacity
                         onPress={() => isEditing ? handleUpdate() : setIsEditing(true)}
@@ -156,7 +158,7 @@ export default function ProfileScreen() {
                             <ActivityIndicator size="small" color="#196F31" />
                         ) : (
                             <>
-                                <Text style={styles.editHeaderText}>{isEditing ? "Save" : "Edit"}</Text>
+                                <Text style={styles.editHeaderText}>{isEditing ? t('profileScreen.Save') : t('profileScreen.Edit')}</Text>
                                 <Ionicons
                                     name={isEditing ? "checkmark-circle" : "create-outline"}
                                     size={18}
@@ -198,10 +200,10 @@ export default function ProfileScreen() {
                     </View>
 
                     <View style={styles.mainCard}>
-                        <Text style={styles.sectionLabel}>ACCOUNT INFORMATION</Text>
+                        <Text style={styles.sectionLabel}>{t('profileScreen.ACCOUNT INFORMATION')}</Text>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Full Name</Text>
+                            <Text style={styles.inputLabel}>{t('profileScreen.Full Name')}</Text>
                             <View style={[styles.inputField, !isEditing && styles.disabledField]}>
                                 <Ionicons name="person-outline" size={20} color={isEditing ? "#196F31" : "#A0B4A5"} />
                                 <TextInput
@@ -214,7 +216,7 @@ export default function ProfileScreen() {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Phone Number</Text>
+                            <Text style={styles.inputLabel}>{t('profileScreen.Phone Number')}</Text>
                             <View style={[styles.inputField, !isEditing && styles.disabledField]}>
                                 <Ionicons name="call-outline" size={20} color={isEditing ? "#196F31" : "#A0B4A5"} />
                                 <TextInput
@@ -228,7 +230,7 @@ export default function ProfileScreen() {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Email Address</Text>
+                            <Text style={styles.inputLabel}>{t('profileScreen.Email Address')}</Text>
                             <View style={[styles.inputField, styles.disabledField]}>
                                 <Ionicons name="mail-outline" size={20} color="#A0B4A5" />
                                 <TextInput
@@ -248,12 +250,12 @@ export default function ProfileScreen() {
                                 onPress={() => { setIsEditing(false); setProfile(originalProfile); setNewImageUri(null); }}
                             >
                                 <Ionicons name="close-circle-outline" size={20} color="#8E8E93" />
-                                <Text style={styles.discardBtnText}>Discard Changes</Text>
+                                <Text style={styles.discardBtnText}>{t('profileScreen.Discard Changes')}</Text>
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
                                 <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                                <Text style={styles.deleteBtnText}>Delete Account</Text>
+                                <Text style={styles.deleteBtnText}>{t('profileScreen.Delete Account')}</Text>
                             </TouchableOpacity>
                         )}
                     </View>

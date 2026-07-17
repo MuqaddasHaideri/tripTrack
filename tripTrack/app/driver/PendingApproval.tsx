@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { checkApprovalStatusApi } from '../../service/server';
+import { useTranslation } from 'react-i18next';
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -20,7 +21,7 @@ export default function PendingApprovalScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [checking, setChecking] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
+const { t } = useTranslation();
   useEffect(() => {
     if (!email) return;
 
@@ -31,9 +32,9 @@ export default function PendingApprovalScreen() {
         if (res?.approved) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           Alert.alert(
-            "Approved!",
-            "Your account has been approved. Please log in to continue.",
-            [{ text: "Go to Login", onPress: () => router.replace('/(auth)/login') }]
+            t("pendingApproval.Approved!"),
+            t("pendingApproval.Your account has been approved. Please log in to continue."),
+            [{ text: t("pendingApproval.Go to Login"), onPress: () => router.replace('/(auth)/login') }]
           );
         }
       } catch {
@@ -64,25 +65,25 @@ export default function PendingApprovalScreen() {
           </View>
         </View>
 
-        <Text style={styles.title}>Application Under Review</Text>
+        <Text style={styles.title}>{t("pendingApproval.Application Under Review")}</Text>
         <Text style={styles.subtitle}>
-          Your driver registration has been submitted successfully. Our admin team is currently reviewing your documents.
+          {t("pendingApproval.Your driver registration has been submitted successfully. Our admin team is currently reviewing your documents.")}
         </Text>
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <Ionicons name="shield-checkmark-outline" size={20} color="#196F31" />
-            <Text style={styles.infoText}>Your CNIC and license are being verified</Text>
+            <Text style={styles.infoText}>{t("pendingApproval.Your CNIC and license are being verified")}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Ionicons name="notifications-outline" size={20} color="#196F31" />
-            <Text style={styles.infoText}>You will be notified once approved</Text>
+            <Text style={styles.infoText}>{t("pendingApproval.You will be notified once approved")}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Ionicons name="hourglass-outline" size={20} color="#196F31" />
-            <Text style={styles.infoText}>This usually takes 24-48 hours</Text>
+            <Text style={styles.infoText}>{t("pendingApproval.This usually takes 24-48 hours")}</Text>
           </View>
         </View>
 
@@ -93,7 +94,7 @@ export default function PendingApprovalScreen() {
             <View style={styles.statusDot} />
           )}
           <Text style={styles.statusText}>
-            {checking ? 'Checking status...' : 'Status: Pending Approval'}
+            {checking ? t("pendingApproval.Checking status...") : t("pendingApproval.Status: Pending Approval")}
           </Text>
         </View>
       </View>
@@ -105,7 +106,7 @@ export default function PendingApprovalScreen() {
           activeOpacity={0.8}
         >
           <Ionicons name="arrow-back" size={18} color="#196F31" />
-          <Text style={styles.backButtonText}>Back to Login</Text>
+          <Text style={styles.backButtonText}>{t("pendingApproval.Back to Login")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

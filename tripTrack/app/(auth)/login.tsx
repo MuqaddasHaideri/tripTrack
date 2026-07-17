@@ -19,21 +19,21 @@ import { useDispatch } from 'react-redux';
 import { loginUserApi } from '../../service/server';
 import { continueAsGuest, setCredentials } from '../../redux/authSlice';
 import { registerForPushNotifications } from '../../utils/notifications';
-
+import { useTranslation } from 'react-i18next';
 export default function LoginScreen() {
+    
     const router = useRouter();
     const dispatch = useDispatch();
-
     const [showPassword, setShowPassword] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-
+      const { t } = useTranslation();
     const handleLogin = async () => {
         const trimmedEmail = email.trim();
 
         if (!trimmedEmail || !password) {
-            Alert.alert("Error", "Please fill in all fields.");
+            Alert.alert(t("login.error"), t("login.fillAllFields"));
             return;
         }
 
@@ -69,7 +69,7 @@ export default function LoginScreen() {
                     console.log('Push registration error:', err);
                 });
 
-                Alert.alert("Success", `Welcome back, ${user?.name || 'User'}!`);
+                Alert.alert(t("login.success"), t(`login.welcomeBack`, { name: user?.name || 'User' }));
                 if (user?.role === 'admin') {
                     //router.replace('/admin/dashboard');
                 } else if (user?.role === 'driver') {
@@ -78,19 +78,19 @@ export default function LoginScreen() {
                     router.replace('/(tabs)');
                 }
             } else {
-                const msg = data?.message || "Invalid credentials";
+                const msg = data?.message || t("login.invalidCredentials");
                 if (msg.includes("pending admin approval")) {
                     router.push({ pathname: '/driver/PendingApproval', params: { email: trimmedEmail } });
                 } else {
-                    Alert.alert("Login Failed", msg);
+                    Alert.alert(t("login.loginFailed"), msg);
                 }
             }
         } catch (error) {
-            const msg = typeof error === 'string' ? error : ((error as any)?.message || "Login failed. Please try again.");
+            const msg = typeof error === 'string' ? error : ((error as any)?.message || t("login.loginFailed"));
             if (msg.toLowerCase().includes("pending") || msg.toLowerCase().includes("approval")) {
                 router.push({ pathname: '/driver/PendingApproval', params: { email: trimmedEmail } });
             } else {
-                Alert.alert("Error", msg);
+                Alert.alert(t("login.error"), msg);
             }
         } finally {
             setLoading(false);
@@ -112,8 +112,8 @@ export default function LoginScreen() {
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.welcomeText}>Welcome</Text>
-                        <Text style={styles.subText}>Hi, you need to login to enter</Text>
+                        <Text style={styles.welcomeText}>{t("login.welcome")}</Text>
+                        <Text style={styles.subText}>{t("login.subtitle")}</Text>
                     </View>
 
                     <AuthTabSwitcher />
@@ -122,12 +122,12 @@ export default function LoginScreen() {
                     <View style={styles.form}>
 
                         {/* Email */}
-                        <Text style={styles.label}>Email Address</Text>
+                        <Text style={styles.label}>{t("login.emailAddress")}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="example@gmail.com"
+                                placeholder={t("login.emailPlaceholder")}
                                 value={email}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -136,12 +136,12 @@ export default function LoginScreen() {
                         </View>
 
                         {/* Password */}
-                        <Text style={styles.label}>Password</Text>
+                        <Text style={styles.label}>{t("login.password")}</Text>
                         <View style={styles.inputWrapper}>
                             <Ionicons name="key-outline" size={20} color="#666" style={styles.icon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Enter your password"
+                                placeholder={t("login.passwordPlaceholder")}
                                 secureTextEntry={!showPassword}
                                 value={password}
                                 onChangeText={setPassword}
@@ -155,9 +155,9 @@ export default function LoginScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <TouchableOpacity style={styles.forgotBtn}>
-                            <Text style={styles.forgotText}>Forgot Password?</Text>
-                        </TouchableOpacity>
+                        {/* <TouchableOpacity style={styles.forgotBtn}>
+                            <Text style={styles.forgotText}>{t("login.forgotPassword")}</Text>
+                        </TouchableOpacity> */}
                     </View>
 
                     {/* Login Button */}
@@ -167,7 +167,7 @@ export default function LoginScreen() {
                         disabled={loading}
                     >
                         <Text style={styles.primaryBtnText}>
-                            {loading ? "Logging in..." : "Login"}
+                            {loading ? t("login.loggingIn") : t("login.login")}
                         </Text>
                     </TouchableOpacity>
 
@@ -179,7 +179,7 @@ export default function LoginScreen() {
                             router.replace('/(tabs)');
                         }}
                     >
-                        <Text style={styles.guestBtnText}>Continue as Guest</Text>
+                        <Text style={styles.guestBtnText}>{t("login.continueAsGuest")}</Text>
                     </TouchableOpacity>
 
                 </ScrollView>

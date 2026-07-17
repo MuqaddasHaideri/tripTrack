@@ -7,6 +7,10 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme, View, ActivityIndicator } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import "../translation/index";
+import { getLanguage } from "../translation/languageStorage";
+import { setLanguage } from "../redux/languageSlice";
+import i18n from '../translation/index';
 
 function AppWrapper() {
   const colorScheme = useColorScheme();
@@ -107,7 +111,14 @@ function RootContent() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(loadUser());
+    const initializeApp = async () => {
+      dispatch(loadUser());
+      const savedLanguage = await getLanguage();
+      dispatch(setLanguage(savedLanguage));
+      await i18n.changeLanguage(savedLanguage);
+    };
+
+    initializeApp();
   }, [dispatch]);
 
   return <AppWrapper />;

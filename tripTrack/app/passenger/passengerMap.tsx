@@ -24,19 +24,18 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-
 // Service & Component Imports
 import { fetchRoutesApi, socket, fetchMyFavoritesApi, addFavoriteRouteApi, removeFavoriteApi } from '../../service/server';
 import { UserLocationMarker, StopMarker } from '../../components/ui/MapMarkers';
 import LocationPermissionScreen from '../../components/ui/PermissionLocation';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 
 export default function PassengerMap() {
   const mapRef = useRef<MapView>(null);
   const appState = useRef(AppState.currentState);
-
+   const { t } = useTranslation();
   // --- STATE ---
   const [permissionState, setPermissionState] = useState<'loading' | 'granted' | 'denied'>('loading');
   const [errorType, setErrorType] = useState<'permission' | 'gps' | null>(null);
@@ -96,7 +95,7 @@ export default function PassengerMap() {
         if (data.success) {
           setFavoriteRouteIds(prev => prev.filter(id => id !== selectedRouteId));
         } else {
-          Alert.alert("Error", data.message || "Failed to remove route from favorites.");
+          Alert.alert(t("map.error"), data.message || t("map.removeFavoriteFailed"));
         }
       } else {
         // POST Network Request
@@ -104,11 +103,11 @@ export default function PassengerMap() {
         if (data.success) {
           setFavoriteRouteIds(prev => [...prev, selectedRouteId]);
         } else {
-          Alert.alert("Error", data.message || "Failed to add route to favorites.");
+          Alert.alert(t("map.error"), data.message || t("map.addFavoriteFailed"));
         }
       }
     } catch (err) {
-      Alert.alert("Network Error", "Could not synchronize bookmark status.");
+      Alert.alert(t("map.networkError"), t("map.bookmarkSyncFailed"));
     } finally {
       setIsFavoriting(false);
     }
@@ -175,9 +174,9 @@ export default function PassengerMap() {
   };
 
   const handleNotNow = () => {
-    Alert.alert("TransitGo", "Nearby routes won't be visible without location.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Enable", onPress: handlePrimaryAction }
+    Alert.alert(t("map.appName"), t("map.locationRequired"), [
+      { text: t("map.cancel"), style: "cancel" },
+      { text: t("map.enable"), onPress: handlePrimaryAction }
     ]);
   };
 
@@ -328,7 +327,7 @@ export default function PassengerMap() {
         <TouchableOpacity style={styles.searchContainer} onPress={() => setIsRoutesModalVisible(true)}>
           <View style={styles.searchIconBox}><Ionicons name="bus" size={16} color="white" /></View>
           <Text style={styles.searchText} numberOfLines={1}>
-            {routeToDisplay ? `${routeToDisplay.origin} → ${routeToDisplay.destination}` : 'Select a Route'}
+            {routeToDisplay ? `${routeToDisplay.origin} → ${routeToDisplay.destination}` : t("map.selectRoute")}
           </Text>
           <Ionicons name="chevron-down" size={16} color="#00C853" />
         </TouchableOpacity>
@@ -340,7 +339,7 @@ export default function PassengerMap() {
           {/* 1. CARD FIXED HEADER CONTAINER */}
           <View style={styles.cardMainHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.cardMainTitle}>{routeToDisplay.route_name || 'Active Transit'}</Text>
+              <Text style={styles.cardMainTitle}>{routeToDisplay.route_name || t("map.activeTransit")}</Text>
               <Text style={styles.cardMainSubtitle}>{routeToDisplay.origin} to {routeToDisplay.destination}</Text>
             </View>
 
@@ -373,17 +372,17 @@ export default function PassengerMap() {
             {Object.keys(liveBuses).length === 0 ? (
               <View style={styles.waitingRow}>
                 <Ionicons name="radio-outline" size={16} color="#123D1F" />
-                <Text style={styles.waitingText}>Waiting for live bus data...</Text>
+                <Text style={styles.waitingText}>{t("map.waitingForLiveBus")}</Text>
               </View>
             ) : (
               Object.entries(liveBuses).map(([busKey, bus]: [string, any]) => (
                 <View key={busKey} style={styles.etaContainer}>
                   <View style={styles.etaHeader}>
                     <Ionicons name="radio" size={18} color="#FF3B30" />
-                    <Text style={styles.etaTitle}>Live Update</Text>
+                    <Text style={styles.etaTitle}>{t("map.liveUpdate")}</Text>
                     {bus.busId && <Text style={styles.busIdBadge}>{bus.busId}</Text>}
                   </View>
-                  <Text style={styles.backendMessage}>{bus.displayMessage || 'Connecting to bus GPS...'}</Text>
+                  <Text style={styles.backendMessage}>{bus.displayMessage || t("map.connectingGps")}</Text>
                 </View>
               ))
             )}
@@ -392,7 +391,7 @@ export default function PassengerMap() {
           {/* CARD ACTION ROOT CLOSURE */}
           <TouchableOpacity style={styles.clearRouteBtnInCard} onPress={clearSelectedRoute}>
             <Ionicons name="close-circle" size={16} color="#FF3B30" />
-            <Text style={styles.clearRouteText}>Clear Route</Text>
+            <Text style={styles.clearRouteText}>{t("map.clearRoute")}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -403,7 +402,7 @@ export default function PassengerMap() {
             <TouchableOpacity onPress={() => setIsRoutesModalVisible(false)}><Ionicons name="close" size={28} color="#123D1F" /></TouchableOpacity>
             <View style={styles.modalSearchBox}>
               <Ionicons name="search" size={18} color="#123D1F" />
-              <TextInput style={styles.modalSearchInput} placeholder="Search routes..." placeholderTextColor="#123D1F" value={routeSearchQuery} onChangeText={setRouteSearchQuery} />
+              <TextInput style={styles.modalSearchInput} placeholder={t("map.searchRoutes")} placeholderTextColor="#123D1F" value={routeSearchQuery} onChangeText={setRouteSearchQuery} />
             </View>
           </View>
           <FlatList
@@ -413,7 +412,7 @@ export default function PassengerMap() {
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.cardContainer} onPress={() => { setSelectedRouteId(item._id); setIsRoutesModalVisible(false); }}>
                 <View style={[styles.cardIconBox, { backgroundColor: item.color_hex || '#00C853' }]}><Ionicons name="bus" size={22} color="white" /></View>
-                <View style={{ flex: 1 }}><Text style={styles.cardTitle}>{item.origin} to {item.destination}</Text><Text style={styles.cardSubtitle}>{item.stops?.length} Stops</Text></View>
+                <View style={{ flex: 1 }}><Text style={styles.cardTitle}>{item.origin} to {item.destination}</Text><Text style={styles.cardSubtitle}>{item.stops?.length} {t("map.stops")}</Text></View>
               </TouchableOpacity>
             )}
           />

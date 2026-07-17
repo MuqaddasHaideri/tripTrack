@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchRoutesApi, getMyReportsApi, submitReportApi } from '@/service/server';
 import { pickImage, uploadToCloudinary } from '@/utils/pickImage';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Category = 'traffic' | 'bug' | 'suggestion' | null;
@@ -31,29 +32,10 @@ interface LastReport {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_CHARS = 300;
 
-const PRIORITY_CONFIG: Record<
-  NonNullable<Priority>,
-  { label: string; color: string; bg: string; border: string }
-> = {
-  low: { label: 'Low', color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB' },
-  medium: { label: 'Medium', color: '#854F0B', bg: '#FAEEDA', border: '#FAC775' },
-  high: { label: 'High', color: '#E65100', bg: '#FFF3E0', border: '#FFAB40' },
-  critical: { label: 'Critical', color: '#791F1F', bg: '#F7C1C1', border: '#E24B4A' },
-};
-
-const STATUS_CONFIG: Record<
-  'pending' | 'reviewed' | 'resolved' | 'dismissed',
-  { label: string; color: string }
-> = {
-  pending:   { label: 'Pending Review',  color: '#4A6B54' }, // Subtle green-gray
-  reviewed:  { label: 'Under Review',   color: '#854F0B' }, // Amber/Orange
-  resolved:  { label: 'Resolved ✓',     color: '#196F31' }, // Vibrant Green
-  dismissed: { label: 'Dismissed',      color: '#791F1F' }, // Subtle Muted Red
-};
 
 export default function ReportIssueScreen() {
   const router = useRouter();
-
+const {t}= useTranslation();
   // Core form state
   const [category, setCategory] = useState<Category>(null);
   const [description, setDescription] = useState('');
@@ -79,6 +61,25 @@ const [pastReports, setPastReports] = useState<any[]>([]);
   const successAnim = useRef(new Animated.Value(0)).current;
   const { token } = useSelector((state) => state.auth);
 
+const PRIORITY_CONFIG: Record<
+  NonNullable<Priority>,
+  { label: string; color: string; bg: string; border: string }
+> = {
+  low: { label: t('reportIssue.low'), color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB' },
+  medium: { label: t('reportIssue.medium'), color: '#854F0B', bg: '#FAEEDA', border: '#FAC775' },
+  high: { label: t('reportIssue.high'), color: '#E65100', bg: '#FFF3E0', border: '#FFAB40' },
+  critical: { label: t('reportIssue.critical'), color: '#791F1F', bg: '#F7C1C1', border: '#E24B4A' },
+};
+
+const STATUS_CONFIG: Record<
+  'pending' | 'reviewed' | 'resolved' | 'dismissed',
+  { label: string; color: string }
+> = {
+  pending:   { label: t('reportIssue.pending'),  color: '#4A6B54' }, // Subtle green-gray
+  reviewed:  { label: t('reportIssue.reviewed'),   color: '#854F0B' }, // Amber/Orange
+  resolved:  { label: t('reportIssue.resolved'),     color: '#196F31' }, // Vibrant Green
+  dismissed: { label: t('reportIssue.dismissed'),      color: '#791F1F' }, // Subtle Muted Red
+};
   useEffect(() => {
     fetchReportHistory();
   }, []);
@@ -155,7 +156,7 @@ const [pastReports, setPastReports] = useState<any[]>([]);
 
   const handleSubmit = async () => {
     if (!isSubmitEnabled()) {
-      Alert.alert('Missing Info', 'Please fill in the required details before submitting.');
+      Alert.alert(t('reportIssue.missingInfoTitle'), t('reportIssue.missingInfoMessage'));
       return;
     }
     setIsSubmitting(true);
@@ -201,15 +202,15 @@ const [pastReports, setPastReports] = useState<any[]>([]);
         await saveLastReport(newReport);
 
         setTimeout(() => {
-          Alert.alert('Report Submitted!', `Your report ${newReport.id} has been received.`, [
+          Alert.alert(t('reportIssue.reportSubmittedTitle'), t('reportIssue.reportSubmittedMessage', { id: newReport.id }), [
             { text: 'Done', onPress: () => router.back() },
           ]);
         }, 1400);
       } else {
-        Alert.alert("Submission Failed", data.message || "Failed to process form parameters.");
+        Alert.alert(t('reportIssue.submissionFailedTitle'), data.message || t('reportIssue.submissionFailedMessage'));
       }
     } catch (err) {
-      Alert.alert("Network Error", "Could not submit report to server layout.");
+      Alert.alert(t('reportIssue.networkError'), t('reportIssue.networkErrorMessage'));
     } finally {
       setIsSubmitting(false);
     }
@@ -242,7 +243,7 @@ const [pastReports, setPastReports] = useState<any[]>([]);
 
   const renderPrioritySelector = () => (
     <View>
-      <Text style={styles.sectionLabel}>Priority</Text>
+      <Text style={styles.sectionLabel}>{t('reportIssue.priority')}</Text>
       <View style={styles.chipContainer}>
         {(Object.keys(PRIORITY_CONFIG) as NonNullable<Priority>[]).map((p) => {
           const cfg = PRIORITY_CONFIG[p];
@@ -258,7 +259,7 @@ const [pastReports, setPastReports] = useState<any[]>([]);
               ]}
             >
               <Text style={[styles.priorityChipText, { color: active ? cfg.color : '#4A6B54' }]}>
-                {cfg.label}
+                {t(cfg.label)}
               </Text>
             </TouchableOpacity>
           );
@@ -269,14 +270,14 @@ const [pastReports, setPastReports] = useState<any[]>([]);
 
   const renderRouteSelector = () => (
     <View>
-      <Text style={styles.sectionLabel}>Route / Bus (optional)</Text>
+      <Text style={styles.sectionLabel}>{t('reportIssue.routeBus')}</Text>
       <TouchableOpacity
         style={styles.routeSelector}
         onPress={() => setRouteModalVisible(true)}
       >
         <Ionicons name="bus" size={16} color="#196F31" />
         <Text style={[styles.routeSelectorText, !selectedRoute && { color: '#A0B4A5' }]}>
-          {selectedRoute ? `${selectedRoute.origin} ➔ ${selectedRoute.destination}` : 'Select an active route...'}
+          {selectedRoute ? `${selectedRoute.origin} ➔ ${selectedRoute.destination}` : t('reportIssue.selectRoute')}
         </Text>
         <Ionicons name="chevron-down" size={16} color="#196F31" />
       </TouchableOpacity>
@@ -286,8 +287,8 @@ const [pastReports, setPastReports] = useState<any[]>([]);
   const renderAnonymousToggle = () => (
     <View style={styles.toggleCard}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.toggleTitle}>Submit anonymously</Text>
-        <Text style={styles.toggleSub}>No name or account attached to report</Text>
+        <Text style={styles.toggleTitle}>{t('reportIssue.anonymousTitle')}</Text>
+        <Text style={styles.toggleSub}>{t('reportIssue.anonymousSubtitle')}</Text>
       </View>
       <Switch
         value={isAnonymous}
@@ -326,7 +327,7 @@ const renderLastReportCard = () => {
 
     return (
       <View style={{ marginBottom: 10 }}>
-        <Text style={styles.sectionLabel}>Your Recent Submissions</Text>
+        <Text style={styles.sectionLabel}>{t('reportIssue.recentReports')}</Text>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false} 
@@ -350,7 +351,7 @@ const renderLastReportCard = () => {
                   
                   {report.busRoute?.routeName && (
                     <Text style={[styles.cardSub, { color: '#196F31', fontWeight: '700', marginTop: 2 }]}>
-                      🚌 {report.busRoute.routeName}
+                       {report.busRoute.routeName}
                     </Text>
                   )}
                   
@@ -386,7 +387,7 @@ const renderLastReportCard = () => {
       <View style={styles.successCircle}>
         <Ionicons name="checkmark" size={40} color="#fff" />
       </View>
-      <Text style={styles.successText}>Report Sent!</Text>
+      <Text style={styles.successText}>{t('reportIssue.reportSent')}</Text>
     </Animated.View>
   );
 
@@ -400,10 +401,10 @@ const renderLastReportCard = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
           <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>Select Route</Text>
+          <Text style={styles.modalTitle}>{t('reportIssue.selectRouteTitle')}</Text>
           <TextInput
             style={styles.modalSearch}
-            placeholder="Search routes..."
+            placeholder={t('reportIssue.searchRoutes')}
             placeholderTextColor="#A0B4A5"
             value={routeSearch}
             onChangeText={setRouteSearch}
@@ -441,7 +442,7 @@ const renderLastReportCard = () => {
               style={styles.clearRouteBtn}
               onPress={() => { setSelectedRoute(null); setRouteModalVisible(false); }}
             >
-              <Text style={styles.clearRouteTxt}>Clear selection</Text>
+              <Text style={styles.clearRouteTxt}>{t('reportIssue.clearSelection')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -457,9 +458,9 @@ const renderLastReportCard = () => {
             {renderPrioritySelector()}
             {renderRouteSelector()}
             <View>
-              <Text style={styles.sectionLabel}>Select the issue</Text>
+              <Text style={styles.sectionLabel}>{t('reportIssue.selectIssue')}</Text>
               <View style={styles.chipContainer}>
-                {['Bus Delayed', 'Route Closed', 'Heavy Traffic', 'Accident', 'Bus Full'].map((item) => (
+                {[t('reportIssue.busDelayed'), t('reportIssue.routeClosed'), t('reportIssue.heavyTraffic'), t('reportIssue.accident'), t('reportIssue.busFull')].map((item) => (
                   <TouchableOpacity
                     key={item}
                     style={[styles.chip, quickSelect === item && styles.activeChip]}
@@ -473,11 +474,11 @@ const renderLastReportCard = () => {
               </View>
             </View>
             <View>
-              <Text style={styles.sectionLabel}>Additional details (optional)</Text>
+              <Text style={styles.sectionLabel}>{t('reportIssue.additionalDetails')}</Text>
               <View style={styles.textAreaWrap}>
                 <TextInput
                   style={styles.textArea}
-                  placeholder="Any extra context..."
+                  placeholder={t('reportIssue.extraContextPlaceholder')}
                   placeholderTextColor="#A0B4A5"
                   multiline
                   value={description}
@@ -491,17 +492,17 @@ const renderLastReportCard = () => {
               {isGettingLocation ? (
                 <>
                   <ActivityIndicator size="small" color="#196F31" />
-                  <Text style={styles.locationText}>Verifying device coordinates...</Text>
+                  <Text style={styles.locationText}>{t('reportIssue.locationVerifying')}</Text>
                 </>
               ) : latitude && longitude ? (
                 <>
                   <Ionicons name="checkmark-circle" size={18} color="#196F31" />
-                  <Text style={styles.locationText}>Live location attached coordinates</Text>
+                  <Text style={styles.locationText}>{t('reportIssue.locationAttached')}</Text>
                 </>
               ) : (
                 <>
                   <Ionicons name="alert-circle" size={18} color="#854F0B" />
-                  <Text style={[styles.locationText, { color: '#854F0B' }]}>GPS tracking skipped</Text>
+                  <Text style={[styles.locationText, { color: '#854F0B' }]}>{t('reportIssue.locationSkipped')}</Text>
                 </>
               )}
             </View>
@@ -516,12 +517,12 @@ const renderLastReportCard = () => {
             {renderPrioritySelector()}
             <View>
               <Text style={styles.sectionLabel}>
-                Describe the bug <Text style={{ color: '#E24B4A' }}>*</Text>
+                {t('reportIssue.describeBug')} <Text style={{ color: '#E24B4A' }}>*</Text>
               </Text>
               <View style={styles.textAreaWrap}>
                 <TextInput
                   style={styles.textArea}
-                  placeholder="What went wrong? (e.g. Map not loading, App crashed)"
+                  placeholder={t('reportIssue.bugPlaceholder')}
                   placeholderTextColor="#A0B4A5"
                   multiline
                   value={description}
@@ -531,7 +532,7 @@ const renderLastReportCard = () => {
               </View>
             </View>
             <View>
-              <Text style={styles.sectionLabel}>Screenshot (optional)</Text>
+              <Text style={styles.sectionLabel}>{t('reportIssue.screenshot')}</Text>
               <TouchableOpacity
                 style={[styles.uploadBox, imageUri && styles.uploadBoxActive]}
                 onPress={async () => {
@@ -544,7 +545,7 @@ const renderLastReportCard = () => {
                 ) : (
                   <View style={styles.uploadPlaceholder}>
                     <Ionicons name="cloud-upload-outline" size={32} color="#196F31" />
-                    <Text style={styles.uploadText}>Tap to attach screenshot</Text>
+                    <Text style={styles.uploadText}>{t('reportIssue.attachScreenshot')}</Text>
                   </View>
                 )}
                 {imageUri && (
@@ -563,12 +564,12 @@ const renderLastReportCard = () => {
           <View style={styles.formSection}>
             <View>
               <Text style={styles.sectionLabel}>
-                Your idea <Text style={{ color: '#E24B4A' }}>*</Text>
+                {t('reportIssue.yourIdea')} <Text style={{ color: '#E24B4A' }}>*</Text>
               </Text>
               <View style={styles.textAreaWrap}>
                 <TextInput
                   style={styles.textArea}
-                  placeholder="New routes, features, or UI improvements..."
+                  placeholder={t('reportIssue.suggestionPlaceholder')}
                   placeholderTextColor="#A0B4A5"
                   multiline
                   value={description}
@@ -585,22 +586,22 @@ const renderLastReportCard = () => {
         return (
           <View style={styles.categoryPicker}>
             {renderLastReportCard()}
-            <Text style={styles.mainPrompt}>How can we help you today?</Text>
+            <Text style={styles.mainPrompt}>{t('reportIssue.mainPrompt')}</Text>
             <CategoryCard
-              title="Traffic / Transit Issue"
-              sub="Delays, closed roads, accidents"
+              title={t('reportIssue.trafficTitle')}
+              sub={t('reportIssue.trafficSubtitle')}
               icon="bus"
               onPress={() => selectCategory('traffic')}
             />
             <CategoryCard
-              title="Report an App Bug"
-              sub="Crashes, errors, or map issues"
+              title={t('reportIssue.bugTitle')}
+              sub={t('reportIssue.bugSubtitle')}
               icon="bug"
               onPress={() => selectCategory('bug')}
             />
             <CategoryCard
-              title="Give a Suggestion"
-              sub="Ideas to make TripTrack better"
+              title={t('reportIssue.suggestionTitle')}
+              sub={t('reportIssue.suggestionSubtitle')}
               icon="bulb"
               onPress={() => selectCategory('suggestion')}
             />
@@ -621,7 +622,7 @@ const renderLastReportCard = () => {
           <TouchableOpacity onPress={handleBack} style={styles.headerCircleBtn}>
             <Ionicons name={category ? 'arrow-back' : 'close'} size={22} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{category ? 'Details' : 'Report Issue'}</Text>
+          <Text style={styles.headerTitle}>{category ? t('reportIssue.details') : t('reportIssue.title')}</Text>
           <View style={{ width: 44 }} />
         </View>
 
@@ -648,7 +649,7 @@ const renderLastReportCard = () => {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <View style={styles.btnContent}>
-                  <Text style={styles.submitBtnText}>Submit Report</Text>
+                  <Text style={styles.submitBtnText}>{t('reportIssue.submitReport')}</Text>
                   <Ionicons name="send" size={18} color="#fff" style={{ marginLeft: 8 }} />
                 </View>
               )}

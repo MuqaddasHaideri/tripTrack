@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'; 
 import { fetchAllReportsApi, updateReportStatusApi } from '../../service/server'; 
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 // Reusable StatCard Component
 const StatCard = ({ label, value, icon }) => (
@@ -30,7 +31,7 @@ export const UserReportsView = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState(null); 
   const { token } = useSelector((state) => state.auth);
-
+const {t} = useTranslation();
   const loadReportData = async (isRefreshing = false) => {
     try {
       if (isRefreshing) setRefreshing(true);
@@ -56,7 +57,7 @@ export const UserReportsView = () => {
       setReports(extractedReports);
     } catch (error) {
       console.error("Error loading report data:", error);
-      Alert.alert("Error", "Something went wrong fetching reports.");
+      Alert.alert("Error", t("userReports.fetchError"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -75,17 +76,17 @@ export const UserReportsView = () => {
       const response = await updateReportStatusApi(reportId, newStatus, token);
 
       if (response && response.success !== false) {
-        Alert.alert("Success", `Report marked as ${newStatus}!`);
+        Alert.alert("Success", t("userReports.updateSuccess", { status: newStatus }));
         
         setReports(prevReports => 
           prevReports.map(r => r._id === reportId ? { ...r, status: newStatus } : r)
         );
       } else {
-        Alert.alert("Error", response.message || "Failed to update report status.");
+        Alert.alert(t("userReports.error"), t("userReports.updateFailed"));
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Could not complete the status update.");
+      Alert.alert(t("userReports.error"), t("userReports.statusUpdateError"));
     } finally {
       setProcessingId(null);
     }
@@ -93,13 +94,13 @@ export const UserReportsView = () => {
 
   const triggerStatusAlert = (reportId) => {
     Alert.alert(
-      "Update Report Status",
-      "Choose a new progress state for this user ticket:",
+      t("userReports.updateStatus"),
+      t("userReports.chooseStatus"),
       [
-        { text: "Mark Reviewed", onPress: () => handleUpdateStatus(reportId, 'reviewed') },
-        { text: "Mark Resolved", onPress: () => handleUpdateStatus(reportId, 'resolved') },
-        { text: "Dismiss", onPress: () => handleUpdateStatus(reportId, 'dismissed'), style: 'destructive' },
-        { text: "Cancel", style: 'cancel' }
+        { text: t("userReports.markReviewed"), onPress: () => handleUpdateStatus(reportId, 'reviewed') },
+        { text: t("userReports.markResolved"), onPress: () => handleUpdateStatus(reportId, 'resolved') },
+        { text: t("userReports.dismiss"), onPress: () => handleUpdateStatus(reportId, 'dismissed'), style: 'destructive' },
+        { text: t("userReports.cancel"), style: 'cancel' }
       ]
     );
   };
@@ -182,9 +183,9 @@ export const UserReportsView = () => {
       <View style={styles.placeholderIconBg}>
         <Ionicons name="folder-open-outline" size={32} color="#196F31" />
       </View>
-      <Text style={styles.mainPrompt}>No Reports</Text>
+      <Text style={styles.mainPrompt}>{t("userReports.noReports")}</Text>
       <Text style={styles.placeholderSub}>
-        There are currently no user complaints or system tickets logged.
+        {t("userReports.noReportsDescription")}
       </Text>
     </View>
   );
@@ -200,16 +201,16 @@ export const UserReportsView = () => {
       
       {/* Dynamic Stats Row Replacing Header */}
       <View style={styles.statsRow}>
-        <StatCard label="Total"    value={totalReports}    icon="folder-open-outline" />
-        <StatCard label="Pending"  value={pendingReports}  icon="time-outline" />
-        <StatCard label="Reviewed" value={reviewedReports} icon="eye-outline" />
-        <StatCard label="Resolved" value={resolvedReports} icon="checkmark-circle-outline" />
+        <StatCard label={t("userReports.total")}    value={totalReports}    icon="folder-open-outline" />
+        <StatCard label={t("userReports.pending")}  value={pendingReports}  icon="time-outline" />
+        <StatCard label={t("userReports.reviewed")} value={reviewedReports} icon="eye-outline" />
+        <StatCard label={t("userReports.resolved")} value={resolvedReports} icon="checkmark-circle-outline" />
       </View>
 
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#196F31" />
-          <Text style={styles.loadingText}>Fetching system reports...</Text>
+          <Text style={styles.loadingText}>{t("userReports.fetchingReports")}</Text>
         </View>
       ) : (
         <FlatList

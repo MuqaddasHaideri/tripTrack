@@ -8,12 +8,14 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const CONTAINER_WIDTH = width - 50;
 const TAB_WIDTH = CONTAINER_WIDTH / 2;
 
 export default function AuthTabSwitcher() {
+        const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   
@@ -51,7 +53,7 @@ export default function AuthTabSwitcher() {
           activeOpacity={1}
         >
           <Text style={[styles.tabText, !isSignup && styles.activeText]}>
-            Login
+            {t("login.login")}
           </Text>
         </TouchableOpacity>
 
@@ -61,7 +63,7 @@ export default function AuthTabSwitcher() {
           activeOpacity={1}
         >
           <Text style={[styles.tabText, isSignup && styles.activeText]}>
-            Sign Up
+            {t("signup.signUp")}
           </Text>
         </TouchableOpacity>
       </View>

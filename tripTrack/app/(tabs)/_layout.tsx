@@ -2,10 +2,11 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
   const themeGreen = '#196F31';
-
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -20,7 +21,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.Home'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="home-outline" size={24} color={color} />
           ),
@@ -31,7 +32,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="setting"
         options={{
-          title: 'Settings',
+          title: t('tabs.Settings'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="settings-outline" size={24} color={color} />
           ),

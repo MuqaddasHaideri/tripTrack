@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchRoutesApi, socket } from '../../service/server'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 export default function DriverMapScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
@@ -30,7 +31,7 @@ export default function DriverMapScreen() {
   const [routeSearchQuery, setRouteSearchQuery] = useState('');
   const [selectedRoute, setSelectedRoute] = useState<any>(null);
   const locationSubscription = useRef<any>(null);
-
+const { t } = useTranslation();
   const { data: routes } = useQuery({ queryKey: ['routes', 'all'], queryFn: fetchRoutesApi });
 
   const filteredRoutes = useMemo(() => {
@@ -45,7 +46,7 @@ export default function DriverMapScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert("Permission Denied", "Location access is required for drivers.");
+        Alert.alert(t("driverMap.Permission Denied"), t("driverMap.Location access is required for drivers."));
         return setIsLoading(false);
       }
       const initialLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -60,7 +61,7 @@ export default function DriverMapScreen() {
   }, []);
 
   const startBroadcasting = async () => {
-    if (!selectedRoute) return Alert.alert("Select Route first");
+    if (!selectedRoute) return Alert.alert(t("driverMap.Select Route first"));
     
     setIsBroadcasting(true);
     if (socket.connected) {
@@ -138,14 +139,14 @@ export default function DriverMapScreen() {
         <View style={styles.statusBadge}>
           <View style={[styles.statusDot, { backgroundColor: isBroadcasting ? '#196F31' : '#FF3B30' }]} />
           <Text style={[styles.statusText, { color: isBroadcasting ? '#196F31' : '#FF3B30' }]}>
-            {isBroadcasting ? 'LIVE BROADCASTING' : 'OFFLINE'}
+            {isBroadcasting ? t("driverMap.LIVE BROADCASTING") : t("driverMap.OFFLINE")}
           </Text>
         </View>
       </SafeAreaView>
 
       {/* Bottom Control Card */}
       <View style={styles.bottomCard}>
-        <Text style={styles.cardLabel}>Active Shift Assignment</Text>
+        <Text style={styles.cardLabel}>{t("driverMap.Active Shift Assignment")}</Text>
         
         <TouchableOpacity 
           style={[styles.routePicker, isBroadcasting && styles.disabledPicker]} 
@@ -157,10 +158,10 @@ export default function DriverMapScreen() {
           </View>
           <View style={styles.routeInfo}>
             <Text style={styles.routeMainText}>
-              {selectedRoute ? `${selectedRoute.origin} ➔ ${selectedRoute.destination}` : "Select Assigned Route"}
+              {selectedRoute ? `${selectedRoute.origin} ➔ ${selectedRoute.destination}` : t("driverMap.Select Assigned Route")}
             </Text>
             <Text style={styles.routeSubText}>
-              {selectedRoute ? selectedRoute.route_name : "Tap to pick from list"}
+              {selectedRoute ? selectedRoute.route_name : t("driverMap.Tap to pick from list")}
             </Text>
           </View>
           {!isBroadcasting && <Ionicons name="chevron-forward" size={20} color="#196F31" />}
@@ -172,7 +173,7 @@ export default function DriverMapScreen() {
         >
           <Ionicons name={isBroadcasting ? "stop-circle" : "play-circle"} size={24} color="white" />
           <Text style={styles.actionButtonText}>
-            {isBroadcasting ? "END SHIFT" : "START SHIFT"}
+            {isBroadcasting ? t("driverMap.END SHIFT") : t("driverMap.START SHIFT")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -188,7 +189,7 @@ export default function DriverMapScreen() {
               <Ionicons name="search" size={18} color="#196F31" />
               <TextInput 
                 style={styles.searchInput} 
-                placeholder="Search assigned routes..." 
+                placeholder={t("driverMap.Search assigned routes...")}
                 placeholderTextColor="#A0B4A5" 
                 value={routeSearchQuery} 
                 onChangeText={setRouteSearchQuery} 
@@ -205,7 +206,7 @@ export default function DriverMapScreen() {
                   <Ionicons name="bus" size={20} color="white" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.routeItemTitle}>{item.origin} to {item.destination}</Text>
+                  <Text style={styles.routeItemTitle}>{item.origin} {t("driverMap.to")} {item.destination}</Text>
                   <Text style={styles.routeItemSub}>{item.route_name}</Text>
                 </View>
                 <Ionicons name="add-circle-outline" size={24} color="#196F31" />
