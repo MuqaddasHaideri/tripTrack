@@ -149,3 +149,25 @@ export const getMyReports = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+// ==========================================
+// ADMIN: DELETE REPORT
+// ==========================================
+export const deleteReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedReport = await report_models.findByIdAndDelete(id);
+
+    if (!deletedReport) {
+      return res.status(404).json({ success: false, message: "Report not found or already deleted." });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Report deleted successfully." 
+    });
+  } catch (error) {
+    console.error("Error deleting report:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

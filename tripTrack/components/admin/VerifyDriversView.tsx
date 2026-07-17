@@ -9,13 +9,12 @@ import {
   Alert,
   Image,
   Linking,
-  SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; 
 import { fetchAllDriversApi, approveDriverApi } from '../../service/server'; 
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 // Reusable StatCard Component
 const StatCard = ({ label, value, icon }) => (
   <View style={styles.statCard}>
@@ -28,7 +27,7 @@ const StatCard = ({ label, value, icon }) => (
 );
 
 export const VerifyDriversView = () => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const [activeSegment, setActiveSegment] = useState('pending');
   
   const [allDrivers, setAllDrivers] = useState([]);
@@ -37,7 +36,6 @@ export const VerifyDriversView = () => {
   const [processingId, setProcessingId] = useState(null); 
   const { token } = useSelector((state) => state.auth);
 
-  // Fetch ALL drivers once, so we can calculate global stats correctly
   const loadDriverData = async (isRefreshing = false) => {
     try {
       if (isRefreshing) setRefreshing(true);
@@ -49,8 +47,6 @@ export const VerifyDriversView = () => {
       }
 
       const response = await fetchAllDriversApi(token);
-      console.log("API Response (All Drivers):", response); 
-
       let extractedData = [];
       if (response?.success && Array.isArray(response.data)) {
         extractedData = response.data;
@@ -81,8 +77,6 @@ export const VerifyDriversView = () => {
 
       if (response && response.success !== false) {
         Alert.alert("Success", t("verifyDrivers.approveSuccessMessage"));
-        
-        // Update the driver locally to reflect the change immediately
         setAllDrivers(prevDrivers => 
           prevDrivers.map(d => d._id === driverId ? { ...d, isVerified: true } : d)
         );
@@ -107,8 +101,6 @@ export const VerifyDriversView = () => {
 
   const renderDriverItem = ({ item }) => {
     const isApproved = item.isVerified === true;
-
-    // Formatting Date & Time
     const formattedDateTime = item.createdAt 
       ? new Date(item.createdAt).toLocaleString('en-US', { 
           year: 'numeric', 
@@ -135,7 +127,6 @@ export const VerifyDriversView = () => {
             <Text style={styles.cardSub}>{item.email}</Text>
           </View>
 
-          {/* Verification Status Badge */}
           <View style={[styles.priorityChip, isApproved ? styles.badgeApproved : styles.badgePending]}>
             <Text style={[styles.priorityChipText, isApproved ? styles.textApproved : styles.textPending]}>
               {isApproved ? t("verifyDrivers.approved") : t("verifyDrivers.pending")}
@@ -161,7 +152,6 @@ export const VerifyDriversView = () => {
           </TouchableOpacity>
         )}
 
-        {/* Footer section for Actions and Timestamp */}
         <View style={styles.cardFooter}>
           <View style={styles.dateRow}>
             <Ionicons name="time-outline" size={16} color="#A0B4A5" />
@@ -205,24 +195,21 @@ export const VerifyDriversView = () => {
     </View>
   );
 
-  // --- Dynamic Stats & Tab Filtering ---
   const totalDrivers = allDrivers.length;
   const verifiedDrivers = allDrivers.filter(d => d.isVerified).length;
   const pendingDrivers = totalDrivers - verifiedDrivers;
 
-  // Filter based on segment AND sort by date (Newest First)
   const displayedDrivers = (activeSegment === 'pending' 
     ? allDrivers.filter(d => !d.isVerified) 
     : allDrivers
   ).sort((a, b) => {
     const dateA = new Date(a.createdAt || 0).getTime();
     const dateB = new Date(b.createdAt || 0).getTime();
-    return dateB - dateA; // Sorts descending (Newest to Oldest)
+    return dateB - dateA;
   });
 
   return (
     <SafeAreaView style={styles.container}>
-      
       {/* ── STATS ROW ── */}
       <View style={styles.statsRow}>
         <StatCard label={t("verifyDrivers.total")} value={totalDrivers} icon="people-outline" />
@@ -230,12 +217,12 @@ export const VerifyDriversView = () => {
         <StatCard label={t("verifyDrivers.pending")} value={pendingDrivers} icon="time-outline" />
       </View>
 
-      {/* ── SEGMENTED TOP CONTROL BUTTONS ── */}
+      {/* ── UPDATED COMPACT SEGMENT CONTROLS ── */}
       <View style={styles.segmentContainer}>
         <TouchableOpacity 
           style={[styles.segmentButton, activeSegment === 'pending' && styles.activeSegmentButton]}
           onPress={() => setActiveSegment('pending')}
-          activeOpacity={0.9}
+          activeOpacity={1}
         >
           <Text style={[styles.segmentText, activeSegment === 'pending' && styles.activeSegmentText]}>
             {t("verifyDrivers.pendingApplications")}
@@ -245,7 +232,7 @@ export const VerifyDriversView = () => {
         <TouchableOpacity 
           style={[styles.segmentButton, activeSegment === 'all' && styles.activeSegmentButton]}
           onPress={() => setActiveSegment('all')}
-          activeOpacity={0.9}
+          activeOpacity={1}
         >
           <Text style={[styles.segmentText, activeSegment === 'all' && styles.activeSegmentText]}>
             {t("verifyDrivers.allDriversDirectory")}
@@ -277,9 +264,6 @@ export const VerifyDriversView = () => {
 
 export default VerifyDriversView;
 
-// ==========================================
-// INTEGRATED STYLES
-// ==========================================
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
@@ -293,13 +277,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#D1E8D9',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#E8F3EB',
   },
   statCard: {
     flex: 1,
     backgroundColor: '#F0F9F4',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 10,
     borderWidth: 1.5,
     borderColor: '#196F31',
@@ -314,43 +298,55 @@ const styles = StyleSheet.create({
   statIconBg: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D1E8D9',
+    borderWidth: 1.5,
+    borderColor: '#E8F3EB',
   },
   statValue: { fontSize: 18, fontWeight: '800', color: '#123D1F', letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: '#6A8E75', fontWeight: '600', textAlign: 'center' },
+  statLabel: { fontSize: 10, color: '#A0B4A5', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' },
 
-  // Segment Switch Controls
+  // Updated Compact Segment Switch Controls
   segmentContainer: { 
     flexDirection: 'row', 
     backgroundColor: '#E8F3EB', 
     marginHorizontal: 20, 
-    marginTop: 20, 
-    marginBottom: 4, 
-    borderRadius: 14, 
-    padding: 4 
+    marginTop: 16, 
+    marginBottom: 6, 
+    borderRadius: 16, 
+    padding: 3,
+    height: 44,
+    alignItems: 'center'
+    
   },
-  segmentButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10 },
-  activeSegmentButton: { backgroundColor: '#FFF', elevation: 2, shadowColor: '#196F31', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  segmentButton: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', borderRadius: 14 },
+  activeSegmentButton: { 
+    backgroundColor: '#FFF', 
+    height: 38,
+    elevation: 3, 
+    shadowColor: '#196F31', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 4,
+    
+  },
   segmentText: { fontSize: 13, fontWeight: '700', color: '#6A8E75' },
   activeSegmentText: { color: '#196F31', fontWeight: '800' },
 
-  // Enhanced Card Layout
   card: {
-    backgroundColor: '#fff', 
-    padding: 18, 
+    backgroundColor: '#fff',
     borderRadius: 24,
-    borderWidth: 2, 
-    borderColor: '#E8F3EB',
-    elevation: 4, 
-    shadowColor: '#196F31', 
-    shadowOpacity: 0.08, 
-    shadowRadius: 10,
-    marginBottom: 16
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#196F31',
+    elevation: 4,
+    shadowColor: '#196F31',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   iconCircle: {
@@ -370,13 +366,13 @@ const styles = StyleSheet.create({
   detailsRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
   detailText: { fontSize: 13, color: '#4A6B54', fontWeight: '600' },
 
-  // Priority Chips (Status)
+  // Status Chips
   priorityChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5 },
   priorityChipText: { fontWeight: '800', fontSize: 11, textTransform: 'uppercase' },
-  badgePending: { backgroundColor: '#FFF9E6', borderColor: '#FDEBD0' },
-  textPending: { color: '#D35400' },
-  badgeApproved: { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' },
-  textApproved: { color: '#196F31' },
+  badgePending: { backgroundColor: '#FFF3E0', borderColor: '#FFAB40' },
+  textPending: { color: '#E65100' },
+  badgeApproved: { backgroundColor: '#E1F5EE', borderColor: '#9FE1CB' },
+  textApproved: { color: '#0F6E56' },
 
   // License Link Button
   licenseLinkButton: { 
@@ -387,7 +383,7 @@ const styles = StyleSheet.create({
     borderRadius: 14, 
     marginBottom: 16, 
     borderWidth: 1.5, 
-    borderColor: '#D1E8D9', 
+    borderColor: '#E8F3EB', 
     gap: 10 
   },
   licenseIconBg: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' },

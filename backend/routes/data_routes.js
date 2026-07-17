@@ -20,7 +20,7 @@ import {
   getAllAdmins,
   removeAdmin 
 } from "../controller/admin_Controller.js";
-import { createReport, getAllReports, getMyReports, updateReportStatus } from "../controller/report_Controller.js"; 
+import { createReport, deleteReport, getAllReports, getMyReports, updateReportStatus } from "../controller/report_Controller.js"; 
 import { getNotifications, markAsRead, markAllAsRead } from "../controller/notification_Controller.js";
 import { createAnnouncement, getAllAnnouncements, getAnnouncementsForUser, deleteAnnouncement } from "../controller/announcement_Controller.js";
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
@@ -56,6 +56,7 @@ router.put("/admin/drivers/approve/:id", isAuthenticated, isAdmin, approveDriver
 router.get("/admin/drivers/all", isAuthenticated, isAdmin, getAllDrivers);
 router.get('/admin/reports', isAuthenticated, isAdmin, getAllReports);
 router.put('/admin/reports/:id', isAuthenticated, isAdmin, updateReportStatus);
+router.delete('/admin/reports/:id', isAuthenticated, isAdmin, deleteReport);
 router.get('/admin/notifications', isAuthenticated, isAdmin, getNotifications);
 router.put('/admin/notifications/:id/read', isAuthenticated, isAdmin, markAsRead);
 router.put('/admin/notifications/read-all', isAuthenticated, isAdmin, markAllAsRead);

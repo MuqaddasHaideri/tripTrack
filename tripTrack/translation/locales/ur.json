@@ -379,7 +379,10 @@
         "total": "کل",
         "reviewed": "جائزہ لیا گیا",
         "resolved": "حل شدہ",
-        "fetchingReports": "سسٹم رپورٹس حاصل کی جا رہی ہیں..."
+        "fetchingReports": "سسٹم رپورٹس حاصل کی جا رہی ہیں...",
+            "deleteReport": "رپورٹ حذف کریں",
+    "confirmDelete": "کیا آپ واقعی اس رپورٹ کو حذف کرنا چاہتے ہیں؟",
+    "delete": "حذف کریں"
     },
     "routes": {
         "error": "خرابی",

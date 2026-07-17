@@ -680,3 +680,21 @@ export const deleteAdminApi = async (id, token) => {
     return { success: false, message: "Network error occurred." };
   }
 };
+
+export const deleteReportApi = async (id, token) => {
+  try {
+    const data = await fetchApi(`${endpoints.adminReports}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    console.log("Report DELETE Response:", data);
+    return data;
+  } catch (error) {
+    console.error("Error deleting report:", error);
+    return { success: false, message: error.message || "Network error occurred." };
+  }
+};

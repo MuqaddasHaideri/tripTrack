@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { 
   View, 
   Text, 
@@ -7,13 +7,12 @@ import {
   TouchableOpacity, 
   ActivityIndicator, 
   Alert,
-  SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; 
-import { fetchAllReportsApi, updateReportStatusApi } from '../../service/server'; 
+import { deleteReportApi, fetchAllReportsApi, updateReportStatusApi } from '../../service/server'; 
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 // Reusable StatCard Component
 const StatCard = ({ label, value, icon }) => (
   <View style={styles.statCard}>
@@ -31,7 +30,8 @@ export const UserReportsView = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState(null); 
   const { token } = useSelector((state) => state.auth);
-const {t} = useTranslation();
+  const { t } = useTranslation();
+
   const loadReportData = async (isRefreshing = false) => {
     try {
       if (isRefreshing) setRefreshing(true);
@@ -91,8 +91,39 @@ const {t} = useTranslation();
       setProcessingId(null);
     }
   };
+const deleteReportHandler = (reportId) => async () => {
+  Alert.alert(
+    t("userReports.deleteReport"),
+    t("userReports.confirmDelete"),
+    [
+      {
+        text: t("userReports.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("userReports.delete"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const response = await deleteReportApi(reportId, token);
 
-  const triggerStatusAlert = (reportId) => {
+            if (response?.success) {
+              setReports((prev) =>
+                prev.filter((report) => report._id !== reportId)
+              );
+            } else {
+              Alert.alert(
+                t("common.error"),
+                response?.message || t("userReports.deleteError")
+              );
+            }
+          } catch (error) {
+            console.error(error);
+            Alert.alert(
+              t("common.error"),
+              t("userReports.deleteError")
+            );}},},]);};
+const triggerStatusAlert = (reportId) => {
     Alert.alert(
       t("userReports.updateStatus"),
       t("userReports.chooseStatus"),
@@ -123,19 +154,18 @@ const {t} = useTranslation();
     const statusTheme = getStatusStyle(item.status);
     const isClosed = item.status === 'resolved' || item.status === 'dismissed';
 
-    // Safely map your API's actual keys to the UI text
     const displayTitle = item.issueType || item.reportType || "User Report";
     const displayName = item.reportedBy?.name || (item.isAnonymous ? 'Anonymous' : 'Unknown User');
+    const visualAttachment = item.attachment || item.screenshotUrl;
 
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.iconCircle}>
             <Ionicons 
-              // Change icon color dynamically if priority is critical
-              name={item.priority === 'critical' ? "alert-circle" : "warning-outline"} 
-              size={26} 
-              color={item.priority === 'critical' ? "#D35400" : "#196F31"} 
+              name={item.priority === 'critical' ? "alert-circle" : "warning"} 
+              size={24} 
+              color={item.priority === 'critical' ? "#E24B4A" : "#196F31"} 
             />
           </View>
           
@@ -144,40 +174,65 @@ const {t} = useTranslation();
             <Text style={styles.cardSub}>By: {displayName}</Text>
           </View>
 
-          <View style={[styles.priorityChip, statusTheme.badge]}>
-            <Text style={[styles.priorityChipText, statusTheme.text]}>
-              {item.status || "Pending"}
-            </Text>
-          </View>
+          <TouchableOpacity style={styles.trashBtn} activeOpacity={0.6} onPress={deleteReportHandler(item._id)}>
+            <Ionicons name="trash-outline" size={18} color="red" />
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.reportDetails}>{item.description || 'No description provided.'}</Text>
 
-        <View style={styles.cardFooter}>
-          <Text style={styles.timestamp}>
-            🕒 {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Date Unknown'}
-          </Text>
+        {/* Optional attachment image card selector route link */}
+        {!!visualAttachment && (
+          <TouchableOpacity 
+            style={styles.screenshotLinkButton} 
+            activeOpacity={0.7}
+          >
+            <View style={styles.screenshotIconBg}>
+              <Ionicons name="image" size={16} color="#196F31" />
+            </View>
+            <Text style={styles.screenshotLinkText}>{t("reportIssue.screenshot") || "View Attached Screenshot"}</Text>
+            <Ionicons name="chevron-forward" size={16} color="#196F31" style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+        )}
 
-          {!isClosed && (
-            <TouchableOpacity 
-              style={[styles.actionButton, processingId === item._id && styles.submitBtnDisabled]} 
-              onPress={() => triggerStatusAlert(item._id)}
-              disabled={processingId === item._id}
-            >
-              {processingId === item._id ? (
-                <ActivityIndicator size="small" color="#FFF" />
-              ) : (
-                <>
-             <Ionicons name="sync-outline" size={16} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Update</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
+        <View style={styles.cardFooter}>
+          <View style={styles.dateRow}>
+            <Ionicons name="time-outline" size={16} color="#A0B4A5" />
+            <Text style={styles.timestamp}>
+              {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Date Unknown'}
+            </Text>
+          </View>
+
+          {/* Action container segment pushing badges to the exact right alignment profile */}
+          <View style={styles.actionsRightContainer}>
+            <View style={[styles.priorityChip, statusTheme.badge]}>
+              <Text style={[styles.priorityChipText, statusTheme.text]}>
+                {item.status || "Pending"}
+              </Text>
+            </View>
+
+            {!isClosed && (
+              <TouchableOpacity 
+                style={[styles.actionButton, processingId === item._id && styles.submitBtnDisabled]} 
+                onPress={() => triggerStatusAlert(item._id)}
+                disabled={processingId === item._id}
+              >
+                {processingId === item._id ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <>
+                    <Ionicons name="sync-outline" size={14} color="#FFF" />
+                    <Text style={styles.actionButtonText}>Update</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
     );
   };
+
   const renderEmptyState = () => (
     <View style={styles.placeholderWrapper}>
       <View style={styles.placeholderIconBg}>
@@ -190,7 +245,6 @@ const {t} = useTranslation();
     </View>
   );
 
-  // Dynamic Statistics Calculations
   const totalReports = reports.length;
   const pendingReports = reports.filter(r => r.status === 'pending' || !r.status).length;
   const reviewedReports = reports.filter(r => r.status === 'reviewed').length;
@@ -198,13 +252,12 @@ const {t} = useTranslation();
 
   return (
     <SafeAreaView style={styles.container}>
-      
-      {/* Dynamic Stats Row Replacing Header */}
+      {/* Stats Row */}
       <View style={styles.statsRow}>
-        <StatCard label={t("userReports.total")}    value={totalReports}    icon="folder-open-outline" />
-        <StatCard label={t("userReports.pending")}  value={pendingReports}  icon="time-outline" />
-        <StatCard label={t("userReports.reviewed")} value={reviewedReports} icon="eye-outline" />
-        <StatCard label={t("userReports.resolved")} value={resolvedReports} icon="checkmark-circle-outline" />
+        <StatCard label={t("userReports.total")}     value={totalReports}    icon="folder-open-outline" />
+        <StatCard label={t("userReports.pending")}   value={pendingReports}  icon="time-outline" />
+        <StatCard label={t("userReports.reviewed")}  value={reviewedReports} icon="eye-outline" />
+        <StatCard label={t("userReports.resolved")}  value={resolvedReports} icon="checkmark-circle-outline" />
       </View>
 
       {loading ? (
@@ -243,16 +296,16 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#D1E8D9',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#E8F3EB',
   },
   statCard: {
     flex: 1,
     backgroundColor: '#F0F9F4',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 10,
     borderWidth: 1.5,
     borderColor: '#196F31',
@@ -267,40 +320,31 @@ const styles = StyleSheet.create({
   statIconBg: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D1E8D9',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#123D1F',
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#6A8E75',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-
-  // Card Layout
-  card: {
-    backgroundColor: '#fff', 
-    padding: 18, 
-    borderRadius: 24,
-    borderWidth: 2, 
+    borderWidth: 1.5,
     borderColor: '#E8F3EB',
-    elevation: 4, 
-    shadowColor: '#196F31', 
-    shadowOpacity: 0.08, 
-    shadowRadius: 10,
-    marginBottom: 16
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#123D1F', letterSpacing: -0.5 },
+  statLabel: { fontSize: 10, color: '#A0B4A5', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' },
+
+  // Card Styles
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#196F31',
+    elevation: 4,
+    shadowColor: '#196F31',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   iconCircle: {
     width: 52, 
     height: 52, 
@@ -313,48 +357,67 @@ const styles = StyleSheet.create({
   cardContent: { flex: 1, justifyContent: 'center' },
   cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F' },
   cardSub: { fontSize: 13, color: '#8E8E93', marginTop: 2, fontWeight: '600' },
-  reportDetails: { fontSize: 14, color: '#4A6B54', lineHeight: 20, marginBottom: 16 },
+  reportDetails: { fontSize: 14, color: '#4A6B54', lineHeight: 20, marginBottom: 14 },
   
+  screenshotLinkButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#F0F9F4', 
+    padding: 10, 
+    borderRadius: 14, 
+    marginBottom: 14, 
+    borderWidth: 1.5, 
+    borderColor: '#E8F3EB', 
+    gap: 10 
+  },
+  screenshotIconBg: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' },
+  screenshotLinkText: { color: '#123D1F', fontSize: 13, fontWeight: '700' },
+
+  // Footer Setup
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1.5,
     borderTopColor: '#F0F9F4',
-    paddingTop: 12,
+    paddingTop: 16,
   },
-  timestamp: { fontSize: 12, color: '#A0B4A5', fontWeight: '700' },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  timestamp: { fontSize: 13, color: '#A0B4A5', fontWeight: '700' },
+  trashBtn: { padding: 4, marginLeft: 8 },
 
-  // Priority Chips
-  priorityChip: {
-    paddingHorizontal: 12, 
-    paddingVertical: 6,
-    borderRadius: 14, 
-    borderWidth: 1.5,
+  // Right Side Segment alignment parameters
+  actionsRightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
+
+  // Status Badges
+  priorityChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1.5 },
   priorityChipText: { fontWeight: '800', fontSize: 11, textTransform: 'uppercase' },
-  badgePending: { backgroundColor: '#FFF9E6', borderColor: '#FDEBD0' },
-  textPending: { color: '#D35400' },
+  badgePending: { backgroundColor: '#FFF3E0', borderColor: '#FFAB40' },
+  textPending: { color: '#E65100' },
   badgeReviewed: { backgroundColor: '#EBF5FB', borderColor: '#D6EAF8' },
   textReviewed: { color: '#2980B9' },
-  badgeResolved: { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' },
-  textResolved: { color: '#196F31' },
+  badgeResolved: { backgroundColor: '#E1F5EE', borderColor: '#9FE1CB' },
+  textResolved: { color: '#0F6E56' },
   badgeDismissed: { backgroundColor: '#F2F4F4', borderColor: '#E5E8E8' },
   textDismissed: { color: '#7B7D7D' },
 
-  // Buttons
+  // Update Button Style
   actionButton: { 
     backgroundColor: '#196F31', 
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    paddingVertical: 8, 
-    paddingHorizontal: 16,
-    borderRadius: 14, 
-    gap: 6 
+    paddingVertical: 6, 
+    paddingHorizontal: 12,
+    borderRadius: 12, 
+    gap: 4 
   },
   submitBtnDisabled: { backgroundColor: '#A0B4A5', elevation: 0 },
-  actionButtonText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  actionButtonText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   
   // Empty States
   placeholderWrapper: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },

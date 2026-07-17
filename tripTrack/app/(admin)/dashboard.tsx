@@ -282,7 +282,25 @@ type TabId = typeof TABS_CONFIG[number]['id'];
                 }}
               />
             ))}
-<View style={styles.languageCard}>
+
+            {/* Admin section */}
+            <Text style={[styles.navSectionLabel, { marginTop: 10 }]}>{t('adminDashboard.admin')}</Text>
+            {TABS_CONFIG.slice(3).map(tab => (
+              <NavItem
+                key={tab.id}
+                title={tab.label}
+                icon={tab.icon}
+                active={activeTab === tab.id}
+                badge={tab.badge}
+                onPress={() => {
+                  setActiveTab(tab.id);
+                  setSidebarOpen(false);
+                }}
+              />
+            ))}
+
+            {/* Footer */}
+            <View style={styles.languageCard}>
   <View style={styles.languageInfo}>
     <Ionicons name="language-outline" size={20} color="#196F31" />
     <View style={{ marginLeft: 10 }}>
@@ -302,23 +320,6 @@ type TabId = typeof TABS_CONFIG[number]['id'];
     thumbColor="#FFFFFF"
   />
 </View>
-            {/* Admin section */}
-            <Text style={[styles.navSectionLabel, { marginTop: 10 }]}>{t('adminDashboard.admin')}</Text>
-            {TABS_CONFIG.slice(3).map(tab => (
-              <NavItem
-                key={tab.id}
-                title={tab.label}
-                icon={tab.icon}
-                active={activeTab === tab.id}
-                badge={tab.badge}
-                onPress={() => {
-                  setActiveTab(tab.id);
-                  setSidebarOpen(false);
-                }}
-              />
-            ))}
-
-            {/* Footer */}
             <View style={styles.sidebarFooter}>
               <View style={styles.userCard}>
                 <View style={styles.avatarCircle}>
@@ -563,11 +564,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ── Tab Content ───────────────────────────────────────────────────────────
-  // flex: 1 so the component fills all remaining vertical space.
-  // Components with FlatList/ScrollView will scroll inside this container.
-  // Components that are purely static can add their own padding/scrolling.
-
   tabContent: {
     flex: 1,
   },
@@ -612,6 +608,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#D1E8D9',
     marginBottom: 4,
+    marginTop: 10,
+    paddingVertical: 4,
   },
 
   logoRow: {
@@ -630,7 +628,7 @@ const styles = StyleSheet.create({
 
   logoText: {
     color: '#123D1F',
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: '700',
   },
 
@@ -786,6 +784,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239,68,68,0.2)',
     paddingVertical: 10,
     borderRadius: 12,
+    marginBottom:10,
   },
 
   signOutText: {

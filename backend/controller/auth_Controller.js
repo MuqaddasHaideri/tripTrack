@@ -338,9 +338,3 @@ export const removeFavoriteRoute = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-export const logout = (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: 'Logged out successfully.'
-  });
-};

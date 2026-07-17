@@ -380,7 +380,10 @@
         "total": "Total",
         "reviewed": "Reviewed",
         "resolved": "Resolved",
-        "fetchingReports": "Fetching system reports..."
+        "fetchingReports": "Fetching system reports...",
+         "deleteReport": "Delete Report",
+    "confirmDelete": "Are you sure you want to delete this report?",
+    "delete": "Delete"
     },
     "routes": {
         "error": "Error",
