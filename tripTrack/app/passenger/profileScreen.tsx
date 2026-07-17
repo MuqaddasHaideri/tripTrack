@@ -29,7 +29,7 @@ export default function ProfileScreen() {
     const [profile, setProfile] = useState({ name: '', email: '', phone: '', profilePic: '' });
     const [originalProfile, setOriginalProfile] = useState({});
     const [newImageUri, setNewImageUri] = useState(null);
-    const {t} = useTranslation();
+    const { t } = useTranslation();
     useEffect(() => {
         if (token) {
             fetchProfile(token);
@@ -57,11 +57,11 @@ export default function ProfileScreen() {
                 setProfile(formatted);
                 setOriginalProfile(formatted);
             } else {
-                Alert.alert("t('profileScreen.Profile Error')", result.message || "Session expired");
+                Alert.alert(t("profileScreen.profileError"), t("profileScreen.profileNotFound"));
             }
         } catch (error) {
             console.error("Catch Block Error:", error);
-            Alert.alert("t('profileScreen.Connection Error')", "t('profileScreenCannot reach the server.')");
+            Alert.alert(t("profileScreen.connectionError"), t("profileScreen.cannotReachServer"));
         } finally {
             setLoading(false);
         }
@@ -69,7 +69,7 @@ export default function ProfileScreen() {
 
     const handleUpdate = async () => {
         if (!profile.name || !profile.phone) {
-            Alert.alert("t('profileScreen.Error')", "t('profileScreenName and Phone are required.')");
+            Alert.alert(t("profileScreen.profileError"), t("profileScreen.namePhoneRequired"));
             return;
         }
 
@@ -89,16 +89,16 @@ export default function ProfileScreen() {
 
             if (result.success) {
                 dispatch(updateUser(result.user || updateData));
-                Alert.alert("t('profileScreen.Success')", "t('profileScreenProfile updated!')");
+                Alert.alert(t("profileScreen.success"), t("profileScreen.profileUpdated"));
 
                 setIsEditing(false);
                 setNewImageUri(null);
                 setOriginalProfile(updateData);
             } else {
-                Alert.alert("t('profileScreen.Update Failed')", result.message);
+                Alert.alert(t("profileScreen.updateFailed"), t("profileScreen.updateProfileFailed"));
             }
         } catch (error) {
-            Alert.alert("t('profileScreen.Error')", "t('profileScreenFailed to update profile.')");
+            Alert.alert(t("profileScreen.profileError"), t("profileScreen.failedToUpdateProfile"));
         } finally {
             setIsUploading(false);
         }
@@ -106,8 +106,8 @@ export default function ProfileScreen() {
 
     const handleDelete = () => {
         Alert.alert(
-            t('profileScreen.Delete Account'),
-            t('profileScreenThis will permanently delete your TransitGo account. Continue?'),
+            t('profileScreen.deleteAccount'),
+            t('profileScreen.deleteConfirmation'),
             [
                 { text: t('profileScreen.Cancel'), style: "cancel" },
                 {
@@ -284,14 +284,10 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
     },
     backCircleBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 15,
-        backgroundColor: '#FFF',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: '#E8F3EB',
+   width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E8F3EB',
+    elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5,
     },
     editHeaderBtn: {
         flexDirection: 'row',

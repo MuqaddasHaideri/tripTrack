@@ -246,7 +246,22 @@
         "Update Failed": "Update Failed",
         "Failed to update profile.": "Failed to update profile.",
         "This will permanently delete your TransitGo account. Continue?": "This will permanently delete your TransitGo account. Continue?",
-        "Loading Profile...": "Loading Profile..."
+        "Loading Profile...": "Loading Profile...",
+        "error": "Error",
+        "success": "Success",
+        "profileError": "Profile Error",
+        "connectionError": "Connection Error",
+        "updateFailed": "Update Failed",
+        "profileNotFound": "Profile not found.",
+        "cannotReachServer": "Cannot reach the server.",
+        "namePhoneRequired": "Name and phone are required.",
+        "profileUpdated": "Profile updated!",
+        "updateProfileFailed": "Update failed.",
+        "failedToUpdateProfile": "Failed to update profile.",
+        "deleteAccount": "Delete Account",
+        "deleteConfirmation": "This will permanently delete your TransitGo account. Continue?",
+        "cancel": "Cancel",
+        "delete": "Delete"
     },
     "tabs": {
         "Home": "Home",

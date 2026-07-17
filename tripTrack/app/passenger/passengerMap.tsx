@@ -309,11 +309,11 @@ export default function PassengerMap() {
 
         {routeToDisplay && (
           <React.Fragment>
-            <Polyline
+            {/* <Polyline
               coordinates={routeToDisplay.polyline || routeToDisplay.stops?.map((s: any) => ({ latitude: s.latitude, longitude: s.longitude }))}
               strokeColor={routeToDisplay.color_hex || '#00C853'}
               strokeWidth={5}
-            />
+            /> */}
             {routeToDisplay.stops?.map((stop: any, idx: number) => (
               <Marker key={idx} coordinate={{ latitude: stop.latitude, longitude: stop.longitude }} anchor={{ x: 0.5, y: 0.5 }}>
                 <StopMarker color={routeToDisplay.color_hex} />

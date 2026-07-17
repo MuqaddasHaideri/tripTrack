@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: '#E8F3EB',
     elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5,
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#123D1F' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#123D1F' },
   scroll: { padding: 20, paddingBottom: 40 },
   categoryPicker: { gap: 16 },
   mainPrompt: { fontSize: 24, fontWeight: '900', color: '#123D1F', marginBottom: 8, marginTop: 6 },

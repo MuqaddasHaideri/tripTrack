@@ -246,7 +246,21 @@
         "Update Failed": "اپڈیٹ ناکام",
         "Failed to update profile.": "پروفائل اپڈیٹ نہیں ہو سکی۔",
         "This will permanently delete your TransitGo account. Continue?": "یہ آپ کا ٹرانزٹ گو اکاؤنٹ ہمیشہ کے لیے حذف کر دے گا۔ کیا آپ جاری رکھنا چاہتے ہیں؟",
-        "Loading Profile...": "پروفائل لوڈ ہو رہی ہے..."
+        "Loading Profile...": "پروفائل لوڈ ہو رہی ہے...",
+        "success": "کامیابی",
+        "profileError": "پروفائل کی خرابی",
+        "connectionError": "کنکشن کی خرابی",
+        "updateFailed": "اپڈیٹ ناکام",
+        "profileNotFound": "پروفائل نہیں ملا۔",
+        "cannotReachServer": "سرور سے رابطہ نہیں ہو سکا۔",
+        "namePhoneRequired": "نام اور فون نمبر درج کرنا ضروری ہے۔",
+        "profileUpdated": "پروفائل کامیابی سے اپڈیٹ ہو گیا!",
+        "updateProfileFailed": "پروفائل اپڈیٹ نہیں ہو سکا۔",
+        "failedToUpdateProfile": "پروفائل اپڈیٹ کرنے میں مسئلہ پیش آیا۔",
+        "deleteAccount": "اکاؤنٹ حذف کریں",
+        "deleteConfirmation": "اس سے آپ کا TransitGo اکاؤنٹ مستقل طور پر حذف ہو جائے گا۔ کیا آپ جاری رکھنا چاہتے ہیں؟",
+        "cancel": "منسوخ کریں",
+        "delete": "حذف کریں"
     },
     "tabs": {
         "Home": "ہوم",

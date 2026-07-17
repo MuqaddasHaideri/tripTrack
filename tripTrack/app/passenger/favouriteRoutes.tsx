@@ -164,9 +164,9 @@ export default function FavoriteRoutesScreen() {
           </View> */}
           <Text style={styles.etaText}>
             {isDriverActive ? (
-              <>Tracking Status: <Text style={styles.etaHighlight}>Active on Map</Text></>
+              <>{t('favoriteRoutes.trackingStatus')}: <Text style={styles.etaHighlight}>{t('favoriteRoutes.activeOnMap')}</Text></>
             ) : (
-              <>Next Bus: <Text style={styles.etaMuted}>No driver tracking</Text></>
+              <> {t('favoriteRoutes.nextBus')}: <Text style={styles.etaMuted}>{t('favoriteRoutes.noDriverTracking')}</Text></>
             )}
           </Text>
         </View>
@@ -188,14 +188,19 @@ export default function FavoriteRoutesScreen() {
 
       <View style={styles.headerContainer}>
         <TouchableOpacity
-          style={styles.backButton}
           onPress={() => router.back()}
+          style={styles.headerCircleBtn}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="close" size={22} color="#000" />
         </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>{t("favoriteRoutes.title")}</Text>
-          <Text style={styles.headerSubtitle}>{t("favoriteRoutes.subtitle")}</Text>
+
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>
+            {t("favoriteRoutes.title")}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {t("favoriteRoutes.subtitle")}
+          </Text>
         </View>
       </View>
 
@@ -233,28 +238,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+    position: 'relative',
   },
-  backButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 15,
-    justifyContent: 'center',
+
+  headerTextContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    marginRight: 6,
+    justifyContent: 'center',
+    pointerEvents: 'none', // lets touches pass through to the button
   },
+
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#000',
+    color: '#123D1F',
     letterSpacing: -0.5,
-    marginTop: 10,
   },
+
   headerSubtitle: {
     fontSize: 14,
     color: '#8E8E93',
     fontWeight: '500',
   },
-
+  headerCircleBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E8F3EB',
+    elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5,
+  },
   list: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 5 },
 
   card: {

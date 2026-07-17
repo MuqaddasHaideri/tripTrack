@@ -23,8 +23,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function SchedulesScreen() {
-       const { t } = useTranslation();
-    
+  const { t } = useTranslation();
+
   const router = useRouter();
   const [expandedRouteId, setExpandedRouteId] = useState<string | null>(null);
 
@@ -93,20 +93,19 @@ export default function SchedulesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-
-      <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          style={styles.backButton} 
+ <View style={styles.headerContainer}>
+        <TouchableOpacity
           onPress={() => router.back()}
+          style={styles.headerCircleBtn}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="close" size={22} color="#000" />
         </TouchableOpacity>
-        <View>
+
+        <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>{t("schedules.title")}</Text>
           <Text style={styles.headerSubtitle}>{t("schedules.subtitle")}</Text>
         </View>
       </View>
-
       <FlatList
         data={routes}
         keyExtractor={(item) => item._id}
@@ -126,7 +125,7 @@ export default function SchedulesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F9F4', 
+    backgroundColor: '#F0F9F4',
   },
   center: {
     flex: 1,
@@ -140,32 +139,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+    headerCircleBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E8F3EB',
+    elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5,
+  },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+    position: 'relative',
   },
-  backButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 15,
-    justifyContent: 'center',
+
+  headerTextContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    marginRight: 6,
-  
+    justifyContent: 'center',
+    pointerEvents: 'none', // lets touches pass through to the button
   },
+
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#000',
+    color: '#123D1F',
     letterSpacing: -0.5,
-    marginTop:10,
   },
+
   headerSubtitle: {
     fontSize: 14,
-    color: '#8E8E93', // Gray
+    color: '#8E8E93',
     fontWeight: '500',
   },
   listContent: {

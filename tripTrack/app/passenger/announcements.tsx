@@ -73,7 +73,7 @@ export default function AnnouncementsScreen() {
     });
   };
 
-  const renderCard = ({ item }: { item: any }) => {
+ const renderCard = ({ item }: { item: any }) => {
     const badge = getBadge(item.targetAudience);
     return (
       <TouchableOpacity
@@ -82,12 +82,12 @@ export default function AnnouncementsScreen() {
         onPress={() => setSelectedAnnouncement(item)}
       >
         <View style={styles.cardRow}>
-          <View style={[styles.iconWrap, { backgroundColor: badge.color + '15' }]}>
-            <Ionicons name={badge.icon as any} size={22} color={badge.color} />
+          <View style={[styles.iconCircle, { backgroundColor: '#F0F9F4' }]}>
+            <Ionicons name={badge.icon as any} size={24} color="#196F31" />
           </View>
           <View style={styles.cardContent}>
             <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-            <Text style={styles.cardPreview} numberOfLines={2}>{item.body}</Text>
+            <Text style={styles.cardSub} numberOfLines={2}>{item.body}</Text>
             <View style={styles.cardMeta}>
               <View style={[styles.audienceTag, { backgroundColor: badge.color + '12' }]}>
                 <Text style={[styles.audienceTagText, { color: badge.color }]}>
@@ -97,7 +97,7 @@ export default function AnnouncementsScreen() {
               <Text style={styles.cardDate}>{formatDate(item.createdAt)}</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#A0B4A5" style={{ alignSelf: 'center' }} />
+          <Ionicons name="chevron-forward" size={20} color="#196F31" style={{ alignSelf: 'center' }} />
         </View>
       </TouchableOpacity>
     );
@@ -106,7 +106,7 @@ export default function AnnouncementsScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyWrap}>
       <View style={styles.emptyIconBg}>
-        <Ionicons name="megaphone-outline" size={32} color="#196F31" />
+        <Ionicons name="megaphone" size={32} color="#196F31" />
       </View>
       <Text style={styles.emptyTitle}>{t("announcements.emptyTitle")}</Text>
       <Text style={styles.emptySub}>
@@ -121,11 +121,11 @@ export default function AnnouncementsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="arrow-back" size={22} color="#123D1F" />
+        <TouchableOpacity style={styles.headerCircleBtn} onPress={() => router.back()}>
+          <Ionicons name="close" size={22} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t("announcements.headerTitle")}</Text>
-        <View style={{ width: 38 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       {/* Content */}
@@ -143,6 +143,7 @@ export default function AnnouncementsScreen() {
           contentContainerStyle={styles.listContent}
           refreshing={refreshing}
           onRefresh={() => loadAnnouncements(true)}
+          showsVerticalScrollIndicator={false}
         />
       )}
 
@@ -157,14 +158,14 @@ export default function AnnouncementsScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
 
-            {selectedAnnouncement && (()   => {
+            {selectedAnnouncement && (() => {
               const badge = getBadge(selectedAnnouncement.targetAudience);
               return (
                 <ScrollView showsVerticalScrollIndicator={false}>
                   {/* Modal header */}
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>{selectedAnnouncement.title}</Text>
-                    <TouchableOpacity onPress={() => setSelectedAnnouncement(null)} hitSlop={10}>
+                    <TouchableOpacity onPress={() => setSelectedAnnouncement(null)}>
                       <Ionicons name="close-circle" size={28} color="#A0B4A5" />
                     </TouchableOpacity>
                   </View>
@@ -184,7 +185,7 @@ export default function AnnouncementsScreen() {
 
                   {selectedAnnouncement.createdBy?.name && (
                     <View style={styles.authorRow}>
-                      <Ionicons name="person-circle-outline" size={16} color="#6A8E75" />
+                      <Ionicons name="person-circle-outline" size={16} color="#A0B4A5" />
                       <Text style={styles.authorText}>
                         {t("announcements.postedBy")} {selectedAnnouncement.createdBy.name}
                       </Text>
@@ -192,7 +193,7 @@ export default function AnnouncementsScreen() {
                   )}
 
                   {/* Body */}
-                  <View style={styles.modalBodyWrap}>
+                  <View style={styles.textAreaWrap}>
                     <Text style={styles.modalBody}>{selectedAnnouncement.body}</Text>
                   </View>
                 </ScrollView>
@@ -210,94 +211,89 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1, borderBottomColor: '#E8F3EB',
-    elevation: 4, shadowColor: '#196F31',
-    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 15,
   },
-  backBtn: {
-    width: 38, height: 38, borderRadius: 12,
-    backgroundColor: '#F0F9F4', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#D1E8D9',
+  headerCircleBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E8F3EB',
+    elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5,
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#123D1F' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#123D1F' },
 
   // Loading
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10, color: '#6A8E75', fontSize: 13, fontWeight: '600' },
+  loadingText: { marginTop: 10, color: '#4A6B54', fontSize: 13, fontWeight: '600' },
 
   // List
-  listContent: { padding: 14, paddingBottom: 30 },
+  listContent: { padding: 20, paddingBottom: 40 },
 
   // Card
   card: {
-    backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 12,
-    borderWidth: 1.5, borderColor: '#E8F3EB',
-    elevation: 2, shadowColor: '#196F31',
-    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6,
+    backgroundColor: '#fff', padding: 20, borderRadius: 24,
+    borderWidth: 2, borderColor: '#196F31',
+    elevation: 4, shadowColor: '#196F31', shadowOpacity: 0.1, shadowRadius: 10,
+    marginBottom: 16,
   },
-  cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  iconWrap: {
-    width: 44, height: 44, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
+  cardRow: { flexDirection: 'row', alignItems: 'center' },
+  iconCircle: {
+    width: 52, height: 52, borderRadius: 18,
+    backgroundColor: '#F0F9F4', justifyContent: 'center', alignItems: 'center', marginRight: 16,
   },
-  cardContent: { flex: 1, marginLeft: 14 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#123D1F', marginBottom: 4 },
-  cardPreview: { fontSize: 13, color: '#555', lineHeight: 19, marginBottom: 10 },
+  cardContent: { flex: 1 },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F', marginBottom: 4 },
+  cardSub: { fontSize: 13, color: '#8E8E93', marginTop: 2, marginBottom: 10 },
   cardMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   audienceTag: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10,
   },
-  audienceTagText: { fontSize: 11, fontWeight: '700' },
-  cardDate: { fontSize: 11, color: '#A0B4A5', fontWeight: '600' },
+  audienceTagText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  cardDate: { fontSize: 11, color: '#A0B4A5', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  // Empty
+  // Empty State
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 100 },
   emptyIconBg: {
-    width: 68, height: 68, borderRadius: 34, backgroundColor: '#E8F5E9',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 18,
-    borderWidth: 2, borderColor: '#D1E8D9',
+    width: 68, height: 68, borderRadius: 34, backgroundColor: '#fff',
+    alignSelf: 'center', justifyContent: 'center', alignItems: 'center', marginBottom: 18,
+    borderWidth: 2, borderColor: '#196F31',
   },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: '#123D1F', marginBottom: 8 },
-  emptySub: { fontSize: 14, color: '#6A8E75', textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 },
+  emptySub: { fontSize: 14, color: '#4A6B54', textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 },
 
-  // Modal
+  // Modal Sheet
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(18, 61, 31, 0.45)',
-    justifyContent: 'flex-end',
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    backgroundColor: '#F0F9F4', borderTopLeftRadius: 28, borderTopRightRadius: 28,
     padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 30,
     maxHeight: '80%',
   },
   modalHandle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#D1E8D9', alignSelf: 'center', marginBottom: 16,
+    width: 40, height: 4, borderRadius: 2, backgroundColor: '#C5D9C9',
+    alignSelf: 'center', marginBottom: 16,
   },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'flex-start', marginBottom: 14,
   },
   modalTitle: {
-    fontSize: 20, fontWeight: '800', color: '#123D1F', flex: 1, marginRight: 12,
+    fontSize: 18, fontWeight: '800', color: '#123D1F', flex: 1, marginRight: 12,
   },
   modalMetaRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginBottom: 12,
   },
-  modalDate: { fontSize: 12, color: '#6A8E75', fontWeight: '600' },
+  modalDate: { fontSize: 11, color: '#A0B4A5', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   authorRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16,
   },
-  authorText: { fontSize: 13, color: '#6A8E75', fontWeight: '600' },
-  modalBodyWrap: {
-    backgroundColor: '#F0F9F4', borderRadius: 14, padding: 16,
-    borderWidth: 1, borderColor: '#D1E8D9',
+  authorText: { fontSize: 12, color: '#4A6B54', fontWeight: '700' },
+  textAreaWrap: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 20,
+    borderWidth: 2, borderColor: '#196F31', minHeight: 120,
   },
-  modalBody: { fontSize: 15, color: '#333', lineHeight: 24 },
+  modalBody: { fontSize: 15, color: '#123D1F', lineHeight: 22 },
 });

@@ -274,9 +274,7 @@ export const getFavoriteRoutes = async (req, res) => {
   }
 };
 
-// ==========================================
-//REMOVE FROM FAVORITES 
-// ==========================================
+
 // ==========================================
 // CHECK DRIVER APPROVAL STATUS (public, no auth)
 // ==========================================
@@ -307,7 +305,9 @@ export const checkApprovalStatus = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
+// ==========================================
+//REMOVE FROM FAVORITES 
+// ==========================================
 export const removeFavoriteRoute = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -337,4 +337,10 @@ export const removeFavoriteRoute = async (req, res) => {
     console.error("Error removing favorite route:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
+};
+export const logout = (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully.'
+  });
 };
