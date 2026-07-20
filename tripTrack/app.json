@@ -76,12 +76,6 @@
       "eas": {
         "projectId": "ce7b0e9d-c327-41a9-af71-388778765ee8"
       }
-    },
-    "preview": {
-  "distribution": "internal",
-  "android": {
-    "buildType": "apk"
-  }
-}
+    }
   }
 }
