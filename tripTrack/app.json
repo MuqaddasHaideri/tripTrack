@@ -11,7 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.triptrack.app",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "tripTrack needs your location to find nearby buses and stops in real time."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +26,11 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.triptrack.app",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -50,11 +57,31 @@
           "icon": "./assets/images/icon.png",
           "color": "#ffffff"
         }
+      ],
+      "expo-localization",
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "tripTrack needs your location to find nearby buses and stops in real time."
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ce7b0e9d-c327-41a9-af71-388778765ee8"
+      }
+    },
+    "preview": {
+  "distribution": "internal",
+  "android": {
+    "buildType": "apk"
+  }
+}
   }
 }
