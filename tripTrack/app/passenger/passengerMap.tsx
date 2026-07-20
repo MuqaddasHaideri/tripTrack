@@ -1,7 +1,6 @@
 if (__DEV__) {
   require("../../reactotron");
 }
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   StyleSheet,
@@ -115,7 +114,7 @@ export default function PassengerMap() {
   const checkLocationStatus = async () => {
     try {
       const { status } = await Location.getForegroundPermissionsAsync();
-
+console.log("Location permission status:", status);
       if (status !== 'granted') {
         setErrorType('permission');
         setPermissionState('denied');
@@ -287,7 +286,7 @@ export default function PassengerMap() {
       <MapView
         ref={mapRef}
         style={styles.map}
-       // provider={PROVIDER_GOOGLE}
+       provider={PROVIDER_GOOGLE}
         initialRegion={{ latitude: 24.8607, longitude: 67.0011, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
       >
         {userLocation && (
