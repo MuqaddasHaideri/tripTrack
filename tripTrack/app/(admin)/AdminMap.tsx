@@ -91,7 +91,7 @@ export default function AdminMapScreen() {
       <MapView 
         ref={mapRef} 
         style={styles.map} 
-        provider={PROVIDER_GOOGLE} 
+        //provider={PROVIDER_GOOGLE} 
         initialRegion={{ 
           latitude: selectedRoute.stops?.[0]?.latitude || 24.8607, 
           longitude: selectedRoute.stops?.[0]?.longitude || 67.0011, 

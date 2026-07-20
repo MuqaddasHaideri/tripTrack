@@ -287,7 +287,7 @@ export default function PassengerMap() {
       <MapView
         ref={mapRef}
         style={styles.map}
-        provider={PROVIDER_GOOGLE}
+       // provider={PROVIDER_GOOGLE}
         initialRegion={{ latitude: 24.8607, longitude: 67.0011, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
       >
         {userLocation && (

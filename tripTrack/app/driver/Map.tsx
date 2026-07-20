@@ -110,7 +110,7 @@ const { t } = useTranslation();
       <MapView 
         ref={mapRef} 
         style={styles.map} 
-        provider={PROVIDER_GOOGLE} 
+        //provider={PROVIDER_GOOGLE} 
         initialRegion={{ 
           latitude: location?.latitude ?? 24.8607, 
           longitude: location?.longitude ?? 67.0011, 
