@@ -8,7 +8,6 @@ import dataRoutes from "./routes/data_routes.js";
 import { calculateDistanceKm, formatETAMessage } from "./controller/data_Controller.js";
 import route_model from "./models/route_models.js"; 
 
-
 dotenv.config(); // Load environment variables from .env file
 const app = express();
 const PORT = process.env.PORT || 3000;
