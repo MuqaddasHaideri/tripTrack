@@ -11,7 +11,6 @@ export const loadUser = createAsyncThunk('auth/loadUser', async () => {
     if (isGuest === 'true') {
       return { isGuest: true };
     }
-
     //  Logged-in user session
     if (token && user) {
       return {
@@ -20,7 +19,6 @@ export const loadUser = createAsyncThunk('auth/loadUser', async () => {
         isGuest: false,
       };
     }
-
   } catch (e) {
     console.error('Failed to load user', e);
   }
@@ -41,7 +39,7 @@ const authSlice = createSlice({
   },
 
   reducers: {
-updateUser: (state, action) => {
+    updateUser: (state, action) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
         AsyncStorage.setItem('userInfo', JSON.stringify(state.user));
@@ -54,13 +52,13 @@ updateUser: (state, action) => {
       state.token = token;
       state.isGuest = false;
 
-     
+
       AsyncStorage.setItem('userToken', token);
       AsyncStorage.setItem('userInfo', JSON.stringify(user));
-      AsyncStorage.removeItem('isGuest'); 
+      AsyncStorage.removeItem('isGuest');
     },
 
-    
+
     continueAsGuest: (state) => {
       state.user = null;
       state.token = null;
@@ -69,11 +67,11 @@ updateUser: (state, action) => {
       AsyncStorage.removeItem('userToken');
       AsyncStorage.removeItem('userInfo');
     },
-deleteAccount: (state) => {
+    deleteAccount: (state) => {
       state.user = null;
       state.token = null;
       state.isGuest = false;
-      
+
       // Clear all persistent data
       AsyncStorage.removeItem('userToken');
       AsyncStorage.removeItem('userInfo');
@@ -91,10 +89,10 @@ deleteAccount: (state) => {
       AsyncStorage.removeItem('userInfo');
       AsyncStorage.removeItem('isGuest');
     },
-    
+
   },
 
- 
+
   extraReducers: (builder) => {
     builder.addCase(loadUser.fulfilled, (state, action) => {
 
@@ -113,7 +111,7 @@ deleteAccount: (state) => {
 
 export const {
   setCredentials,
-  continueAsGuest, 
+  continueAsGuest,
   logout,
   updateUser,
   deleteAccount

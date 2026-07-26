@@ -18,7 +18,7 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchRoutesApi, socket } from '../../service/server'; 
+import { fetchRoutesApi, socket } from '../../service/server';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 export default function DriverMapScreen() {
@@ -31,7 +31,7 @@ export default function DriverMapScreen() {
   const [routeSearchQuery, setRouteSearchQuery] = useState('');
   const [selectedRoute, setSelectedRoute] = useState<any>(null);
   const locationSubscription = useRef<any>(null);
-const { t } = useTranslation();
+  const { t } = useTranslation();
   const { data: routes } = useQuery({ queryKey: ['routes', 'all'], queryFn: fetchRoutesApi });
 
   const filteredRoutes = useMemo(() => {
@@ -62,7 +62,7 @@ const { t } = useTranslation();
 
   const startBroadcasting = async () => {
     if (!selectedRoute) return Alert.alert(t("driverMap.Select Route first"));
-    
+
     setIsBroadcasting(true);
     if (socket.connected) {
       socket.emit("driver_start_route", selectedRoute._id);
@@ -78,7 +78,7 @@ const { t } = useTranslation();
             routeId: selectedRoute._id,
             lat: latitude,
             lng: longitude,
-            busId: selectedRoute.route_name 
+            busId: selectedRoute.route_name
           });
         }
       }
@@ -87,7 +87,7 @@ const { t } = useTranslation();
 
   const stopBroadcasting = () => {
     setIsBroadcasting(false);
-    
+
     if (locationSubscription.current) {
       locationSubscription.current.remove();
       locationSubscription.current = null;
@@ -97,41 +97,40 @@ const { t } = useTranslation();
       console.log("Emitting end_shift for route:", selectedRoute._id);
       socket.emit('end_shift', {
         routeId: selectedRoute._id,
-        busId: selectedRoute.route_name 
+        busId: selectedRoute.route_name
       });
     }
   };
 
   if (isLoading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#00C853" /></View>;
 
- return (
+  return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <MapView 
-        ref={mapRef} 
-        style={styles.map} 
-        provider={PROVIDER_GOOGLE} 
-        initialRegion={{ 
-          latitude: location?.latitude ?? 24.8607, 
-          longitude: location?.longitude ?? 67.0011, 
-          latitudeDelta: 0.01, 
-          longitudeDelta: 0.01 
+      //Displays the driver's current location on the map using a custom marker.
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={{
+          latitude: location?.latitude ?? 24.8607,
+          longitude: location?.longitude ?? 67.0011,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01
         }}
       >
         {location && (
           <Marker coordinate={location} anchor={{ x: 0.5, y: 0.5 }} zIndex={100}>
             <View style={[styles.driverMarker, isBroadcasting && styles.onlineMarker]}>
-              <Ionicons 
-          name={isBroadcasting ? "bus" : "navigate"} 
-          size={isBroadcasting ? 22 : 20} 
-          color={isBroadcasting ? "#FFFFFF" : "#F0F9F4"} 
-        />
+              <Ionicons
+                name={isBroadcasting ? "bus" : "navigate"}
+                size={isBroadcasting ? 22 : 20}
+                color={isBroadcasting ? "#FFFFFF" : "#F0F9F4"}
+              />
             </View>
           </Marker>
         )}
       </MapView>
-
-      {/* Floating Header */}
       <SafeAreaView style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#196F31" />
@@ -147,14 +146,14 @@ const { t } = useTranslation();
       {/* Bottom Control Card */}
       <View style={styles.bottomCard}>
         <Text style={styles.cardLabel}>{t("driverMap.Active Shift Assignment")}</Text>
-        
-        <TouchableOpacity 
-          style={[styles.routePicker, isBroadcasting && styles.disabledPicker]} 
-          onPress={() => !isBroadcasting && setIsRoutesModalVisible(true)} 
+
+        <TouchableOpacity
+          style={[styles.routePicker, isBroadcasting && styles.disabledPicker]}
+          onPress={() => !isBroadcasting && setIsRoutesModalVisible(true)}
           disabled={isBroadcasting}
         >
           <View style={styles.routeIconBox}>
-             <Ionicons name="map-outline" size={20} color="#196F31" />
+            <Ionicons name="map-outline" size={20} color="#196F31" />
           </View>
           <View style={styles.routeInfo}>
             <Text style={styles.routeMainText}>
@@ -167,8 +166,8 @@ const { t } = useTranslation();
           {!isBroadcasting && <Ionicons name="chevron-forward" size={20} color="#196F31" />}
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: isBroadcasting ? '#FF3B30' : '#196F31' }]} 
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: isBroadcasting ? '#FF3B30' : '#196F31' }]}
           onPress={() => isBroadcasting ? stopBroadcasting() : startBroadcasting()}
         >
           <Ionicons name={isBroadcasting ? "stop-circle" : "play-circle"} size={24} color="white" />
@@ -187,18 +186,18 @@ const { t } = useTranslation();
             </TouchableOpacity>
             <View style={styles.searchBox}>
               <Ionicons name="search" size={18} color="#196F31" />
-              <TextInput 
-                style={styles.searchInput} 
+              <TextInput
+                style={styles.searchInput}
                 placeholder={t("driverMap.Search assigned routes...")}
-                placeholderTextColor="#A0B4A5" 
-                value={routeSearchQuery} 
-                onChangeText={setRouteSearchQuery} 
+                placeholderTextColor="#A0B4A5"
+                value={routeSearchQuery}
+                onChangeText={setRouteSearchQuery}
               />
             </View>
           </View>
-          <FlatList 
-            data={filteredRoutes} 
-            keyExtractor={(item) => item._id} 
+          <FlatList
+            data={filteredRoutes}
+            keyExtractor={(item) => item._id}
             contentContainerStyle={{ padding: 20 }}
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.routeItem} onPress={() => { setSelectedRoute(item); setIsRoutesModalVisible(false); }}>
@@ -211,7 +210,7 @@ const { t } = useTranslation();
                 </View>
                 <Ionicons name="add-circle-outline" size={24} color="#196F31" />
               </TouchableOpacity>
-            )} 
+            )}
           />
         </SafeAreaView>
       </Modal>
@@ -220,6 +219,7 @@ const { t } = useTranslation();
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F9F4' },
   container: { flex: 1, backgroundColor: '#F0F9F4' },
   map: { flex: 1 },
   header: { position: 'absolute', top: 50, left: 16, right: 16, flexDirection: 'row', alignItems: 'center' },
@@ -227,13 +227,13 @@ const styles = StyleSheet.create({
   statusBadge: { flex: 1, marginLeft: 12, backgroundColor: 'white', paddingVertical: 10, borderRadius: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#196F31', elevation: 4 },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
   statusText: { fontWeight: '800', fontSize: 12, letterSpacing: 1 },
-  
+
   driverMarker: { backgroundColor: '#196F31', padding: 8, borderRadius: 20, borderWidth: 3, borderColor: 'white', elevation: 10 },
   onlineMarker: { backgroundColor: '#196F31', borderColor: '#F0F9F4' },
 
   bottomCard: { position: 'absolute', bottom: 30, left: 20, right: 20, backgroundColor: 'white', borderRadius: 28, padding: 20, borderWidth: 2, borderColor: '#196F31', elevation: 10, shadowColor: '#196F31', shadowOpacity: 0.2, shadowRadius: 10 },
   cardLabel: { color: '#A0B4A5', fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 1 },
-  
+
   routePicker: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F9F4', padding: 14, borderRadius: 18, marginBottom: 20, borderWidth: 1, borderColor: '#196F31' },
   disabledPicker: { opacity: 0.6, borderColor: '#A0B4A5' },
   routeIconBox: { width: 40, height: 40, backgroundColor: 'white', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },

@@ -1,7 +1,12 @@
 
 import user_models from "../models/user_models.js"
 import bcrypt from "bcrypt";
-// all drivers who are waiting for approval
+
+// ==========================================
+// GET ALL PENDING DRIVER ACCOUNTS
+// Retrieves all drivers whose accounts are
+// awaiting admin approval.
+// ==========================================
 export const getPendingDrivers = async (req, res) => {
   try {
     const pendingDrivers = await user_models.find({ 
@@ -18,7 +23,11 @@ export const getPendingDrivers = async (req, res) => {
   }
 };
 
-// Approve a driver
+// ==========================================
+// APPROVE DRIVER ACCOUNT
+// Marks a pending driver as verified so
+// they can access driver features.
+// ==========================================
 export const approveDriver = async (req, res) => {
   try {
     const driverId = req.params.id;
@@ -42,7 +51,11 @@ export const approveDriver = async (req, res) => {
   }
 };
 
-//Get all drivers, verified or not
+// ==========================================
+// GET ALL DRIVER ACCOUNTS
+// Retrieves every registered driver,
+// regardless of verification status.
+// ==========================================
 export const getAllDrivers = async (req, res) => {
   try {
     const drivers = await user_models.find({ role: 'driver' }).select('-password');
@@ -52,39 +65,31 @@ export const getAllDrivers = async (req, res) => {
   }
 };
 // ==========================================
-// CREATE A NEW ADMIN (Admin Only)
+// CREATE NEW ADMIN ACCOUNT
+// Allows an existing administrator to
+// register another administrator.
 // ==========================================
 export const addAdmin = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
-
-    // 1. Basic Validation
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: "Name, email, and password are required." });
     }
-
-    // 2. Check if a user with this email already exists
     const existingUser = await user_models.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: "An account with this email already exists." });
     }
-
-    // 3. Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate a default avatar
     const encodedName = encodeURIComponent(name);
-    const avatar = `https://ui-avatars.com/api/?name=${encodedName}&background=b82c33&color=fff&size=256`; // Red background for admin
-
-    // 4. Create the new Admin user
+    const avatar = `https://ui-avatars.com/api/?name=${encodedName}&background=b82c33&color=fff&size=256`; 
     const newAdmin = new user_models({
       name,
       email,
       password: hashedPassword,
       profilePic: avatar,
-      role: 'admin', // FORCING THE ROLE TO ADMIN
+      role: 'admin', 
       phone: phone || "",
-      isVerified: true,      // Pre-verified because an admin made it 
+      isVerified: true,      
     });
 
     await newAdmin.save();
@@ -107,12 +112,13 @@ export const addAdmin = async (req, res) => {
 };
 
 // ==========================================
-// GET ALL ADMINS (Admin Only)
+// GET ALL ADMIN ACCOUNTS
+// Returns a list of registered
+// administrators in descending order
+// of creation date.
 // ==========================================
 export const getAllAdmins = async (req, res) => {
   try {
-    // Find all users where the role is 'admin'
-    // .select('-password') ensures we don't accidentally send hashed passwords to the frontend
     const admins = await user_models.find({ role: 'admin' })
       .select('-password') 
       .sort({ createdAt: -1 });
@@ -128,22 +134,19 @@ export const getAllAdmins = async (req, res) => {
 };
 
 // ==========================================
-// REMOVE AN ADMIN (Admin Only)
+// REMOVE ADMIN ACCOUNT
+// Deletes an administrator account while
+// preventing self-deletion for security.
 // ==========================================
 export const removeAdmin = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // 🛡️ SECURITY CHECK: Prevent an admin from deleting themselves!
-    // Assuming your `isAuthenticated` middleware attaches the logged-in user's ID to req.user._id
     if (req.user._id.toString() === id) {
       return res.status(400).json({ 
         success: false, 
         message: "Action denied: You cannot delete your own admin account." 
       });
     }
-
-    // Find and delete the user, but ONLY if their role is actually 'admin'
     const deletedAdmin = await user_models.findOneAndDelete({ _id: id, role: 'admin' });
 
     if (!deletedAdmin) {

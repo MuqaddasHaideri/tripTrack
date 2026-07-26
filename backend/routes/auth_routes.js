@@ -3,14 +3,10 @@ import { signupController, loginController,deleteUserProfile, updateUserProfile,
 import { signupValidation, loginValidation } from "../middleware/validation.js"; 
 import { isAuthenticated } from "../middleware/isAuthenticated.js"; 
 import { registerFcmToken } from "../controller/notification_Controller.js";
-// import { sendVerificationEmail } from "../utils/verifyEmail.js";
 const router = express.Router();
-
 router.post("/signup", signupValidation, signupController); 
-
 router.post("/login", loginValidation, loginController); 
 router.post("/check-approval-status", checkApprovalStatus);
-// router.post("/verify", verifyOtpController);  
 router.get("/profile", isAuthenticated, getUserProfile);
 router.put("/profile", isAuthenticated, updateUserProfile);
 router.delete("/profile", isAuthenticated, deleteUserProfile);

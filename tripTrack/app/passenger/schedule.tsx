@@ -21,23 +21,19 @@ import { useTranslation } from 'react-i18next';
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
 export default function SchedulesScreen() {
   const { t } = useTranslation();
-
   const router = useRouter();
   const [expandedRouteId, setExpandedRouteId] = useState<string | null>(null);
-
   const { data: routes, isLoading, refetch } = useQuery({
     queryKey: ['routes', 'all'],
     queryFn: fetchRoutesApi,
   });
-
+  // Enables animations for Android devices.
   const toggleExpand = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedRouteId(expandedRouteId === id ? null : id);
   };
-
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -93,7 +89,7 @@ export default function SchedulesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
- <View style={styles.headerContainer}>
+      <View style={styles.headerContainer}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.headerCircleBtn}
@@ -139,7 +135,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-    headerCircleBtn: {
+  headerCircleBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
     borderWidth: 1.5, borderColor: '#E8F3EB',

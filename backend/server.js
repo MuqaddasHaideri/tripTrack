@@ -2,29 +2,26 @@ import express from "express";
 import dotenv from "dotenv";
 import http from "http"; 
 import { Server } from "socket.io"; 
-
-
 import { start } from "./config/db.js";
 import router from "./routes/auth_routes.js"; 
 import dataRoutes from "./routes/data_routes.js";
-
 import { calculateDistanceKm, formatETAMessage } from "./controller/data_Controller.js";
 import route_model from "./models/route_models.js"; 
 
-dotenv.config();
 
+dotenv.config(); // Load environment variables from .env file
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.use(express.json()); //parse incoming JSON requests
 
-app.use(express.json());
-
-start(); 
+start();  // MongoDB database connection
 
 app.use("/api/auth", router); 
 app.use("/api/data", dataRoutes);
 
 const server = http.createServer(app); 
 
+//Socketio server for real-time communication
 const io = new Server(server, {
   cors: {
     origin: "*", 
@@ -93,7 +90,11 @@ io.on("connection", (socket) => {
       console.error("Socket DB Query Error:", error);
     }
   });
-
+  // ==========================================
+  // Driver ends the trip.
+  // Remove bus from cache and notify passengers
+  // that the bus is now offline.
+  // ==========================================
   socket.on("end_shift", (data) => {
     const { busId, routeId } = data;
     
@@ -104,7 +105,12 @@ io.on("connection", (socket) => {
 
     io.to(routeId).emit("bus_offline", { busId: busId });
   });
-
+  // ==========================================
+  // Handle device disconnection.
+  // If the disconnected socket belongs to a
+  // driver, remove the bus from cache and
+  // notify all passengers.
+  // ==========================================
   socket.on("disconnect", () => {
     console.log(`🔴 Device disconnected: ${socket.id}`);
     

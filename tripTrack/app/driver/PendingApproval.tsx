@@ -21,10 +21,12 @@ export default function PendingApprovalScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [checking, setChecking] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-const { t } = useTranslation();
+  const { t } = useTranslation();
   useEffect(() => {
     if (!email) return;
-
+    // Periodically sends a request to the
+    // server until the driver's account is
+    // approved or the component unmounts.
     const checkStatus = async () => {
       setChecking(true);
       try {
@@ -38,7 +40,6 @@ const { t } = useTranslation();
           );
         }
       } catch {
-        // Silently ignore polling errors
       } finally {
         setChecking(false);
       }
@@ -55,7 +56,6 @@ const { t } = useTranslation();
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <View style={styles.iconCircleOuter}>
@@ -64,12 +64,10 @@ const { t } = useTranslation();
             </View>
           </View>
         </View>
-
         <Text style={styles.title}>{t("pendingApproval.Application Under Review")}</Text>
         <Text style={styles.subtitle}>
           {t("pendingApproval.Your driver registration has been submitted successfully. Our admin team is currently reviewing your documents.")}
         </Text>
-
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <Ionicons name="shield-checkmark-outline" size={20} color="#196F31" />
