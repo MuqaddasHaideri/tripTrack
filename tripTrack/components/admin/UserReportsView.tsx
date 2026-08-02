@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react'; 
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  ActivityIndicator, 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; 
-import { deleteReportApi, fetchAllReportsApi, updateReportStatusApi } from '../../service/server'; 
+import { Ionicons } from '@expo/vector-icons';
+import { deleteReportApi, fetchAllReportsApi, updateReportStatusApi } from '../../service/server';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +29,7 @@ export const UserReportsView = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [processingId, setProcessingId] = useState(null); 
+  const [processingId, setProcessingId] = useState(null);
   const { token } = useSelector((state) => state.auth);
   const { t } = useTranslation();
 
@@ -43,7 +44,7 @@ export const UserReportsView = () => {
       }
 
       const response = await fetchAllReportsApi(token);
-      console.log("API Response (All Reports):", response); 
+      console.log("API Response (All Reports):", response);
 
       let extractedReports = [];
       if (response?.success && Array.isArray(response.reports)) {
@@ -77,8 +78,8 @@ export const UserReportsView = () => {
 
       if (response && response.success !== false) {
         Alert.alert("Success", t("userReports.updateSuccess", { status: newStatus }));
-        
-        setReports(prevReports => 
+
+        setReports(prevReports =>
           prevReports.map(r => r._id === reportId ? { ...r, status: newStatus } : r)
         );
       } else {
@@ -91,39 +92,43 @@ export const UserReportsView = () => {
       setProcessingId(null);
     }
   };
-const deleteReportHandler = (reportId) => async () => {
-  Alert.alert(
-    t("userReports.deleteReport"),
-    t("userReports.confirmDelete"),
-    [
-      {
-        text: t("userReports.cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("userReports.delete"),
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const response = await deleteReportApi(reportId, token);
+  const deleteReportHandler = (reportId) => async () => {
+    Alert.alert(
+      t("userReports.deleteReport"),
+      t("userReports.confirmDelete"),
+      [
+        {
+          text: t("userReports.cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("userReports.delete"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await deleteReportApi(reportId, token);
 
-            if (response?.success) {
-              setReports((prev) =>
-                prev.filter((report) => report._id !== reportId)
-              );
-            } else {
+              if (response?.success) {
+                setReports((prev) =>
+                  prev.filter((report) => report._id !== reportId)
+                );
+              } else {
+                Alert.alert(
+                  t("common.error"),
+                  response?.message || t("userReports.deleteError")
+                );
+              }
+            } catch (error) {
+              console.error(error);
               Alert.alert(
                 t("common.error"),
-                response?.message || t("userReports.deleteError")
+                t("userReports.deleteError")
               );
             }
-          } catch (error) {
-            console.error(error);
-            Alert.alert(
-              t("common.error"),
-              t("userReports.deleteError")
-            );}},},]);};
-const triggerStatusAlert = (reportId) => {
+          },
+        },]);
+  };
+  const triggerStatusAlert = (reportId) => {
     Alert.alert(
       t("userReports.updateStatus"),
       t("userReports.chooseStatus"),
@@ -150,25 +155,25 @@ const triggerStatusAlert = (reportId) => {
     }
   };
 
- const renderReportItem = ({ item }) => {
+  const renderReportItem = ({ item }) => {
     const statusTheme = getStatusStyle(item.status);
     const isClosed = item.status === 'resolved' || item.status === 'dismissed';
 
     const displayTitle = item.issueType || item.reportType || "User Report";
     const displayName = item.reportedBy?.name || (item.isAnonymous ? 'Anonymous' : 'Unknown User');
-    const visualAttachment = item.attachment || item.screenshotUrl;
+    const visualAttachment = item.screenshotUrl || item.attachment;
 
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.iconCircle}>
-            <Ionicons 
-              name={item.priority === 'critical' ? "alert-circle" : "warning"} 
-              size={24} 
-              color={item.priority === 'critical' ? "#E24B4A" : "#196F31"} 
+            <Ionicons
+              name={item.priority === 'critical' ? "alert-circle" : "warning"}
+              size={24}
+              color={item.priority === 'critical' ? "#E24B4A" : "#196F31"}
             />
           </View>
-          
+
           <View style={styles.cardContent}>
             <Text style={styles.cardTitle} numberOfLines={1}>{displayTitle}</Text>
             <Text style={styles.cardSub}>By: {displayName}</Text>
@@ -182,10 +187,10 @@ const triggerStatusAlert = (reportId) => {
           </View>
 
           {/* Muted delete button layout configuration inside arrow block */}
-          <TouchableOpacity 
-            style={styles.trashBtn} 
-            activeOpacity={0.6} 
-            onPress={() => deleteReportHandler(item._id)}
+          <TouchableOpacity
+            style={styles.trashBtn}
+            activeOpacity={0.6}
+            onPress={deleteReportHandler(item._id)}
           >
             <Ionicons name="trash-outline" size={18} color="#E24B4A" />
           </TouchableOpacity>
@@ -194,9 +199,10 @@ const triggerStatusAlert = (reportId) => {
         <Text style={styles.reportDetails}>{item.description || 'No description provided.'}</Text>
 
         {!!visualAttachment && (
-          <TouchableOpacity 
-            style={styles.screenshotLinkButton} 
+          <TouchableOpacity
+            style={styles.screenshotLinkButton}
             activeOpacity={0.7}
+            onPress={() => Linking.openURL(visualAttachment)}
           >
             <View style={styles.screenshotIconBg}>
               <Ionicons name="image" size={16} color="#196F31" />
@@ -216,8 +222,8 @@ const triggerStatusAlert = (reportId) => {
 
           {/* Cleaner Card Footer: Reserved completely for the active actionable update container */}
           {!isClosed && (
-            <TouchableOpacity 
-              style={[styles.actionButton, processingId === item._id && styles.submitBtnDisabled]} 
+            <TouchableOpacity
+              style={[styles.actionButton, processingId === item._id && styles.submitBtnDisabled]}
               onPress={() => triggerStatusAlert(item._id)}
               disabled={processingId === item._id}
             >
@@ -257,10 +263,10 @@ const triggerStatusAlert = (reportId) => {
     <View style={styles.container}>
       {/* Stats Row */}
       <View style={styles.statsRow}>
-        <StatCard label={t("userReports.total")}     value={totalReports}    icon="folder-open-outline" />
-        <StatCard label={t("userReports.pending")}   value={pendingReports}  icon="time-outline" />
-        <StatCard label={t("userReports.reviewed")}  value={reviewedReports} icon="eye-outline" />
-        <StatCard label={t("userReports.resolved")}  value={resolvedReports} icon="checkmark-circle-outline" />
+        <StatCard label={t("userReports.total")} value={totalReports} icon="folder-open-outline" />
+        <StatCard label={t("userReports.pending")} value={pendingReports} icon="time-outline" />
+        <StatCard label={t("userReports.reviewed")} value={reviewedReports} icon="eye-outline" />
+        <StatCard label={t("userReports.resolved")} value={resolvedReports} icon="checkmark-circle-outline" />
       </View>
 
       {loading ? (
@@ -349,29 +355,29 @@ const styles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   iconCircle: {
-    width: 52, 
-    height: 52, 
+    width: 52,
+    height: 52,
     borderRadius: 18,
-    backgroundColor: '#F0F9F4', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+    backgroundColor: '#F0F9F4',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 14,
   },
   cardContent: { flex: 1, justifyContent: 'center' },
   cardTitle: { fontSize: 17, fontWeight: '800', color: '#123D1F' },
   cardSub: { fontSize: 13, color: '#8E8E93', marginTop: 2, fontWeight: '600' },
   reportDetails: { fontSize: 14, color: '#4A6B54', lineHeight: 20, marginBottom: 14 },
-  
-  screenshotLinkButton: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#F0F9F4', 
-    padding: 10, 
-    borderRadius: 14, 
-    marginBottom: 14, 
-    borderWidth: 1.5, 
-    borderColor: '#E8F3EB', 
-    gap: 10 
+
+  screenshotLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F9F4',
+    padding: 10,
+    borderRadius: 14,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: '#E8F3EB',
+    gap: 10
   },
   screenshotIconBg: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' },
   screenshotLinkText: { color: '#123D1F', fontSize: 13, fontWeight: '700' },
@@ -409,26 +415,26 @@ const styles = StyleSheet.create({
   textDismissed: { color: '#7B7D7D' },
 
   // Update Button Style
-  actionButton: { 
-    backgroundColor: '#196F31', 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    paddingVertical: 6, 
+  actionButton: {
+    backgroundColor: '#196F31',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 12, 
-    gap: 4 
+    borderRadius: 12,
+    gap: 4
   },
   submitBtnDisabled: { backgroundColor: '#A0B4A5', elevation: 0 },
   actionButtonText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  
+
   // Empty States
   placeholderWrapper: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
-  placeholderIconBg: { 
-    width: 80, height: 80, borderRadius: 40, 
-    backgroundColor: '#fff', 
+  placeholderIconBg: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: '#fff',
     borderWidth: 2, borderColor: '#E8F3EB',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16 
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16
   },
   mainPrompt: { fontSize: 24, fontWeight: '900', color: '#123D1F', marginBottom: 8 },
   placeholderSub: { fontSize: 14, color: '#8E8E93', textAlign: 'center', paddingHorizontal: 32, fontWeight: '500' },

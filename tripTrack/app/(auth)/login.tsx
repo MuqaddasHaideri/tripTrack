@@ -21,14 +21,14 @@ import { continueAsGuest, setCredentials } from '../../redux/authSlice';
 import { registerForPushNotifications } from '../../utils/notifications';
 import { useTranslation } from 'react-i18next';
 export default function LoginScreen() {
-    
+
     const router = useRouter();
     const dispatch = useDispatch();
     const [showPassword, setShowPassword] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-      const { t } = useTranslation();
+    const { t } = useTranslation();
     const handleLogin = async () => {
         const trimmedEmail = email.trim();
 
@@ -128,6 +128,7 @@ export default function LoginScreen() {
                             <TextInput
                                 style={styles.input}
                                 placeholder={t("login.emailPlaceholder")}
+                                placeholderTextColor="#A0B4A5"
                                 value={email}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -142,6 +143,7 @@ export default function LoginScreen() {
                             <TextInput
                                 style={styles.input}
                                 placeholder={t("login.passwordPlaceholder")}
+                                placeholderTextColor="#A0B4A5"
                                 secureTextEntry={!showPassword}
                                 value={password}
                                 onChangeText={setPassword}
@@ -173,7 +175,7 @@ export default function LoginScreen() {
 
                     {/* Guest */}
                     <TouchableOpacity
-                    style={styles.guestBtn}
+                        style={styles.guestBtn}
                         onPress={() => {
                             dispatch(continueAsGuest());
                             router.replace('/(tabs)');

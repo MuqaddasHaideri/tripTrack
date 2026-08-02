@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -10,25 +11,25 @@ export default function LocationPermissionScreen({
   onOpenSettings, 
   errorType 
 }) {
-  
-  let title = "Allow Location Access";
-  let body = "TransitGo needs your location to find nearby bus routes and stops in real time.";
+  const { t} = useTranslation();
+  let title = t("locationPermission.default.title");
+  let body = t("locationPermission.default.body");
   let primaryAction = onAllow;
-  let primaryText = "Allow Location";
+  let primaryText = t("locationPermission.default.primaryText");
   let primaryIcon = "navigate";
 
   if (errorType === 'permission') {
-    title = "Permission Required";
-    body = "You have denied location access. We cannot show nearby buses without it. Please enable it in Settings.";
+    title = t("locationPermission.permission.title");
+    body = t("locationPermission.permission.body");
     primaryAction = onOpenSettings; 
-    primaryText = "Open Settings";
+    primaryText = t("locationPermission.permission.primaryText");
     primaryIcon = "settings-outline";
   } 
   else if (errorType === 'gps') {
-    title = "Turn On GPS";
-    body = "Permission is granted, but your phone's physical GPS is off. Please turn on Location and try again.";
+    title = t("locationPermission.gps.title");
+    body = t("locationPermission.gps.body");
     primaryAction = onAllow; 
-    primaryText = "Try Again";
+    primaryText = t("locationPermission.gps.primaryText");
     primaryIcon = "refresh";
   }
 
@@ -63,7 +64,7 @@ export default function LocationPermissionScreen({
             style={permStyles.denyBtn} 
             onPress={onDeny}
           >
-            <Text style={permStyles.denyText}>Not now</Text>
+            <Text style={permStyles.denyText}>{t("locationPermission.denyText")}</Text>
           </TouchableOpacity>
         </View>
       </View>

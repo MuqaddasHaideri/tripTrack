@@ -198,7 +198,7 @@
         "locationSkipped": "GPS tracking skipped",
         "describeBug": "Describe the bug",
         "bugPlaceholder": "What went wrong? (e.g. Map not loading, App crashed)",
-        "screenshot": "Screenshot (optional)",
+        "screenshot": "Screenshot added",
         "attachScreenshot": "Tap to attach screenshot",
         "yourIdea": "Your idea",
         "suggestionPlaceholder": "New routes, features, or UI improvements...",
@@ -506,5 +506,24 @@
         "totalStops": "Total Stops",
         "status": "Status",
         "active": "Active"
-    }
+    },
+  "locationPermission": {
+    "default": {
+      "title": "Allow Location Access",
+      "body": "TransitGo needs your location to find nearby bus routes and stops in real time.",
+      "primaryText": "Allow Location"
+    },
+    "permission": {
+      "title": "Permission Required",
+      "body": "\nYou have denied location access. We cannot show nearby buses without it. Please enable it in Settings.\n\nHow to fix:\n1. Tap 'Permissions' > 'Location'\n2. Choose 'Allow only while using the app'",
+      "primaryText": "Open Settings"
+    },
+    "gps": {
+      "title": "Turn On GPS",
+      "body": "Permission is granted, but your phone's physical GPS is off. Please turn on Location and try again.",
+      "primaryText": "Try Again"
+    },
+    "denyText": "Not now"
+  }
+
 }

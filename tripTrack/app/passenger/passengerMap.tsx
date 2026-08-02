@@ -34,7 +34,7 @@ import { useTranslation } from 'react-i18next';
 export default function PassengerMap() {
   const mapRef = useRef<MapView>(null);
   const appState = useRef(AppState.currentState);
-   const { t } = useTranslation();
+  const { t } = useTranslation();
   // --- STATE ---
   const [permissionState, setPermissionState] = useState<'loading' | 'granted' | 'denied'>('loading');
   const [errorType, setErrorType] = useState<'permission' | 'gps' | null>(null);
@@ -49,9 +49,9 @@ export default function PassengerMap() {
   // --- 1. LOCATION & PERMISSION LOGIC ---
   useEffect(() => {
     checkLocationStatus();
-     if (!isGuest && token) {
-    loadUserFavorites();
-  }
+    if (!isGuest && token) {
+      loadUserFavorites();
+    }
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         checkLocationStatus();
@@ -81,9 +81,9 @@ export default function PassengerMap() {
 
   // --- 3. NATIVE TOGGLE FAVORITE LOGIC ---
   const handleToggleFavorite = async () => {
-   if (isGuest || !token) {
-    return;
-  }
+    if (isGuest || !token) {
+      return;
+    }
     if (!selectedRouteId || isFavoriting) return;
     setIsFavoriting(true);
 
@@ -111,29 +111,33 @@ export default function PassengerMap() {
       setIsFavoriting(false);
     }
   };
-  const checkLocationStatus = async () => {
-    try {
-      const { status } = await Location.getForegroundPermissionsAsync();
-console.log("Location permission status:", status);
-      if (status !== 'granted') {
-        setErrorType('permission');
-        setPermissionState('denied');
-        return;
-      }
-
+const checkLocationStatus = async () => {
+  try {
+    const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
+    console.log("Location permission status:", status);
+    
+    if (status === 'granted') {
       const gpsEnabled = await Location.hasServicesEnabledAsync();
       if (!gpsEnabled) {
         setErrorType('gps');
         setPermissionState('denied');
         return;
       }
-
       setErrorType(null);
       await startTracking();
-    } catch (err) {
-      setPermissionState('denied');
+      return;
     }
-  };
+    if (status === 'undetermined') {
+      setErrorType(null);
+      setPermissionState('denied'); 
+      return;
+    }
+    setErrorType('permission');
+    setPermissionState('denied');
+  } catch (err) {
+    setPermissionState('denied');
+  }
+};
 
   const startTracking = async () => {
     try {
@@ -286,7 +290,7 @@ console.log("Location permission status:", status);
       <MapView
         ref={mapRef}
         style={styles.map}
-       provider={PROVIDER_GOOGLE}
+        provider={PROVIDER_GOOGLE}
         initialRegion={{ latitude: 24.8607, longitude: 67.0011, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
       >
         {userLocation && (

@@ -5,13 +5,14 @@ import { useEffect } from 'react';
 import { loadUser } from '../redux/authSlice';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme, View, ActivityIndicator } from 'react-native';
+import { useColorScheme, View, ActivityIndicator, Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "../translation/index";
 import { getLanguage } from "../translation/languageStorage";
 import { setLanguage } from "../redux/languageSlice";
 import i18n from '../translation/index';
-
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as NavigationBar from 'expo-navigation-bar';
 function AppWrapper() {
   const colorScheme = useColorScheme();
 
@@ -70,7 +71,12 @@ if (isGuest && inProtectedPassengerScreen) {
     // }
 
   }, [user, isGuest, isInitialized, segments]);
-
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setBackgroundColorAsync('#F0F9F4');
+      NavigationBar.setButtonStyleAsync('dark');
+    }
+  }, []);
   //Loader while restoring
   if (!isInitialized) {
     return (
@@ -128,11 +134,13 @@ export default function RootLayout() {
   const queryClient = new QueryClient();
 
   return (
+        <SafeAreaProvider>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <RootContent />
       </QueryClientProvider>
     </Provider>
+    </SafeAreaProvider>
   );
 }
 

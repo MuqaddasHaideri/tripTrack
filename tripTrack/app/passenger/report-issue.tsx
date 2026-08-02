@@ -75,10 +75,10 @@ const STATUS_CONFIG: Record<
   'pending' | 'reviewed' | 'resolved' | 'dismissed',
   { label: string; color: string }
 > = {
-  pending:   { label: t('reportIssue.pending'),  color: '#4A6B54' }, // Subtle green-gray
-  reviewed:  { label: t('reportIssue.reviewed'),   color: '#854F0B' }, // Amber/Orange
-  resolved:  { label: t('reportIssue.resolved'),     color: '#196F31' }, // Vibrant Green
-  dismissed: { label: t('reportIssue.dismissed'),      color: '#791F1F' }, // Subtle Muted Red
+  pending:   { label: t('reportStatus.pending'),  color: '#4A6B54' }, // Subtle green-gray
+  reviewed:  { label: t('reportStatus.reviewed'),   color: '#854F0B' }, // Amber/Orange
+  resolved:  { label: t('reportStatus.resolved'),     color: '#196F31' }, // Vibrant Green
+  dismissed: { label: t('reportStatus.dismissed'),      color: '#791F1F' }, // Subtle Muted Red
 };
   useEffect(() => {
     fetchReportHistory();
@@ -180,7 +180,7 @@ const STATUS_CONFIG: Record<
           issueType: quickSelect,
           location: latitude && longitude ? { lat: latitude, lng: longitude } : null
         }),
-        ...(attachmentUrl && { attachment: attachmentUrl })
+        ...(attachmentUrl && { screenshotUrl: attachmentUrl })
       };
 
       const data = await submitReportApi(payload, token);
@@ -201,11 +201,6 @@ const STATUS_CONFIG: Record<
         };
         await saveLastReport(newReport);
 
-        setTimeout(() => {
-          Alert.alert(t('reportIssue.reportSubmittedTitle'), t('reportIssue.reportSubmittedMessage', { id: newReport.id }), [
-            { text: 'Done', onPress: () => router.back() },
-          ]);
-        }, 1400);
       } else {
         Alert.alert(t('reportIssue.submissionFailedTitle'), data.message || t('reportIssue.submissionFailedMessage'));
       }
@@ -298,7 +293,8 @@ const STATUS_CONFIG: Record<
       />
     </View>
   );
-
+// Reusable card used to display report
+// categories with an icon and navigation.
   const CategoryCard = ({ title, sub, icon, onPress }: {
     title: string; sub: string; icon: string; onPress: () => void;
   }) => (

@@ -107,7 +107,7 @@ export default function DriverMapScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      //Displays the driver's current location on the map using a custom marker.
+
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -143,7 +143,6 @@ export default function DriverMapScreen() {
         </View>
       </SafeAreaView>
 
-      {/* Bottom Control Card */}
       <View style={styles.bottomCard}>
         <Text style={styles.cardLabel}>{t("driverMap.Active Shift Assignment")}</Text>
 
@@ -177,7 +176,6 @@ export default function DriverMapScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Route Selection Modal */}
       <Modal visible={isRoutesModalVisible} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>

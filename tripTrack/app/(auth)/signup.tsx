@@ -17,7 +17,7 @@ import {
 import { useTranslation } from 'react-i18next';
 export default function SignupScreen() {
     const router = useRouter();
-      const { t } = useTranslation();
+    const { t } = useTranslation();
     const [role, setRole] = useState('passenger');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [name, setName] = useState('');
@@ -69,7 +69,7 @@ export default function SignupScreen() {
         } else {
             // PASSENGER Signup
             try {
-                    setIsUploading(true);
+                setIsUploading(true);
 
                 const data = await signupUserApi(name, email, password, "passenger", phone);
                 if (data.success) {
@@ -87,9 +87,11 @@ export default function SignupScreen() {
                 Alert.alert("Error", "Something went wrong during passenger signup.");
 
             }
-           finally {
+            finally {
                 setIsUploading(false);
-            }}};
+            }
+        }
+    };
     const isBusy = isUploading;
 
 
@@ -145,6 +147,7 @@ export default function SignupScreen() {
                             <TextInput
                                 style={styles.input}
                                 placeholder={t("signup.fullNamePlaceholder")}
+                                    placeholderTextColor="#A0B4A5"
                                 value={name}
                                 onChangeText={setName}
                             />
@@ -156,6 +159,7 @@ export default function SignupScreen() {
                             <TextInput
                                 style={styles.input}
                                 placeholder={t("signup.phonePlaceholder")}
+                                    placeholderTextColor="#A0B4A5"
                                 keyboardType="phone-pad"
                                 value={phone}
                                 onChangeText={setPhone}
@@ -169,6 +173,7 @@ export default function SignupScreen() {
                                 style={styles.input}
                                 placeholder={t("signup.emailPlaceholder")}
                                 keyboardType="email-address"
+                                    placeholderTextColor="#A0B4A5"
                                 autoCapitalize="none"
                                 value={email}
                                 onChangeText={setEmail}
@@ -186,6 +191,7 @@ export default function SignupScreen() {
                                         placeholder={t("signup.cnicPlaceholder")}
                                         value={cnic}
                                         onChangeText={setCnic}
+                                        placeholderTextColor="#A0B4A5"
                                     />
                                 </View>
 
@@ -221,6 +227,7 @@ export default function SignupScreen() {
                                 secureTextEntry={!showPassword}
                                 value={password}
                                 onChangeText={setPassword}
+                                placeholderTextColor="#A0B4A5"
                             />
                             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                                 <Ionicons
