@@ -2,8 +2,11 @@ import user_models from "../models/user_models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { notifyAdmins } from "../utils/sendNotification.js";
+
 // ==========================================
-// SINGUP
+// SIGNUP
+// Checks existing user, hashes password,
+// creates account and notifies admins for drivers.
 // ==========================================
 export const signupController = async (req, res) => {
   try {
@@ -72,8 +75,10 @@ export const signupController = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
-// ==========================================
+/// ==========================================
 // LOGIN
+// Verifies user credentials, checks driver
+// approval and generates a JWT token.
 // ==========================================
 export const loginController = async (req, res) => {
   try {
@@ -137,6 +142,8 @@ export const loginController = async (req, res) => {
 
 // ==========================================
 // VIEW PROFILE
+// Fetches the logged-in user's profile
+// without returning the password.
 // ==========================================
 export const getUserProfile = async (req, res) => {
   try {
@@ -157,6 +164,8 @@ export const getUserProfile = async (req, res) => {
 
 // ==========================================
 // EDIT PROFILE
+// Updates allowed user details while keeping
+// sensitive account fields protected.
 // ==========================================
 export const updateUserProfile = async (req, res) => {
   try {
@@ -194,6 +203,8 @@ export const updateUserProfile = async (req, res) => {
 
 // ==========================================
 // DELETE PROFILE
+// Deletes the logged-in user's account
+// from the database.
 // ==========================================
 export const deleteUserProfile = async (req, res) => {
   try {
@@ -216,11 +227,13 @@ export const deleteUserProfile = async (req, res) => {
 };
 
 // ==========================================
-// ADD TO FAVORITES 
+// ADD TO FAVORITES
+// Adds a route to the user's favorite routes
+// list without creating duplicate entries.
 // ==========================================
 export const addFavoriteRoute = async (req, res) => {
   try {
-    const userId = req.user._id; // From your isAuthenticated middleware
+    const userId = req.user._id; // From isAuthenticated middleware
     const { routeId } = req.body;
 
     if (!routeId) {
@@ -250,7 +263,9 @@ export const addFavoriteRoute = async (req, res) => {
 };
 
 // ==========================================
-//  GET FAVORITES 
+// GET FAVORITES
+// Fetches the user's favorite routes along
+// with their route details.
 // ==========================================
 export const getFavoriteRoutes = async (req, res) => {
   try {
@@ -276,7 +291,9 @@ export const getFavoriteRoutes = async (req, res) => {
 
 
 // ==========================================
-// CHECK DRIVER APPROVAL STATUS (public, no auth)
+// CHECK DRIVER APPROVAL STATUS
+// Checks if a driver account has been approved
+// by the admin using the driver's email.
 // ==========================================
 export const checkApprovalStatus = async (req, res) => {
   try {
@@ -306,7 +323,9 @@ export const checkApprovalStatus = async (req, res) => {
   }
 };
 // ==========================================
-//REMOVE FROM FAVORITES 
+// REMOVE FROM FAVORITES
+// Removes a route from the user's favorite
+// routes list using the route ID.
 // ==========================================
 export const removeFavoriteRoute = async (req, res) => {
   try {

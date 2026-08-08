@@ -2,6 +2,11 @@ import route_model from "../models/route_models.js";
 import bus_model from "../models/bus_model.js";
 import UserLocation from '../models/userLocation.js';
 
+// ==========================================
+// GET ALL ROUTES
+// Fetches all routes from the database and
+// returns them in the response.
+// ==========================================
 export const getAllRoutes = async (req, res) => {
   try {
     const routes = await route_model.find();
@@ -11,7 +16,11 @@ export const getAllRoutes = async (req, res) => {
   }
 };
 
-
+// ==========================================
+// GET ALL BUSES
+// Fetches all buses from the database and
+// returns them in the response.
+// ==========================================
 export const getAllBuses = async (req, res) => {
   try {
     const buses = await bus_model.find();
@@ -22,7 +31,9 @@ export const getAllBuses = async (req, res) => {
 };
 
 // ==========================================
-// 1. CREATE A NEW ROUTE
+// CREATE A NEW ROUTE
+// Checks for duplicate routes and saves the
+// new route details to the database.
 // ==========================================
 export const createRoute = async (req, res) => {
   try {
@@ -55,7 +66,11 @@ export const createRoute = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
+// ==========================================
+// CREATE A NEW BUS
+// Saves a new bus with the provided details
+// to the database.
+// ==========================================
 export const createBus = async (req, res) => {
   try {
     const newBus = new bus_model(req.body);
@@ -66,7 +81,11 @@ export const createBus = async (req, res) => {
   }
 };
 
-
+// ==========================================
+// ADD USER LOCATION
+// Saves a user's location with its details
+// and location type in the database.
+// ==========================================
 export const addLocation = async (req, res) => {
   try {
     const { name, address, latitude, longitude, type } = req.body;
@@ -89,7 +108,11 @@ export const addLocation = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// ==========================================
+// GET USER LOCATIONS
+// Fetches the user's saved locations and
+// optionally filters them by location type.
+// ==========================================
 export const getUserLocations = async (req, res) => {
   try {
     const query = { user: req.user._id };
@@ -107,7 +130,11 @@ export const getUserLocations = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// ==========================================
+// UPDATE LOCATION TYPE
+// Finds the user's location and updates
+// its type.
+// ==========================================
 export const updateLocationType = async (req, res) => {
   try {
     const { type } = req.body;
@@ -128,7 +155,11 @@ export const updateLocationType = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// ==========================================
+// DELETE LOCATION
+// Deletes a saved location belonging to
+// the logged-in user.
+// ==========================================
 export const deleteLocation = async (req, res) => {
   try {
     const location = await UserLocation.findOneAndDelete({ _id: req.params.id, user: req.user._id });
@@ -145,7 +176,11 @@ export const deleteLocation = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// ==========================================
+// CALCULATE DISTANCE
+// Calculates the distance between two points
+// using their latitude and longitude.
+// ==========================================
 export const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -156,7 +191,11 @@ export const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
   return R * c; 
 };
-
+// ==========================================
+// FORMAT ETA MESSAGE
+// Calculates the estimated travel time and
+// returns it as a readable message.
+// ==========================================
 export const formatETAMessage = (distanceKm, stopName) => {
   const speedKmh = 20; 
   const timeHours = distanceKm / speedKmh;
@@ -172,7 +211,11 @@ export const formatETAMessage = (distanceKm, stopName) => {
   }
 };
 
-
+// ==========================================
+// GET LIVE ETA
+// Uses Google Maps API to get the distance
+// and estimated travel time to a bus stop.
+// ==========================================
 export const getLiveETA = async (busLat, busLng, stopLat, stopLng) => {
   try {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -181,7 +224,7 @@ export const getLiveETA = async (busLat, busLng, stopLat, stopLng) => {
     const response = await fetch(url);
     const data = await response.json();
 
-    // 4. FIXED: Added to read Google's array correctly
+    //  read Google's array correctly
     if (data.status === "OK" && data.rows.elements.status === "OK") {
       const element = data.rows.elements;
       
@@ -201,6 +244,8 @@ export const getLiveETA = async (busLat, busLng, stopLat, stopLng) => {
 
 // ==========================================
 // UPDATE A ROUTE (Admin Only)
+// Finds the route by ID and updates its
+// details in the database.
 // ==========================================
 export const updateRoute = async (req, res) => {
   try {
@@ -231,6 +276,8 @@ export const updateRoute = async (req, res) => {
 
 // ==========================================
 // DELETE A ROUTE (Admin Only)
+// Finds the route by ID and removes it
+// from the database.
 // ==========================================
 export const deleteRoute = async (req, res) => {
   try {

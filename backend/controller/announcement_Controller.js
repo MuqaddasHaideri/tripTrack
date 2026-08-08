@@ -2,6 +2,8 @@ import announcement_model from "../models/announcement_model.js";
 
 // ==========================================
 // ADMIN: CREATE ANNOUNCEMENT
+// Creates a new announcement for passengers,
+// drivers, or all users.
 // ==========================================
 export const createAnnouncement = async (req, res) => {
   try {
@@ -43,6 +45,8 @@ export const createAnnouncement = async (req, res) => {
 
 // ==========================================
 // ADMIN: GET ALL ANNOUNCEMENTS
+// Retrieves all announcements created by admins,
+// sorted from newest to oldest.
 // ==========================================
 export const getAllAnnouncements = async (req, res) => {
   try {
@@ -59,6 +63,8 @@ export const getAllAnnouncements = async (req, res) => {
 
 // ==========================================
 // USER: GET ANNOUNCEMENTS FOR THEIR ROLE
+// Retrieves active announcements based on the
+// user's role.
 // ==========================================
 export const getAnnouncementsForUser = async (req, res) => {
   try {
@@ -80,6 +86,8 @@ export const getAnnouncementsForUser = async (req, res) => {
 
 // ==========================================
 // ADMIN: DELETE ANNOUNCEMENT
+// Deletes an announcement using its ID and
+// returns an error if it does not exist.
 // ==========================================
 export const deleteAnnouncement = async (req, res) => {
   try {

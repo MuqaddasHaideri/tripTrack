@@ -1,9 +1,14 @@
 import report_models from "../models/report_model.js";
 import { notifyAdmins } from "../utils/sendNotification.js";
 
+// ==========================================
+// CREATE REPORT
+// Validates the report details, saves the
+// report and notifies admins about it.
+// ==========================================
 export const createReport = async (req, res) => {
   try {
-    // 1. Grab everything from the request body
+    
     const { 
       reportType, 
       priority, 
@@ -15,7 +20,7 @@ export const createReport = async (req, res) => {
       isAnonymous 
     } = req.body;
 
-    // 2. Validate that we have a valid report type
+    //  Validate that we have a valid report type
     if (!['transit_issue', 'app_bug', 'suggestion'].includes(reportType)) {
       return res.status(400).json({ 
         success: false, 
@@ -23,11 +28,10 @@ export const createReport = async (req, res) => {
       });
     }
 
-    // 3. Determine who is reporting
     // If they choose anonymous, we save 'null'. Otherwise, we link their user ID.
     const reporterId = isAnonymous ? null : req.user._id;
 
-    // 4. Custom validation for Transit Issue location
+    // Custom validation for Transit Issue location
     if (reportType === 'transit_issue' && (!location || !location.lat || !location.lng)) {
       return res.status(400).json({
         success: false,
@@ -35,7 +39,6 @@ export const createReport = async (req, res) => {
       });
     }
 
-    // 5. Build the report object
     const newReport = new report_models({
       reportType,
       priority,
@@ -48,7 +51,7 @@ export const createReport = async (req, res) => {
       reportedBy: reporterId
     });
 
-    // 6. Save to database
+    // Save to database
     await newReport.save();
 
     const reportTypeLabel = reportType.replace('_', ' ');
@@ -67,7 +70,7 @@ export const createReport = async (req, res) => {
   } catch (error) {
     console.error("Error creating report:", error);
     
-    // Handle Mongoose validation errors (e.g., missing description for a bug)
+    // Handle Mongoose validation errors 
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
@@ -81,12 +84,15 @@ export const createReport = async (req, res) => {
     });
   }
 };
-
+// ==========================================
+// GET ALL REPORTS
+// Fetches all reports with reporter and route
+// details, sorted from newest to oldest.
+// ==========================================
 export const getAllReports = async (req, res) => {
   try {
     const reports = await report_models.find()
       .populate('reportedBy', 'name email') // Gets the user who reported it
-      //  this line to pull the full bus route data!
       .populate('busRoute', 'routeName startLocation endLocation') 
       .sort({ createdAt: -1 });
 
@@ -98,6 +104,8 @@ export const getAllReports = async (req, res) => {
 
 // ==========================================
 // ADMIN: UPDATE REPORT STATUS
+// Updates the report status and admin response
+// after validating the new status.
 // ==========================================
 export const updateReportStatus = async (req, res) => {
   try {
@@ -132,6 +140,8 @@ export const updateReportStatus = async (req, res) => {
 
 // ==========================================
 // PASSENGER: GET MY PAST REPORTS
+// Fetches reports submitted by the logged-in
+// user and sorts them from newest to oldest.
 // ==========================================
 export const getMyReports = async (req, res) => {
   try {
@@ -149,8 +159,11 @@ export const getMyReports = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 // ==========================================
 // ADMIN: DELETE REPORT
+// Finds the report by ID and removes it
+// from the database.
 // ==========================================
 export const deleteReport = async (req, res) => {
   try {

@@ -1,7 +1,11 @@
 import user_models from "../models/user_models.js";
 import notification_model from "../models/notification_model.js";
 
-// Register/update FCM token
+// ==========================================
+// REGISTER FCM TOKEN
+// Saves or updates the user's FCM token
+// for push notification delivery.
+// ==========================================
 export const registerFcmToken = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -20,7 +24,11 @@ export const registerFcmToken = async (req, res) => {
   }
 };
 
-// Get all notifications (for admin polling)
+// // ==========================================
+// GET ALL NOTIFICATIONS for admin polling)
+// Fetches recent notifications and the
+// total number of unread notifications.
+// ==========================================(
 export const getNotifications = async (req, res) => {
   try {
     const notifications = await notification_model.find()
@@ -40,7 +48,11 @@ export const getNotifications = async (req, res) => {
   }
 };
 
-// Mark a single notification as read
+// ==========================================
+// MARK NOTIFICATION AS READ
+// Finds a notification by ID and updates
+// its read status and read time.
+// ==========================================
 export const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
@@ -62,7 +74,11 @@ export const markAsRead = async (req, res) => {
   }
 };
 
-// Mark all notifications as read
+// ==========================================
+// MARK ALL NOTIFICATIONS AS READ
+// Updates all unread notifications and sets
+// their read time.
+// ==========================================
 export const markAllAsRead = async (req, res) => {
   try {
     await notification_model.updateMany(
@@ -76,8 +92,11 @@ export const markAllAsRead = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
-// Delete notifications that were read more than 7 days ago
+// ==========================================
+// CLEANUP OLD NOTIFICATIONS
+// Deletes read notifications that are older
+// than 7 days to keep the database clean.
+// ==========================================
 export const cleanupOldNotifications = async () => {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);

@@ -4,8 +4,8 @@ import bcrypt from "bcrypt";
 
 // ==========================================
 // GET ALL PENDING DRIVER ACCOUNTS
-// Retrieves all drivers whose accounts are
-// awaiting admin approval.
+// Fetches unverified drivers and excludes
+// their passwords from the response.
 // ==========================================
 export const getPendingDrivers = async (req, res) => {
   try {
@@ -25,8 +25,8 @@ export const getPendingDrivers = async (req, res) => {
 
 // ==========================================
 // APPROVE DRIVER ACCOUNT
-// Marks a pending driver as verified so
-// they can access driver features.
+// Finds the driver by ID and updates their
+// account status to verified.
 // ==========================================
 export const approveDriver = async (req, res) => {
   try {
