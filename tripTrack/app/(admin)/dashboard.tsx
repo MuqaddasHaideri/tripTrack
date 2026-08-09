@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, View, Text, TouchableOpacity,
-  StatusBar, Alert, Platform, Pressable, FlatList, Modal,Switch
+  StatusBar, Alert, Platform, Pressable, FlatList, Modal, Switch
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,11 +13,11 @@ import { fetchNotificationsApi, markAllNotificationsReadApi } from '../../servic
 // ─── TAB COMPONENT IMPORTS ────────────────────────────────────────────────────
 // Each tab lives in its own file under components/admin/
 // Add new tabs here — no other change needed in this file.
-import { VerifyDriversView }    from '../../components/admin/VerifyDriversView';
+import { VerifyDriversView } from '../../components/admin/VerifyDriversView';
 import { TransitManagementView } from '../../components/admin/TransitManagementView';
-import { UserReportsView }       from '../../components/admin/UserReportsView';
-import { ProvisionAdminView }    from '../../components/admin/ProvisionAdminView';
-import { BroadcastStationView }  from '../../components/admin/BroadcastStationView';
+import { UserReportsView } from '../../components/admin/UserReportsView';
+import { ProvisionAdminView } from '../../components/admin/ProvisionAdminView';
+import { BroadcastStationView } from '../../components/admin/BroadcastStationView';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/translation';
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -30,10 +30,10 @@ import { setLanguage } from '@/redux/languageSlice';
 // ─── SIDEBAR NAV ITEM ─────────────────────────────────────────────────────────
 
 interface NavItemProps {
-  title:   string;
-  icon:    string;
-  active:  boolean;
-  badge?:  number;
+  title: string;
+  icon: string;
+  active: boolean;
+  badge?: number;
   onPress: () => void;
 }
 
@@ -43,7 +43,7 @@ const NavItem = ({ title, icon, active, badge, onPress }: NavItemProps) => (
     onPress={onPress}
     activeOpacity={0.7}
   >
-    
+
     <View style={[styles.navIconWrap, active && styles.navIconWrapActive]}>
       <Ionicons name={icon as any} size={18} color={active ? '#196F31' : '#6A8E75'} />
     </View>
@@ -60,57 +60,57 @@ const NavItem = ({ title, icon, active, badge, onPress }: NavItemProps) => (
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 export default function AdminDashboardScreen() {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const TABS_CONFIG = [
-  {
-    id:        'verify',
-    title:     t('adminDashboard.driverVerification'),
-    label:     t('adminDashboard.verifyDrivers'),
-    icon:      'card-outline',
-    component: VerifyDriversView,
-    badge:     0,
-  },
-  {
-    id:        'transit',
-    title:     t('adminDashboard.routesAssetManagement'),
-    label:     t('adminDashboard.routesBuses'),
-    icon:      'git-branch-outline',
-    component: TransitManagementView,
-    badge:     0,
-  },
-  {
-    id:        'reports',
-    title:     t('adminDashboard.userReportsHub'),
-    label:     t('adminDashboard.userReports'),
-    icon:      'chatbubbles-outline',
-    component: UserReportsView,
-    badge:     0,
-  },
-  {
-    id:        'admin',
-    title:     t('adminDashboard.manageAdministrativeStaff'),
-    label:     t('adminDashboard.addAdmin'),
-    icon:      'person-add-outline',
-    component: ProvisionAdminView,
-    badge:     0,
-  },
-  {
-    id:        'broadcast',
-    title:     t('adminDashboard.globalAnnouncements'),
-    label:     t('adminDashboard.announcements'),
-    icon:      'megaphone-outline',
-    component: BroadcastStationView,
-    badge:     0,
-  },
-] as const;
+    {
+      id: 'verify',
+      title: t('adminDashboard.driverVerification'),
+      label: t('adminDashboard.verifyDrivers'),
+      icon: 'card-outline',
+      component: VerifyDriversView,
+      badge: 0,
+    },
+    {
+      id: 'transit',
+      title: t('adminDashboard.routesAssetManagement'),
+      label: t('adminDashboard.routesBuses'),
+      icon: 'git-branch-outline',
+      component: TransitManagementView,
+      badge: 0,
+    },
+    {
+      id: 'reports',
+      title: t('adminDashboard.userReportsHub'),
+      label: t('adminDashboard.userReports'),
+      icon: 'chatbubbles-outline',
+      component: UserReportsView,
+      badge: 0,
+    },
+    {
+      id: 'admin',
+      title: t('adminDashboard.manageAdministrativeStaff'),
+      label: t('adminDashboard.addAdmin'),
+      icon: 'person-add-outline',
+      component: ProvisionAdminView,
+      badge: 0,
+    },
+    {
+      id: 'broadcast',
+      title: t('adminDashboard.globalAnnouncements'),
+      label: t('adminDashboard.announcements'),
+      icon: 'megaphone-outline',
+      component: BroadcastStationView,
+      badge: 0,
+    },
+  ] as const;
 
-type TabId = typeof TABS_CONFIG[number]['id'];
+  type TabId = typeof TABS_CONFIG[number]['id'];
 
-  const router   = useRouter();
+  const router = useRouter();
   const dispatch = useDispatch();
   const { user, token } = useSelector((state: any) => state.auth);
 
-  const [activeTab, setActiveTab]     = useState<TabId>('verify');
+  const [activeTab, setActiveTab] = useState<TabId>('verify');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
@@ -127,24 +127,24 @@ type TabId = typeof TABS_CONFIG[number]['id'];
       setUnreadCount(res.unreadCount || 0);
     }
   };
-  
-    const toggleLanguage = async () => {
-      try {
-        const newLanguage = language === "en" ? "ur" : "en";
-  
-        // Update Redux
-        dispatch(setLanguage(newLanguage));
-  
-        // Update i18next
-        await i18n.changeLanguage(newLanguage);
-  
-        // Save language
-        await AsyncStorage.setItem("language", newLanguage);
-      } catch (error) {
-        console.log("Language change error:", error);
-      }
-    };
-    useEffect(() => {
+
+  const toggleLanguage = async () => {
+    try {
+      const newLanguage = language === "en" ? "ur" : "en";
+
+      // Update Redux
+      dispatch(setLanguage(newLanguage));
+
+      // Update i18next
+      await i18n.changeLanguage(newLanguage);
+
+      // Save language
+      await AsyncStorage.setItem("language", newLanguage);
+    } catch (error) {
+      console.log("Language change error:", error);
+    }
+  };
+  useEffect(() => {
     const loadLanguage = async () => {
       const savedLanguage = await AsyncStorage.getItem("language");
 
@@ -166,7 +166,7 @@ type TabId = typeof TABS_CONFIG[number]['id'];
     return () => clearInterval(pollInterval);
   }, [token]);
 
-  const currentTab      = TABS_CONFIG.find(t => t.id === activeTab) ?? TABS_CONFIG[0];
+  const currentTab = TABS_CONFIG.find(t => t.id === activeTab) ?? TABS_CONFIG[0];
   const ActiveComponent = currentTab.component;
 
   const handleLogout = () => {
@@ -301,25 +301,25 @@ type TabId = typeof TABS_CONFIG[number]['id'];
 
             {/* Footer */}
             <View style={styles.languageCard}>
-  <View style={styles.languageInfo}>
-    <Ionicons name="language-outline" size={20} color="#196F31" />
-    <View style={{ marginLeft: 10 }}>
-      <Text style={styles.languageTitle}>
-        {t('settings.language')}
-      </Text>
-      <Text style={styles.languageSubtitle}>
-        {isUrdu ? 'اردو' : 'English'}
-      </Text>
-    </View>
-  </View>
+              <View style={styles.languageInfo}>
+                <Ionicons name="language-outline" size={20} color="#196F31" />
+                <View style={{ marginLeft: 10 }}>
+                  <Text style={styles.languageTitle}>
+                    {t('settings.language')}
+                  </Text>
+                  <Text style={styles.languageSubtitle}>
+                    {isUrdu ? 'اردو' : 'English'}
+                  </Text>
+                </View>
+              </View>
 
-  <Switch
-    value={isUrdu}
-    onValueChange={toggleLanguage}
-    trackColor={{ false: '#D1E8D9', true: '#196F31' }}
-    thumbColor="#FFFFFF"
-  />
-</View>
+              <Switch
+                value={isUrdu}
+                onValueChange={toggleLanguage}
+                trackColor={{ false: '#D1E8D9', true: '#196F31' }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
             <View style={styles.sidebarFooter}>
               <View style={styles.userCard}>
                 <View style={styles.avatarCircle}>
@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239,68,68,0.2)',
     paddingVertical: 10,
     borderRadius: 12,
-    marginBottom:10,
+    marginBottom: 10,
   },
 
   signOutText: {
@@ -888,31 +888,31 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   languageCard: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  backgroundColor: '#F0F9F4',
-  borderRadius: 12,
-  padding: 12,
-  marginBottom: 10,
-  borderWidth: 1,
-  borderColor: '#D1E8D9',
-},
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0F9F4',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#D1E8D9',
+  },
 
-languageInfo: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
+  languageInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 
-languageTitle: {
-  fontSize: 13,
-  fontWeight: '700',
-  color: '#123D1F',
-},
+  languageTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#123D1F',
+  },
 
-languageSubtitle: {
-  fontSize: 11,
-  color: '#6A8E75',
-  marginTop: 2,
-},
+  languageSubtitle: {
+    fontSize: 11,
+    color: '#6A8E75',
+    marginTop: 2,
+  },
 });

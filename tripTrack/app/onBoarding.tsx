@@ -209,12 +209,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 8,
+    alignItems: 'center',  
+    justifyContent: 'center',
+    alignSelf: 'flex-start',   
   },
 
   skipText: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
     color: '#000000',
+    textAlign: 'center',
   },
 
   slide: {
@@ -263,6 +267,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     paddingHorizontal: 20,
+    marginBottom: 10,
   },
 
   pagination: {
