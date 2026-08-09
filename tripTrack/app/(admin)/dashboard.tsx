@@ -726,6 +726,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#D1E8D9',
     gap: 10,
+    marginBottom: 18,
   },
 
   userCard: {

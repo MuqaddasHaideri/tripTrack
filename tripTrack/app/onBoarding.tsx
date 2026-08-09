@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
+    marginBottom: 12,
   },
 
   nextText: {

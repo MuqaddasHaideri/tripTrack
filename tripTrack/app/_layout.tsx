@@ -134,13 +134,13 @@ export default function RootLayout() {
   const queryClient = new QueryClient();
 
   return (
-        <SafeAreaProvider>
+        // <SafeAreaProvider>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <RootContent />
       </QueryClientProvider>
     </Provider>
-    </SafeAreaProvider>
+    // </SafeAreaProvider>
   );
 }
 
