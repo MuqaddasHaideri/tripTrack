@@ -35,7 +35,6 @@ export default function PassengerMap() {
   const mapRef = useRef<MapView>(null);
   const appState = useRef(AppState.currentState);
   const { t } = useTranslation();
-  // --- STATE ---
   const [permissionState, setPermissionState] = useState<'loading' | 'granted' | 'denied'>('loading');
   const [errorType, setErrorType] = useState<'permission' | 'gps' | null>(null);
   const [userLocation, setUserLocation] = useState<any>(null);
@@ -46,7 +45,7 @@ export default function PassengerMap() {
   const [favoriteRouteIds, setFavoriteRouteIds] = useState<string[]>([]);
   const [isFavoriting, setIsFavoriting] = useState(false);
   const { token, isGuest } = useSelector((state) => state.auth);
-  // --- 1. LOCATION & PERMISSION LOGIC ---
+  // - LOCATION & PERMISSION ---
   useEffect(() => {
     checkLocationStatus();
     if (!isGuest && token) {

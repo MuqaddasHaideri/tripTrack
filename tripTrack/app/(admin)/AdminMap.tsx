@@ -21,7 +21,7 @@ export default function AdminMapScreen() {
   const { routeId } = useLocalSearchParams(); 
   const mapRef = useRef(null);
 
-  // Fetch routes (assuming you pull all and filter, or you can use a specific getRouteById API)
+  // Fetch routes 
   const { data: routes, isLoading } = useQuery({ 
     queryKey: ['routes', 'all'], 
     queryFn: fetchRoutesApi 
@@ -99,21 +99,8 @@ export default function AdminMapScreen() {
           longitudeDelta: 0.05 
         }}
       >
-        {/* Draw the Route Path */}
-        {/* {selectedRoute.polyline && selectedRoute.polyline.length > 0 && (
-          <Polyline
-            coordinates={selectedRoute.polyline.map(p => ({
-              latitude: parseFloat(p.latitude),
-              longitude: parseFloat(p.longitude)
-            }))}
-            strokeColor={routeColor}
-            strokeWidth={5}
-            lineJoin="round"
-            lineCap="round"
-          />
-        )} */}
 
-        {/* Draw the Stops as Markers */}
+       {/*  Stops as Markers */}
         {selectedRoute.stops?.map((stop, index) => {
           const isOrigin = index === 0;
           const isDestination = index === selectedRoute.stops.length - 1;
@@ -144,14 +131,14 @@ export default function AdminMapScreen() {
         })}
       </MapView>
 
-      {/* ── TOP HEADER (Back Button) ── */}
+      {/* header */}
       <SafeAreaView style={styles.headerPointer} pointerEvents="box-none">
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#196F31" />
         </TouchableOpacity>
       </SafeAreaView>
 
-      {/* ── BOTTOM ROUTE INFO CARD ── */}
+      {/* bottom info card*/}
       <View style={styles.bottomCard}>
         <View style={styles.cardHeader}>
           <View style={[styles.routeBadge, { backgroundColor: `${routeColor}20` }]}>

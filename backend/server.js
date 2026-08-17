@@ -105,7 +105,7 @@ io.on("connection", (socket) => {
     io.to(routeId).emit("bus_offline", { busId: busId });
   });
   // ==========================================
-  // Handle device disconnection.
+  // device disconnection.
   // If the disconnected socket belongs to a
   // driver, remove the bus from cache and
   // notify all passengers.

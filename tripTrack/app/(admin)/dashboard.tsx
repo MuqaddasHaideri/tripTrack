@@ -10,9 +10,6 @@ import { useRouter } from 'expo-router';
 import { logout } from '../../redux/authSlice';
 import { fetchNotificationsApi, markAllNotificationsReadApi } from '../../service/server';
 
-// ─── TAB COMPONENT IMPORTS ────────────────────────────────────────────────────
-// Each tab lives in its own file under components/admin/
-// Add new tabs here — no other change needed in this file.
 import { VerifyDriversView } from '../../components/admin/VerifyDriversView';
 import { TransitManagementView } from '../../components/admin/TransitManagementView';
 import { UserReportsView } from '../../components/admin/UserReportsView';
@@ -22,12 +19,6 @@ import { useTranslation } from 'react-i18next';
 import i18n from '@/translation';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setLanguage } from '@/redux/languageSlice';
-
-// ─── TAB CONFIG ───────────────────────────────────────────────────────────────
-
-
-
-// ─── SIDEBAR NAV ITEM ─────────────────────────────────────────────────────────
 
 interface NavItemProps {
   title: string;
@@ -57,7 +48,7 @@ const NavItem = ({ title, icon, active, badge, onPress }: NavItemProps) => (
   </TouchableOpacity>
 );
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+// ─── MAIN COMPONENT ──
 
 export default function AdminDashboardScreen() {
   const { t } = useTranslation();
@@ -194,7 +185,7 @@ export default function AdminDashboardScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#F0F9F4" />
 
-      {/* ── FULL-SCREEN CONTENT ─────────────────────────────────────────── */}
+      {/* ── FULL-SCREEN CONTENT ─ */}
       <View style={styles.fullScreen}>
 
         {/* Topbar */}
@@ -243,10 +234,10 @@ export default function AdminDashboardScreen() {
         </View>
       </View>
 
-      {/* ── SIDEBAR OVERLAY ────────────────────────────────────────────── */}
+      {/* ── SIDEBAR OVERLAY ──*/}
       {sidebarOpen && (
         <>
-          {/* Dim backdrop — tap anywhere to close */}
+          {/* Dim backdrop — cloe when tap anywhere*/}
           <Pressable style={styles.backdrop} onPress={() => setSidebarOpen(false)} />
 
           {/* Sidebar panel */}
@@ -346,7 +337,7 @@ export default function AdminDashboardScreen() {
           </View>
         </>
       )}
-      {/* ── NOTIFICATION PANEL MODAL ─────────────────────────────────── */}
+      {/* notification model */}
       <Modal
         visible={notifPanelOpen}
         animationType="slide"
@@ -410,7 +401,6 @@ export default function AdminDashboardScreen() {
   );
 }
 
-// ─── STYLES ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
 
@@ -424,7 +414,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F4',
   },
 
-  // ── Topbar ────────────────────────────────────────────────────────────────
 
   topbar: {
     flexDirection: 'row',
@@ -511,7 +500,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ── Stats Row ─────────────────────────────────────────────────────────────
 
   statsRow: {
     flexDirection: 'row',
@@ -568,7 +556,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ── Overlay Sidebar ───────────────────────────────────────────────────────
 
   backdrop: {
     ...StyleSheet.absoluteFillObject,

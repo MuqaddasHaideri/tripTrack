@@ -234,7 +234,6 @@ const STATUS_CONFIG: Record<
     );
   }, [routeSearch, routes]);
 
-  // ─── Sub-renders ──────────────────────────────────────────────────────────
 
   const renderPrioritySelector = () => (
     <View>
@@ -330,11 +329,10 @@ const renderLastReportCard = () => {
           contentContainerStyle={{ gap: 12, paddingBottom: 5 }}
         >
           {pastReports.map((report) => {
-            // Safe fallback configuration lookup using the schema enum string
             const statusType = (report.status || 'pending') as 'pending' | 'reviewed' | 'resolved' | 'dismissed';
             const statusCfg = STATUS_CONFIG[statusType];
 
-            // Clean format for type display tag strings (e.g. transit_issue -> TRANSIT ISSUE)
+            // Clean format for type display tag strings
             const displayTag = report.reportType?.replace('_', ' ').toUpperCase() || 'REPORT';
 
             return (
@@ -351,7 +349,6 @@ const renderLastReportCard = () => {
                     </Text>
                   )}
                   
-                  {/* DYNAMIC RENDER LINKED DIRECTLY TO SCHEMA ENUMS */}
                   <Text style={[styles.lastReportStatus, { color: statusCfg.color }]}>
                     {statusCfg.label}
                   </Text>
