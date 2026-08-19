@@ -1,25 +1,14 @@
 # TripTrack
 
-<p align="center">
-  <img src="https://img.shields.io/badge/TripTrack-Bus%20Tracking%20Application-196F31?style=for-the-badge" alt="TripTrack">
-</p>
 
-<p align="center">
+<p>
   <strong>A Bus Tracking Mobile Application</strong>
 </p>
 
-<p align="center">
+<p >
   Track buses in real time, view routes and stops, and make public transportation more convenient.
 </p>
 
-<p align="center">
-  <a href="https://github.com/MuqaddasHaideri/tripTrack">
-    <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=flat-square&logo=github" alt="GitHub">
-  </a>
-  <img src="https://img.shields.io/github/stars/MuqaddasHaideri/tripTrack?style=flat-square&logo=github&label=Stars" alt="Stars">
-  <img src="https://img.shields.io/github/commit-activity/m/MuqaddasHaideri/tripTrack?style=flat-square&logo=git&label=Activity" alt="Commit Activity">
-  <img src="https://img.shields.io/github/last-commit/MuqaddasHaideri/tripTrack?style=flat-square&logo=git&label=Last%20Commit" alt="Last Commit">
-</p>
 
 ---
 
@@ -111,58 +100,36 @@ Manage routes, stops, announcements, and driver registrations.
 
 ## Tech Stack
 
-<table>
-<tr>
-<th>Technology</th>
-<th>Purpose</th>
-</tr>
+<p align="center">
+  <img src="https://img.shields.io/badge/React%20Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native">
+  <img src="https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo">
+  <img src="https://img.shields.io/badge/Redux-764ABC?style=for-the-badge&logo=redux&logoColor=white" alt="Redux">
+  <img src="https://img.shields.io/badge/i18next-26A69A?style=for-the-badge&logo=i18next&logoColor=white" alt="i18next">
+</p>
 
-<tr>
-<td><strong>React Native</strong></td>
-<td>Mobile application development</td>
-</tr>
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express.js">
+  <img src="https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socket.io&logoColor=white" alt="Socket.IO">
+  <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT">
+  <img src="https://img.shields.io/badge/Mongoose-880000?style=for-the-badge&logo=mongoose&logoColor=white" alt="Mongoose">
+</p>
 
-<tr>
-<td><strong>Expo</strong></td>
-<td>React Native development and tooling</td>
-</tr>
+<p align="center">
+  <img src="https://img.shields.io/badge/MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB Atlas">
+  <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white" alt="Cloudinary">
+  <img src="https://img.shields.io/badge/Render-000000?style=for-the-badge&logo=render&logoColor=white" alt="Render">
+  <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white" alt="Axios">
+</p>
 
-<tr>
-<td><strong>Node.js</strong></td>
-<td>Backend runtime environment</td>
-</tr>
+<p align="center">
+  <img src="https://img.shields.io/badge/Google%20Maps%20API-4285F4?style=for-the-badge&logo=googlemaps&logoColor=white" alt="Google Maps API">
+  <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git">
+  <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+  <img src="https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white" alt="Postman">
+</p>
 
-<tr>
-<td><strong>Express.js</strong></td>
-<td>REST API development</td>
-</tr>
 
-<tr>
-<td><strong>MongoDB Atlas</strong></td>
-<td>Database and data storage</td>
-</tr>
-
-<tr>
-<td><strong>Google Maps API</strong></td>
-<td>Maps and location services</td>
-</tr>
-
-<tr>
-<td><strong>JWT</strong></td>
-<td>Authentication and authorization</td>
-</tr>
-
-<tr>
-<td><strong>Mongoose</strong></td>
-<td>MongoDB object modeling</td>
-</tr>
-
-<tr>
-<td><strong>Axios</strong></td>
-<td>Frontend–backend communication</td>
-</tr>
-
-</table>
 
 ---
 
@@ -173,75 +140,6 @@ Manage routes, stops, announcements, and driver registrations.
 | **Passenger** | Track buses, view routes and stops, check arrival information, save favorite routes, and report issues |
 | **Driver**    | Start shifts, view assigned routes, and share live GPS location                                        |
 | **Admin**     | Manage routes, stops, announcements, and driver registrations                                          |
-
----
-
-## Repository Statistics
-
-<p align="center">
-
-<img src="https://img.shields.io/github/stars/MuqaddasHaideri/tripTrack?style=for-the-badge&logo=github&logoColor=white&label=Stars" alt="Stars">
-
-<img src="https://img.shields.io/github/forks/MuqaddasHaideri/tripTrack?style=for-the-badge&logo=github&logoColor=white&label=Forks" alt="Forks">
-
-<img src="https://img.shields.io/github/commit-activity/y/MuqaddasHaideri/tripTrack?style=for-the-badge&logo=git&logoColor=white&label=Commits" alt="Commit Activity">
-
-</p>
-
-<p align="center">
-
-<img src="https://img.shields.io/github/issues/MuqaddasHaideri/tripTrack?style=flat-square&logo=github&label=Issues">
-
-<img src="https://img.shields.io/github/last-commit/MuqaddasHaideri/tripTrack?style=flat-square&logo=git&label=Last%20Commit">
-
-<img src="https://img.shields.io/github/repo-size/MuqaddasHaideri/tripTrack?style=flat-square&label=Repository%20Size">
-
-<img src="https://img.shields.io/github/languages/top/MuqaddasHaideri/tripTrack?style=flat-square&label=Top%20Language">
-
-</p>
-
-### Project Timeline
-
-| Project Detail         | Information        |
-| ---------------------- | ------------------ |
-| **Project Started**    | June 2026          |
-| **Development Period** | 2+ Months          |
-| **Project Type**       | Final Year Project |
-| **Platform**           | Mobile Application |
-| **Backend**            | Deployed           |
-| **Repository**         | GitHub             |
-
-> The GitHub badges above automatically display the repository's current stars, forks, commit activity, issues, and other statistics.
-
----
-
-## System Overview
-
-```text
-                         ┌─────────────────────┐
-                         │      TRIPTRACK      │
-                         │  Mobile Application │
-                         └──────────┬──────────┘
-                                    │
-              ┌─────────────────────┼─────────────────────┐
-              │                     │                     │
-              ▼                     ▼                     ▼
-       ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-       │  Passenger  │       │   Driver    │       │    Admin    │
-       └──────┬──────┘       └──────┬──────┘       └──────┬──────┘
-              │                     │                     │
-              └─────────────────────┼─────────────────────┘
-                                    ▼
-                         ┌─────────────────────┐
-                         │    REST API /       │
-                         │   Express Server    │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │    MongoDB Atlas    │
-                         └─────────────────────┘
-```
 
 ---
 
@@ -271,7 +169,6 @@ npx expo start
 
 The application can be opened using an Android emulator, iOS simulator, or a compatible mobile device.
 
-> **Note:** The TripTrack backend is already deployed, so local backend setup and environment-variable configuration are not required to run the application.
 
 ---
 
@@ -279,22 +176,4 @@ The application can be opened using an Android emulator, iOS simulator, or a com
 
 TripTrack aims to improve the public transportation experience by providing passengers with **better visibility of bus locations and arrival information**, while giving drivers and administrators the tools required to manage the transportation system efficiently.
 
----
 
-## Project Journey
-
-TripTrack started as a Final Year Project in **June 2026** and evolved through continuous development, testing, debugging, feature implementation, and system refinement.
-
-Over the development period, the project progressed from an initial concept into a complete mobile bus tracking solution with dedicated **Passenger, Driver, and Admin** functionality.
-
----
-
-<p align="center">
-  <strong>TripTrack</strong>
-  <br>
-  A smarter way to track your journey.
-</p>
-
-<p align="center">
-  <sub>Built with React Native, Node.js, Express.js & MongoDB</sub>
-</p>
