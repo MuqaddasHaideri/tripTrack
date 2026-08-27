@@ -25,7 +25,7 @@ export const signupController = async (req, res) => {
 
     const isUserVerified = role === 'passenger' ? true : false;
 // const otp = Math.floor(100000 + Math.random() * 900000).toString();
-//     const otpExpires = new Date(Date.now() + 10 * 60000);
+// const otpExpires = new Date(Date.now() + 10 * 60000);
     const newUser = new user_models({
       name,
       email: trimmedEmail,
